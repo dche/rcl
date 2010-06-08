@@ -1,0 +1,10 @@
+*.gem
+.DS_Store
+*.rbo
+*.rbc
+
+Makefile
+*.o
+*.bundle
+
+ci.rb
