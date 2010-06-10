@@ -15,6 +15,19 @@ describe Context do
   end
   
   the "info() method" do
+    cxt = Context.new(nil, CL_DEVICE_TYPE_CPU);
+    cxt.info(CL_CONTEXT_REFERENCE_COUNT).should.is_a Integer
+  end
+  
+  the "retainContext should performed." do
+    cxt = Context.new(nil, CL_DEVICE_TYPE_CPU)
+    rc = cxt.info(CL_CONTEXT_REFERENCE_COUNT)
     
+    cxt2 = cxt.dup
+    rc1 = cxt.info(CL_CONTEXT_REFERENCE_COUNT)
+    rc2 = cxt2.info(CL_CONTEXT_REFERENCE_COUNT)
+    
+    (rc1 > rc).should.be.true
+    (rc1 == rc2).should.be.true
   end
 end
