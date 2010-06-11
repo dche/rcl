@@ -9,6 +9,8 @@
 
 #include <OpenCL/opencl.h>
 
+#define TRACE(...)     fprintf(stderr, __VA_ARGS__)
+
 /*
  * Modules.
  *
@@ -289,7 +291,7 @@ static VALUE rcl_errors;    // { errcode => message }
 
 #define RCL_DEF_CL_ERROR(errcode, errstr) \
     do { \
-        rb_define_const(rb_eOpenCL, #errcode, INT2FIX(errcode)); \
+        rb_define_const(rb_mCapi, #errcode, INT2FIX(errcode)); \
         rb_hash_aset(rcl_errors, INT2FIX(errcode), rb_str_new2(errstr)); \
     } while (0)
 
@@ -350,7 +352,7 @@ static VALUE
 rcl_error_init(VALUE self, VALUE errcode)
 {
     if (FIXNUM_P(errcode) && !NIL_P(rb_hash_aref(rcl_errors, errcode))) {
-        rb_iv_set(self, "cl_errcode", errcode);
+        rb_iv_set(self, "@cl_errcode", errcode);
     } else {
         rb_raise(rb_eArgError, "Invalid CL error code.");
     }
@@ -903,9 +905,9 @@ static inline VALUE
 RImageFormat(cl_image_format *imf)
 {
     VALUE ro = rb_obj_alloc(rb_cImageFormat);
-    rb_ivar_set(ro, rb_intern("channel_order"), 
+    rb_iv_set(ro, "@channel_order", 
               INT2FIX(imf->image_channel_order));
-    rb_ivar_set(ro, rb_intern("channel_data_type"), 
+    rb_iv_set(ro, "@channel_data_type", 
               INT2FIX(imf->image_channel_data_type));
     
     return ro;
@@ -914,16 +916,43 @@ RImageFormat(cl_image_format *imf)
 static VALUE
 rcl_image_format_init(VALUE self, VALUE order, VALUE type)
 {
-    return Qnil;
+    if (!(FIXNUM_P(order) && FIXNUM_P(type))) {
+        rb_raise(rb_eArgError, "Invalid argument types.");
+    }
+    
+    rb_iv_set(self, "@channel_order", INT2FIX(order));
+    rb_iv_set(self, "@channel_data_type", INT2FIX(type));
+    
+    return self;
 }
  
 static VALUE
 rcl_context_supported_image_formats(VALUE self, VALUE mem_flag, VALUE type)
 {
+    if (!FIXNUM_P(type)) {
+        rb_raise(rb_eArgError, "Invalid memory object type.");
+    }
+    cl_mem_object_type mt = FIX2INT(type);
+    cl_mem_flags mf = NUM2UINT(mem_flag);    // FIXME: how to check type of ulong?
+    
     cl_context cxt = Context_Ptr(self);
+    cl_uint num_ret = 0;
+    cl_int res = clGetSupportedImageFormats(cxt, mf, mt, 0, NULL, &num_ret);
+    Check_And_Raise(res);
     
+    cl_image_format *ifs = ALLOCA_N(cl_image_format, num_ret);
+    if (NULL == ifs) {
+        rb_raise(rb_eRuntimeError, "Out of memory.");
+    }
+    res = clGetSupportedImageFormats(cxt, mf, mt, num_ret, ifs, NULL);
+    Check_And_Raise(res);
     
-    return Qnil;
+    VALUE ret = rb_ary_new2(num_ret);
+    int i = 0;
+    for (; i < num_ret; i++) {
+        rb_ary_push(ret, RImageFormat(ifs + i));
+    }
+    return ret;
 }
 
 static void
@@ -931,7 +960,7 @@ define_class_image_format(void)
 {
     rb_cImageFormat = rb_define_class_under(rb_mCapi, "ImageFormat", rb_cObject);
     rb_define_attr(rb_cImageFormat, "channel_order", 1, 0);
-    rb_define_attr(rb_cImageFormat, "chennel_data_type", 1, 0);
+    rb_define_attr(rb_cImageFormat, "channel_data_type", 1, 0);
     rb_define_method(rb_cImageFormat, "initialize", rcl_image_format_init, 2);
     rb_define_method(rb_cContext, "supported_image_formats", 
                                   rcl_context_supported_image_formats, 2);
@@ -1100,12 +1129,18 @@ rcl_command_queue_set_property(VALUE self, VALUE props, VALUE yesno)
 static VALUE
 rcl_flush(VALUE self)
 {
+    cl_int res = clFlush(CommandQueue_Ptr(self));
+    Check_And_Raise(res);
+    
     return self;
 }
 
 static VALUE
 rcl_finish(VALUE self)
 {
+    cl_int res = clFinish(CommandQueue_Ptr(self));
+    Check_And_Raise(res);
+    
     return self;
 }
 
