@@ -392,15 +392,6 @@ check_cl_error(cl_int errcode, int warn)
 
 #define Check_And_Raise(code)   (check_cl_error(code, 0))
 #define Check_And_Warn(code)    (check_cl_error(code, 1))
-// NOTE: this macro needs local defined class variables 
-//       take specific pattern of name, /rb_c\w+/
-#define Check_RCL_Type(o, klass) \
-    do { \
-        Check_Type(o, T_DATA); \
-        if (rb_class_of(o) != rb_c##klass) { \
-            rb_raise(rb_eTypeError, "Expected %s is instance of %s.", #o, #klass); \
-        } \
-    } while (0)
 
 static void
 define_class_clerror(void)
@@ -409,6 +400,30 @@ define_class_clerror(void)
     rb_define_method(rb_eOpenCL, "initialize", rcl_error_init, 1);
     rb_define_attr(rb_eOpenCL, "cl_errcode", 1, 0);    
 }
+
+// NOTE: this macro needs local defined class variables 
+//       take specific pattern of name, /rb_c\w+/
+#define Expect_RCL_Type(o, klass) \
+    do { \
+        Check_Type(o, T_DATA); \
+        if (rb_class_of(o) != rb_c##klass) { \
+            rb_raise(rb_eTypeError, "Expected %s is a instance of %s.", #o, #klass); \
+        } \
+    } while (0)
+    
+#define Expect_RCL_Const(ro) \
+    do { \
+        if (!FIXNUM_P(ro)) \
+            rb_raise(rb_eTypeError, \
+                    "Expected %s an OpenCL enumerated type. ", #ro); \
+    } while (0)
+
+#define Expect_Boolean(ro) \
+    do { \
+        if (ro != Qtrue && ro != Qfalse) \
+            rb_raise(rb_eTypeError, \
+                    "Expected %s has a boolean value.", #ro); \
+    } while (0)
 
 /*
  * class Platform
@@ -419,7 +434,13 @@ static VALUE rb_cPlatform;
 // cl ptr -> ruby object
 #define RPlatform(ptr)      (Data_Wrap_Struct(rb_cPlatform, 0, 0, (ptr)))
 // ruby object -> cl ptr
-#define Platform_Ptr(ro)    (DATA_PTR(ro))
+
+static inline cl_platform_id
+Platform_Ptr(VALUE ro)
+{
+    Expect_RCL_Type(ro, Platform);
+    return DATA_PTR(ro);
+}
 
 /*
  * :nodoc:
@@ -442,12 +463,11 @@ rcl_platforms(VALUE self)
 {
     cl_uint num_p;
     cl_platform_id p_ids[16];   // CHECK: literal constant.
-    int i;
     
     VALUE list = rb_ary_new();
     cl_int res = clGetPlatformIDs(16, p_ids, &num_p);   // CHECK: ditto.
     if (CL_SUCCESS == res) {
-        for(i = 0; i < num_p; i++) {
+        for(int i = 0; i < num_p; i++) {
             VALUE o = RPlatform(p_ids[i]);
             rb_ary_push(list, o);
         }
@@ -465,13 +485,11 @@ rcl_platforms(VALUE self)
  */
 
 static VALUE
-rcl_platform_info(VALUE self, VALUE param)
+rcl_platform_info(VALUE self, VALUE platform_info)
 {
-    if (!FIXNUM_P(param)) {
-        rb_raise(rb_eArgError, "Invalid platform info type.");
-    }
+    Expect_RCL_Const(platform_info);
+    cl_platform_info info = FIX2UINT(platform_info);
     
-    cl_platform_info info = FIX2INT(param);
     cl_int res;
     char param_value[2048];     // CHECK: literal constant, and correct size.
     size_t param_value_size;
@@ -501,7 +519,13 @@ define_class_platform(void)
 static VALUE rb_cDevice;
 
 #define RDevice(ptr)      Data_Wrap_Struct(rb_cDevice, 0, 0, (ptr))
-#define Device_Ptr(ro)    DATA_PTR(ro)
+
+static inline cl_device_id
+Device_Ptr(VALUE ro)
+{
+    Expect_RCL_Type(ro, Device);
+    return DATA_PTR(ro);
+}
 
 /*
  * :nodoc:
@@ -520,27 +544,24 @@ rcl_device_alloc(VALUE self)
  * Wrapps +clGetDeviceIDs()+
  */
 static VALUE
-rcl_devices(VALUE self, VALUE type, VALUE platform)
+rcl_devices(VALUE self, VALUE device_type, VALUE platform)
 {
-    if (!FIXNUM_P(type)) {
-        rb_raise(rb_eArgError, "Invalid device type.");
-    }
-    if (!NIL_P(platform)) Check_RCL_Type(platform, Platform);
-    
+    cl_platform_id pid = NIL_P(platform) ? NULL : Platform_Ptr(platform);
+
+    Expect_RCL_Const(device_type);
+    cl_device_type dt = FIX2UINT(device_type);
+
     cl_device_id d_ids[256];    // CHECK: literal constant and correct value.
     cl_uint num_id;
     cl_int res;
     
-    cl_platform_id pid = NIL_P(platform) ? NULL : Platform_Ptr(platform);
-    cl_device_type dt = FIX2INT(type);
     res = clGetDeviceIDs(pid, dt, 256, d_ids, &num_id); // CHECK: ditto.
     
     VALUE devs = rb_ary_new();
     if (res != CL_SUCCESS) {
         Check_And_Warn(res);
     } else {
-        int i;
-        for (i = 0; i < num_id; i++) {
+        for (int i = 0; i < num_id; i++) {
             VALUE o = RDevice(d_ids[i]);
             rb_ary_push(devs, o);
         }
@@ -555,13 +576,11 @@ rcl_devices(VALUE self, VALUE type, VALUE platform)
  * Wrapps +clGetDeviceInfo()+
  */
 static VALUE
-rcl_device_info(VALUE self, VALUE param)
+rcl_device_info(VALUE self, VALUE device_info)
 {
-    if (!FIXNUM_P(param)) {
-        rb_raise(rb_eArgError, "Invalid device info type.");
-    }
+    Expect_RCL_Const(device_info);
+    cl_device_info info = FIX2UINT(device_info);
     
-    cl_device_info info = FIX2INT(param);
     cl_int res;
     char param_value[2048];     // CHECK: literal constant.
     size_t param_value_size;
@@ -676,16 +695,17 @@ rcl_context_free(void *ptr)
 static inline VALUE
 RContext(cl_context ptr)
 {
-    rcl_context_t *p = ALLOC_N(rcl_context_t, 1);
-    p->c = (ptr);
+    rcl_context_t *p;
+    VALUE ret = Data_Make_Struct(rb_cContext, rcl_context_t, 0, rcl_context_free, p);
     
-    return Data_Wrap_Struct(rb_cContext, 0, rcl_context_free, p);   
+    p->c = ptr;
+    return ret;   
 }
 
 static inline cl_context
 Context_Ptr(VALUE ro)
 {
-    Check_RCL_Type(ro, Context);
+    Expect_RCL_Type(ro, Context);
     
     rcl_context_t *p;
     Data_Get_Struct(ro, rcl_context_t, p);
@@ -708,8 +728,7 @@ rcl_pfn_notify(const char *errinfo, const void *private_info, size_t cb, void *u
 static void
 set_context_properties(cl_context_properties *props, VALUE arr, uint len)
 {
-    int i;
-    for (i = 0; i < len; i += 2) {
+    for (int i = 0; i < len; i += 2) {
         VALUE pn = rb_ary_entry(arr, i);
         VALUE ptr = rb_ary_entry(arr, i + 1);
         
@@ -730,10 +749,9 @@ set_context_properties(cl_context_properties *props, VALUE arr, uint len)
 static void
 set_context_device_list(cl_device_id *devs, VALUE arr, uint len)
 {
-    int i;
-    for (i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         VALUE dev = rb_ary_entry(arr, i);
-        Check_RCL_Type(dev, Device);
+        Expect_RCL_Type(dev, Device);
         
         devs[i] = Device_Ptr(dev);
     }
@@ -743,10 +761,9 @@ static VALUE
 build_device_array(cl_device_id *devs, size_t cb)
 {
     VALUE ret = rb_ary_new();
-    size_t num_dev = cb / sizeof(cl_device_id);
+    uint num_dev = cb / sizeof(cl_device_id);
     
-    int i;
-    for (i = 0; i < num_dev; i++) {
+    for (int i = 0; i < num_dev; i++) {
         VALUE dev = RDevice(devs[i]);
         rb_ary_push(ret, dev);
     }
@@ -785,7 +802,7 @@ rcl_context_init(VALUE self, VALUE parg, VALUE darg)
     if (TYPE(darg) == T_ARRAY && RARRAY_LEN(darg) > 0) {
         devs = darg;
     } else if(FIXNUM_P(darg)) {
-        dev_type = FIX2INT(darg);
+        dev_type = FIX2UINT(darg);
     } else {
         rb_raise(rb_eArgError, "Invalid argument. Expected device type or device array.");
     }
@@ -824,7 +841,7 @@ static VALUE
 rcl_context_init_copy(VALUE copy, VALUE orig)
 {
     if (copy == orig) return copy;
-    Check_RCL_Type(orig, Context);
+    Expect_RCL_Type(orig, Context);
     
     rcl_context_t *copy_p;
     rcl_context_t *orig_p;
@@ -855,19 +872,16 @@ rcl_context_init_copy(VALUE copy, VALUE orig)
  */
 
 static VALUE
-rcl_context_info(VALUE self, VALUE param)
+rcl_context_info(VALUE self, VALUE context_info)
 {
-    if (!FIXNUM_P(param)) {
-        rb_raise(rb_eArgError, "Invalid context info.");
-    }        
-    cl_context_info iname = FIX2INT(param);    
+    Expect_RCL_Const(context_info); 
+    cl_context_info iname = FIX2UINT(context_info);       
     cl_context cxt = Context_Ptr(self);
     
     char info[512];
     size_t info_size;
      
-    cl_int res = clGetContextInfo(cxt, iname, 512, (void *)info, &info_size);
-    
+    cl_int res = clGetContextInfo(cxt, iname, 512, (void *)info, &info_size);    
     Check_And_Raise(res);
     
     switch (iname) {
@@ -906,34 +920,32 @@ RImageFormat(cl_image_format *imf)
 {
     VALUE ro = rb_obj_alloc(rb_cImageFormat);
     rb_iv_set(ro, "@channel_order", 
-              INT2FIX(imf->image_channel_order));
+              UINT2FIX(imf->image_channel_order));
     rb_iv_set(ro, "@channel_data_type", 
-              INT2FIX(imf->image_channel_data_type));
+              UINT2FIX(imf->image_channel_data_type));
     
     return ro;
 }
 
 static VALUE
-rcl_image_format_init(VALUE self, VALUE order, VALUE type)
+rcl_image_format_init(VALUE self, VALUE channel_order, VALUE channel_data_type)
 {
-    if (!(FIXNUM_P(order) && FIXNUM_P(type))) {
-        rb_raise(rb_eArgError, "Invalid argument types.");
-    }
+    Expect_RCL_Const(channel_order);
+    Expect_RCL_Const(channel_data_type);
     
-    rb_iv_set(self, "@channel_order", INT2FIX(order));
-    rb_iv_set(self, "@channel_data_type", INT2FIX(type));
+    rb_iv_set(self, "@channel_order", channel_order);
+    rb_iv_set(self, "@channel_data_type", channel_data_type);
     
     return self;
 }
  
 static VALUE
-rcl_context_supported_image_formats(VALUE self, VALUE mem_flag, VALUE type)
+rcl_context_supported_image_formats(VALUE self, VALUE mem_flag, VALUE mem_obj_type)
 {
-    if (!FIXNUM_P(type)) {
-        rb_raise(rb_eArgError, "Invalid memory object type.");
-    }
-    cl_mem_object_type mt = FIX2INT(type);
-    cl_mem_flags mf = NUM2UINT(mem_flag);    // FIXME: how to check type of ulong?
+    Expect_RCL_Const(mem_obj_type);
+    cl_mem_object_type mt = FIX2INT(mem_obj_type);
+    Expect_RCL_Const(mem_flag);
+    cl_mem_flags mf = FIX2UINT(mem_flag);
     
     cl_context cxt = Context_Ptr(self);
     cl_uint num_ret = 0;
@@ -948,8 +960,7 @@ rcl_context_supported_image_formats(VALUE self, VALUE mem_flag, VALUE type)
     Check_And_Raise(res);
     
     VALUE ret = rb_ary_new2(num_ret);
-    int i = 0;
-    for (; i < num_ret; i++) {
+    for (int i = 0; i < num_ret; i++) {
         rb_ary_push(ret, RImageFormat(ifs + i));
     }
     return ret;
@@ -972,21 +983,13 @@ define_class_image_format(void)
  */
  
 static VALUE rb_cCommandQueue;
+static VALUE rb_cMemory;
+static VALUE rb_cProgram;
+static VALUE rb_cKernel;
 
 typedef struct {
     cl_command_queue cq;
 } rcl_command_queue_t;
-
-static inline cl_command_queue
-Command_Queue_Ptr(VALUE ro)
-{
-    Check_RCL_Type(ro, CommandQueue);
-    
-    rcl_command_queue_t *p;
-    Data_Get_Struct(ro, rcl_command_queue_t, p);
-    
-    return p->cq;
-}
 
 static void
 rcl_command_queue_free(void *ptr)
@@ -995,13 +998,31 @@ rcl_command_queue_free(void *ptr)
     free(ptr);
 }
 
+static inline VALUE
+RCommandQueue(cl_command_queue ptr)
+{
+    rcl_command_queue_t *p;
+    VALUE ret = Data_Make_Struct(rb_cCommandQueue, rcl_command_queue_t, 
+                                 0, rcl_command_queue_free, p);
+    p->cq = ptr;
+    return ret;
+}
+
+static inline cl_command_queue
+Command_Queue_Ptr(VALUE ro)
+{
+    Expect_RCL_Type(ro, CommandQueue);
+    
+    rcl_command_queue_t *p;
+    Data_Get_Struct(ro, rcl_command_queue_t, p);
+    
+    return p->cq;
+}
+
 static VALUE
 rcl_command_queue_alloc(VALUE klass)
 {
-    rcl_command_queue_t *p = ALLOC_N(rcl_command_queue_t, 1);
-    p->cq = NULL;
-    
-    return Data_Wrap_Struct(klass, 0, rcl_command_queue_free, p);
+    return RCommandQueue(NULL);
 }
 
 /*
@@ -1018,12 +1039,11 @@ rcl_command_queue_alloc(VALUE klass)
 static VALUE
 rcl_command_queue_init(VALUE self, VALUE context, VALUE device, VALUE props)
 {
-    Check_RCL_Type(context, Context);
-    Check_RCL_Type(device, Device);
-    
     cl_context cxt = Context_Ptr(context);   
     cl_device_id did = Device_Ptr(device);
-    cl_uint properties = NUM2UINT(props);
+    
+    Expect_RCL_Const(props);
+    cl_uint properties = FIX2UINT(props);
     
     cl_int res;
     cl_command_queue q = clCreateCommandQueue(cxt, did, properties, &res);
@@ -1043,7 +1063,7 @@ rcl_command_queue_init_copy(VALUE copy, VALUE orig)
 {
     if (copy == orig) return copy;
     
-    Check_RCL_Type(orig, CommandQueue);
+    Expect_RCL_Type(orig, CommandQueue);
     
     rcl_command_queue_t *copy_p;
     rcl_command_queue_t *orig_p;    
@@ -1071,17 +1091,15 @@ rcl_command_queue_init_copy(VALUE copy, VALUE orig)
  */
 
 static VALUE
-rcl_command_queue_info(VALUE self, VALUE param)
+rcl_command_queue_info(VALUE self, VALUE command_queue_info)
 {
-    if (!FIXNUM_P(param)) {
-        rb_raise(rb_eArgError, "Invalid command queue info type.");
-    }
+    Expect_RCL_Const(command_queue_info);
+    cl_command_queue_info info = FIX2UINT(command_queue_info);
     
     intptr_t param_value;   // CHECK: extensibility.
     size_t sz_ret;
     
     cl_command_queue cq = Command_Queue_Ptr(self);
-    cl_command_queue_info info = FIX2UINT(param);
     
     cl_int res = clGetCommandQueueInfo(cq, info, sizeof(intptr_t), (void *)&param_value, &sz_ret);
     Check_And_Raise(res);
@@ -1113,9 +1131,7 @@ rcl_command_queue_info(VALUE self, VALUE param)
 static VALUE
 rcl_command_queue_set_property(VALUE self, VALUE props, VALUE yesno)
 {
-    if (yesno != Qtrue && yesno != Qfalse) {
-        rb_raise(rb_eArgError, "Argument 2 is not true or false.");
-    }
+    Expect_Boolean(yesno);
     
     cl_command_queue q = Command_Queue_Ptr(self);
     cl_command_queue_properties pval = NUM2UINT(props);
@@ -1129,7 +1145,7 @@ rcl_command_queue_set_property(VALUE self, VALUE props, VALUE yesno)
 static VALUE
 rcl_flush(VALUE self)
 {
-    cl_int res = clFlush(CommandQueue_Ptr(self));
+    cl_int res = clFlush(Command_Queue_Ptr(self));
     Check_And_Raise(res);
     
     return self;
@@ -1138,11 +1154,126 @@ rcl_flush(VALUE self)
 static VALUE
 rcl_finish(VALUE self)
 {
-    cl_int res = clFinish(CommandQueue_Ptr(self));
+    cl_int res = clFinish(Command_Queue_Ptr(self));
     Check_And_Raise(res);
     
     return self;
 }
+
+// static VALUE
+// rcl_cq_enqueue_read_buffer(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_write_buffer(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_copy_buffer(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_read_image(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_write_image(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_copy_image(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_copy_image_to_buffer(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_copy_buffer_to_image(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_map_buffer(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_map_image(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_unmap_mem_obj(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_ndrange_kernel(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_task(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_native_kernel(VALUE self, )
+// {
+//     rb_notimplement();
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_marker(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_waitfor_events(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_barrier(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_acquire_gl_objects(VALUE self, )
+// {
+//     return self;
+// }
+// 
+// static VALUE
+// rcl_cq_enqueue_release_gl_objects(VALUE self, )
+// {
+//     return self;
+// }
 
 static void
 define_class_command_queue(void)
@@ -1153,8 +1284,37 @@ define_class_command_queue(void)
     rb_define_method(rb_cCommandQueue, "initialize_copy", rcl_command_queue_init_copy, 1);
     rb_define_method(rb_cCommandQueue, "info", rcl_command_queue_info, 1);
     rb_define_method(rb_cCommandQueue, "set_property", rcl_command_queue_set_property, 2);
+    
+    // mem
+    // rb_define_method(rb_cCommandQueue, "enqueue_read_buffer", rcl_cq_enqueue_read_buffer, );
+    // rb_define_method(rb_cCommandQueue, "enqueue_write_buffer", rcl_cq_enqueue_write_buffer, );
+    // rb_define_method(rb_cCommandQueue, "enqueue_copy_buffer", rcl_cq_enqueue_copy_buffer, );
+    // rb_define_method(rb_cCommandQueue, "enqueue_read_image", rcl_cq_enqueue_read_image, );
+    // rb_define_method(rb_cCommandQueue, "enqueue_write_image", rcl_cq_enqueue_write_image, );
+    // rb_define_method(rb_cCommandQueue, "enqueue_copy_image", rcl_cq_enqueue_copy_image, );
+    // rb_define_method(rb_cCommandQueue, "enqueue_copy_image_to_buffer", rcl_cq_enqueue_copy_image_to_buffer, );
+    // rb_define_method(rb_cCommandQueue, "enqueue_copy_buffer_to_image", rcl_cq_enqueue_copy_buffer_to_image, );
+    // rb_define_method(rb_cCommandQueue, "enqueue_map_buffer", rcl_cq_enqueue_map_buffer, );
+    // rb_define_method(rb_cCommandQueue, "enqueue_map_image", rcl_cq_enqueue_map_image, );
+    // rb_define_method(rb_cCommandQueue, "enqueue_unmap_mem_object", rcl_cq_enqueue_unmap_mem_obj, );
+    // 
+    // // execution
+    // rb_define_method(rb_cCommandQueue, "enqueue_NDRange_kernel", rcl_cq_enqueue_ndrange_kernel, 6);
+    // rb_define_method(rb_cCommandQueue, "enqueue_task", rcl_cq_enqueue_task, 2);
+    // rb_define_method(rb_cCommandQueue, "enqueue_native_kernel", rcl_cq_enqueue_native_kernel, 5);
+    // 
+    // // sync 
+    // rb_define_method(rb_cCommandQueue, "enqueue_marker",rcl_cq_enqueue_marker, 1);
+    // rb_define_method(rb_cCommandQueue, "enqueue_wait_for_events", rcl_cq_enqueue_waitfor_events, 1);
+    // rb_define_method(rb_cCommandQueue, "enequeu_barrier", rcl_cq_enqueue_barrier, 0);
+    
     rb_define_method(rb_cCommandQueue, "flush", rcl_flush, 0);
-    rb_define_method(rb_cCommandQueue, "finish", rcl_finish, 0);    
+    rb_define_method(rb_cCommandQueue, "finish", rcl_finish, 0);
+    
+    // // gl interoperation
+    // rb_define_method(rb_cCommandQueue, "enqueue_acquire_gl_objects", rcl_cq_enqueue_acquire_gl_objects, -1);
+    // rb_define_method(rb_cCommandQueue, "enqueue_release_gl_objects", rcl_cq_enqueue_release_gl_objects, -1)
+    
 }
 
 /*
@@ -1164,18 +1324,18 @@ define_class_command_queue(void)
 static VALUE rb_cSampler;
 
 typedef struct {
-    cl_sampler  s;
+    cl_sampler s;
 } rcl_sampler_t;
 
 static inline cl_sampler
 Sampler_Ptr(VALUE ro)
 {
-    Check_RCL_Type(ro, Sampler);
+    Expect_RCL_Type(ro, Sampler);
     
-    rcl_sampler_t *p;
-    Data_Get_Struct(ro, rcl_sampler_t, p);
+    rcl_sampler_t *ps;
+    Data_Get_Struct(ro, rcl_sampler_t, ps);
     
-    return p->s;
+    return ps->s;
 }
 
 static void
@@ -1187,27 +1347,87 @@ rcl_sampler_free(void *ptr)
 
 static VALUE
 rcl_sampler_alloc(VALUE klass)
-{
-    return Qnil;
+{    
+    rcl_sampler_t *ps;
+    return Data_Make_Struct(klass, rcl_sampler_t, 0, rcl_sampler_free, ps);
 }
 
 static VALUE
 rcl_sampler_init(VALUE self, VALUE context, VALUE normalized_coords, 
                  VALUE addressing_mode, VALUE filter_mode)
 {
-    return self;
+    cl_context cxt = Context_Ptr(context);
+    
+    Expect_Boolean(normalized_coords);    
+    
+    Expect_RCL_Const(addressing_mode);
+    Expect_RCL_Const(filter_mode);    
+    cl_addressing_mode am = FIX2UINT(addressing_mode);
+    cl_filter_mode fm = FIX2UINT(filter_mode);
+    
+    cl_int res;
+    cl_sampler s = clCreateSampler(cxt, normalized_coords, am, fm, &res);
+    Check_And_Raise(res);
+    
+    return Data_Wrap_Struct(rb_cSampler, 0, rcl_sampler_free, s);
 }
 
 static VALUE
 rcl_sampler_init_copy(VALUE copy, VALUE orig)
 {
+    if (copy == orig) return copy;
+    
+    Expect_RCL_Type(orig, Sampler);
+    
+    rcl_sampler_t *copy_p;
+    Data_Get_Struct(copy, rcl_sampler_t, copy_p);
+    rcl_sampler_t *orig_p;
+    Data_Get_Struct(orig, rcl_sampler_t, orig_p);
+    
+    if (copy_p->s == orig_p->s) return copy;
+    
+    cl_int res;
+    if (copy_p->s != NULL) {
+        res = clReleaseSampler(copy_p->s);
+        Check_And_Raise(res);
+    }
+    
+    res = clRetainSampler(orig_p->s);
+    Check_And_Raise(res);
+    
+    copy_p->s = orig_p->s;
+    
     return copy;
 }
 
 static VALUE
-rcl_sampler_info(VALUE self, VALUE param)
+rcl_sampler_info(VALUE self, VALUE sampler_info)
 {
-    return self;
+    Expect_RCL_Const(sampler_info);
+    cl_sampler_info si = FIX2UINT(sampler_info);
+    
+    cl_sampler s = Sampler_Ptr(self);
+    
+    cl_int res;
+    intptr_t param_value = 0;   // CHECK: again, extensibility.
+                                // The best way is to get size first.
+    
+    res = clGetSamplerInfo(s, si, sizeof(intptr_t), &param_value, NULL);
+    Check_And_Raise(res);
+    
+    switch (si) {
+    case CL_SAMPLER_REFERENCE_COUNT:
+    case CL_SAMPLER_ADDRESSING_MODE:
+    case CL_SAMPLER_FILTER_MODE:
+        return UINT2FIX(param_value);
+    case CL_SAMPLER_CONTEXT:
+        return RContext((cl_context)param_value);
+    case CL_SAMPLER_NORMALIZED_COORDS:
+        return param_value ? Qtrue : Qfalse;
+    default:
+        break;
+    }
+    return Qnil;
 }
 
 static void
@@ -1217,8 +1437,7 @@ define_class_sampler(void)
     rb_define_alloc_func(rb_cSampler, rcl_sampler_alloc);
     rb_define_method(rb_cSampler, "initialize", rcl_sampler_init, 4);
     rb_define_method(rb_cSampler, "initialize_copy", rcl_sampler_init_copy, 1);
-    rb_define_method(rb_cSampler, "info", rcl_sampler_info, 1);
-        
+    rb_define_method(rb_cSampler, "info", rcl_sampler_info, 1);       
 }
 
 /*
@@ -1250,7 +1469,7 @@ REvent(cl_event ptr)
 static inline cl_event
 Event_Ptr(VALUE ro)
 {
-    Check_RCL_Type(ro, Event);
+    Expect_RCL_Type(ro, Event);
     
     rcl_event_t *p;
     Data_Get_Struct(ro, rcl_event_t, p);
@@ -1268,12 +1487,51 @@ rcl_event_alloc(VALUE klass)
 static VALUE
 rcl_event_init_copy(VALUE copy, VALUE orig)
 {
+    if (copy == orig) return copy;
+    
+    Expect_RCL_Type(copy, Event);
+    Expect_RCL_Type(orig, Event);
+    
+    rcl_event_t *copy_p, *orig_p;
+    Data_Get_Struct(copy, rcl_event_t, copy_p);
+    Data_Get_Struct(orig, rcl_event_t, orig_p);
+    
+    if (copy_p->e == orig_p->e) return copy;
+    
+    cl_int res;
+    if (copy_p->e != NULL) {
+        res = clReleaseEvent(copy_p->e);
+        Check_And_Raise(res);
+    }
+    res = clRetainEvent(orig_p->e);
+    copy_p->e = orig_p->e;
+    
     return copy;
 }
 
 static VALUE
-rcl_event_info(VALUE self, VALUE param)
+rcl_event_info(VALUE self, VALUE event_info)
 {
+    Expect_RCL_Const(event_info);
+    cl_event_info info = FIX2UINT(event_info);
+    
+    cl_event e = Event_Ptr(self);
+    intptr_t param_value;
+    
+    cl_int res = clGetEventInfo(e, info, sizeof(intptr_t), &param_value, NULL);
+    Check_And_Raise(res);
+    
+    switch (info) {
+        case CL_EVENT_COMMAND_QUEUE:
+            return RCommandQueue((cl_command_queue)param_value);
+        case CL_EVENT_COMMAND_TYPE:
+        case CL_EVENT_REFERENCE_COUNT:
+            return UINT2FIX((cl_uint)param_value);
+        case CL_EVENT_COMMAND_EXECUTION_STATUS:
+            return INT2FIX((cl_int)param_value);
+        default:
+            break;
+    }
     return Qnil;
     
 }
@@ -1281,16 +1539,28 @@ rcl_event_info(VALUE self, VALUE param)
 static VALUE
 rcl_wait_for_events(VALUE self, VALUE events)
 {
+    if (TYPE(events) != T_ARRAY) {
+        rb_raise(rb_eTypeError, "Expected events is an instance of Array.");
+    }
+    
+    cl_uint num = RARRAY_LEN(events);
+    if (num == 0) return Qfalse;
+    
+    cl_event *pe = ALLOCA_N(cl_event, num);
+    for (int i = 0; i < num; i++) {
+        pe[i] = Event_Ptr(rb_ary_entry(events, i));
+    }
+    cl_int res = clWaitForEvents(num, pe);
+    Check_And_Raise(res);
+    
     return Qtrue;
 }
 
 static VALUE
-rcl_event_profiling_info(VALUE self, VALUE param)
+rcl_event_profiling_info(VALUE self, VALUE profiling_info)
 {
-    if (!FIXNUM_P(param)) {
-        rb_raise(rb_eArgError, "Invalid profiling info type.");
-    }
-    cl_profiling_info itype = FIX2INT(param);
+    Expect_RCL_Const(profiling_info);
+    cl_profiling_info itype = FIX2UINT(profiling_info);
     
     cl_ulong info;    
     cl_event e = Event_Ptr(self);
@@ -1316,59 +1586,558 @@ define_class_event(void)
  * class Memory
  */
 
-static VALUE rb_cMemory;
-
-typedef struct _rcl_memory_t
-{
+typedef struct {
     cl_mem  mem;
-} rcl_memory;
+    // void *ptr;  // The host pointer.
+} rcl_mem_t;
+
+static void
+rcl_mem_free(void *ptr)
+{
+    clReleaseMemObject(((rcl_mem_t *)ptr)->mem);
+    free(ptr);
+}
+
+static inline cl_mem
+Memory_Ptr(VALUE ro)
+{
+    Expect_RCL_Type(ro, Memory);
+    
+    rcl_mem_t *p;
+    Data_Get_Struct(ro, rcl_mem_t, p);
+    
+    return p->mem;    
+}
+
+static VALUE
+rcl_mem_alloc(VALUE klass)
+{
+    return Qnil;
+}
 
 static void
 define_class_memory(void)
 {
     rb_cMemory = rb_define_class_under(rb_mCapi, "Memory", rb_cObject);
+    rb_define_alloc_func(rb_cMemory, rcl_mem_alloc);
+    // rb_define_method(rb_cMemory, "initialize", rcl_mem_init, -1);
+    // rb_define_singleton_method(rb_cMemory, "create_image2d", rcl_mem_create_image_2d, -1);
+    // rb_deinfe_singleton_method(rb_cMemory, "create_buffer", rcl_mem_create_buffer, -1);
+    // rb_define_singleton_method(rb_cMemory, "create_image3d", rcl_mem_create_image_3d, -1);
+    // rb_define_singleton_method(rb_cMemory, "create_from_gl_buffer", rcl_mem_create_from_gl_buffer, -1);
+    // rb_define_singleton_method(rb_cMemory, "create_from_gl_render_buffer", rcl_mem_create_from_gl_render_buffer, -1);
+    // rb_define_singleton_method(rb_cMemory, "create_from_gl_texture_2d", rcm_mem_create_from_gl_texture_2d, -1);
+    // rb_define_singleton_method(rb_cMemory, "create_from_gl_texture_3d", rb_mem_create_from_gl_texture_3d, -1);
+    // rb_define_method(rb_cMemory, "info", rcl_mem_info, -1);
+    // rb_define_method(rb_cMemory, "image_info", rcl_mem_image_info, -1);
+    // rb_define_method(rb_cMemory, "gl_object_info", rcl_mem_gl_obj_info, -1);
+    // rb_define_method(rb_cMemory, "gl_texture_info", rcl_mem_gl_texture_info, -1);
 }
 
 /*
  * class Program
  */
+ 
+typedef struct {
+    cl_program p;
+} rcl_program_t;
 
-static VALUE rb_cProgram;
+static void
+rcl_program_free(void *ptr)
+{
+    clReleaseProgram(((rcl_program_t *)ptr)->p);
+    free(ptr);
+}
+
+static inline VALUE
+RProgram(cl_program prog)
+{
+    rcl_program_t *sp;
+    VALUE ret = Data_Make_Struct(rb_cProgram, rcl_program_t, 0, rcl_program_free, sp);
+    
+    sp->p = prog;
+    return ret;
+}
+
+static inline cl_program
+Program_Ptr(VALUE ro)
+{
+    Expect_RCL_Type(ro, Program);
+    
+    rcl_program_t *p;
+    Data_Get_Struct(ro, rcl_program_t, p);
+    
+    return p->p;
+}
+
+static VALUE
+rcl_program_alloc(VALUE klass)
+{
+    return RProgram(NULL);
+}
+
+static cl_program
+rcl_program_create_from_sources(cl_context context, VALUE sources)
+{
+    if (TYPE(sources) != T_ARRAY) {
+        rb_raise(rb_eTypeError, "Invalid argument.");
+    }
+    uint num_src = RARRAY_LEN(sources);
+    
+    const char **srcp = (const char **)ALLOCA_N(intptr_t, num_src);
+    size_t *lenp = ALLOCA_N(size_t, num_src);
+    
+    for (int i = 0; i < num_src; i++) {
+        VALUE srcstr = rb_ary_entry(sources, i);
+        if (TYPE(srcstr) != T_STRING) {
+            rb_raise(rb_eTypeError, "Invalid source found. Not a String.");
+        }
+        srcp[i] = RSTRING_PTR(srcstr);
+        lenp[i] = RSTRING_LEN(srcstr);
+    }
+    
+    cl_int res;
+    cl_program prog = clCreateProgramWithSource(context, num_src, srcp, lenp, &res);
+    Check_And_Raise(res);
+    
+    return prog; 
+}
+
+static cl_program
+rcl_program_create_from_binaries(cl_context context, VALUE devices, VALUE binaries)
+{
+    if (TYPE(devices) != T_ARRAY || TYPE(binaries) != T_ARRAY) {
+        rb_raise(rb_eTypeError, "Invalid arguments. Expected Array.");
+    }
+    uint num_dev = RARRAY_LEN(devices);
+    if (RARRAY_LEN(binaries) != num_dev) {
+        rb_raise(rb_eArgError, "Number of binaries shall equal to number of devices.");
+    }
+    
+    cl_device_id *devs = ALLOCA_N(cl_device_id, num_dev);
+    size_t *len_ar = ALLOCA_N(size_t, num_dev);
+    const unsigned char **bin_ar = (const unsigned char **)ALLOCA_N(intptr_t, num_dev);
+    
+    for (int i = 0; i < num_dev; i++) {
+        VALUE dev = rb_ary_entry(devices, i);
+        Expect_RCL_Type(dev, Device);
+        
+        VALUE bin = rb_ary_entry(binaries, i);
+        if (TYPE(bin) != T_STRING) {
+            rb_raise(rb_eTypeError, "Invalid binary. Expected a byte string.");
+        }
+        devs[i] = Device_Ptr(dev);
+        len_ar[i] = RSTRING_LEN(bin);
+        bin_ar[i] = (unsigned char *)RSTRING_PTR(bin);
+    }
+    
+    cl_int res;
+    cl_int *bin_status = ALLOCA_N(cl_int, num_dev);
+    cl_program prog = clCreateProgramWithBinary(context, num_dev, devs, len_ar, bin_ar, bin_status, &res);
+    Check_And_Raise(res);
+    
+    // FIXME: we got binary status, but do not use these information yet.
+    
+    return prog;
+}
+
+/*
+ * call-seq:
+ *      Program.new(Context, [String, ..])
+ *      Program.new(Context, [Device, ..], [String, ..])
+ *
+ */
+static VALUE
+rcl_program_init(int argc, VALUE *argv, VALUE self)
+{
+    if (argc != 2 && argc != 3) {
+        rb_raise(rb_eArgError, "Wrong number of arguments.");
+    }
+    
+    Expect_RCL_Type(argv[0], Context);
+    cl_context context = Context_Ptr(argv[0]);
+    
+    rcl_program_t *dp;
+    Data_Get_Struct(self, rcl_program_t, dp);
+    
+    if (argc == 2) {
+        VALUE sources = argv[1];
+        
+        dp->p = rcl_program_create_from_sources(context, sources);
+    } else {
+        VALUE devices = argv[1];
+        VALUE binaries = argv[2];
+        
+        dp->p = rcl_program_create_from_binaries(context, devices, binaries);
+    }
+    
+    return self;
+}
+
+static VALUE
+rcl_program_init_copy(VALUE copy, VALUE orig)
+{
+    if (copy == orig) return copy;
+    
+    Expect_RCL_Type(orig, Program);
+    rcl_program_t *copy_p, *orig_p;
+    
+    Data_Get_Struct(copy, rcl_program_t, copy_p);
+    Data_Get_Struct(orig, rcl_program_t, orig_p);
+    
+    if (copy_p->p == orig_p->p) return copy;
+    
+    cl_int res;
+    if (copy_p->p != NULL) {
+        res = clReleaseProgram(copy_p->p);
+        Check_And_Raise(res);
+    }
+    res = clRetainProgram(orig_p->p);
+    Check_And_Raise(res);
+    
+    copy_p->p = orig_p->p;
+    
+    return copy;
+}
+
+typedef void (*pfn_build_notify)(cl_program, void *user_data);
+
+static void
+build_notify(cl_program program, void *user_data)
+{
+    // TODO: do something.
+}
+
+/*
+ * call-seq:
+ *      Program#build([Device, ..], "-D")   -> the receiver
+ *      Program#build([Device, ..], "", memo) do |receiver, memo|
+ * 
+ * Wrapps +clProgramBuild()+.
+ */
+static VALUE
+rcl_program_build(VALUE self, VALUE devices, VALUE options, VALUE memo)
+{
+    if (TYPE(devices) != T_ARRAY) {
+        rb_raise(rb_eTypeError, "");
+    }
+    
+    if (TYPE(options) != T_STRING) {
+        rb_raise(rb_eTypeError, "");        
+    }
+    
+    uint num_dev = RARRAY_LEN(devices);
+    cl_device_id *devs = ALLOCA_N(cl_device_id, num_dev);
+    
+    for (int i = 0; i < num_dev; i++) {
+        VALUE dev = rb_ary_entry(devices, i);
+        Expect_RCL_Type(dev, Device);
+        
+        devs[i] = Device_Ptr(dev);
+    }
+    
+    cl_program prog = Program_Ptr(self);
+    pfn_build_notify pbn = NIL_P(memo) ? NULL : build_notify;
+    cl_int res = clBuildProgram(prog, num_dev, devs, RSTRING_PTR(options), pbn, (void *)memo);
+    Check_And_Raise(res);
+
+    return self;
+}
+
+static VALUE
+rcl_program_build_info(VALUE self, VALUE device, VALUE param_name)
+{
+    Expect_RCL_Type(device, Device);
+    Expect_RCL_Const(param_name);
+    
+    cl_program prog = Program_Ptr(self);
+    cl_device_id dev = Device_Ptr(device);
+    cl_program_build_info bi = FIX2UINT(param_name);
+    
+    size_t sz_ret = 0;
+    cl_int res = clGetProgramBuildInfo(prog, dev, bi, 0, NULL, &sz_ret);
+    Check_And_Raise(res);
+    
+    char *param_value = ALLOCA_N(char, sz_ret);
+    res = clGetProgramBuildInfo(prog, dev, bi, sz_ret, param_value, NULL);
+    Check_And_Raise(res);
+    
+    switch (bi) {
+    case CL_PROGRAM_BUILD_STATUS:
+        return UINT2NUM(*(cl_build_status *)param_value);
+    case CL_PROGRAM_BUILD_OPTIONS:
+    case CL_PROGRAM_BUILD_LOG:
+        return rb_str_new(param_value, sz_ret);
+    default:
+        break;
+    }
+    
+    return Qnil;
+}
+
+static VALUE
+rcl_program_info(VALUE self, VALUE param_name)
+{
+    Expect_RCL_Const(param_name);
+    
+    cl_program prog = Program_Ptr(self);
+    cl_program_info pi = FIX2UINT(param_name);
+    
+    size_t sz_ret;
+    cl_int res = clGetProgramInfo(prog, pi, 0, NULL, &sz_ret);
+    Check_And_Raise(res);
+    
+    char *param_value = ALLOCA_N(char, sz_ret);
+    res = clGetProgramInfo(prog, pi, sz_ret, param_value, NULL);
+    Check_And_Raise(res);
+    
+    uint num_szs = 0;
+    switch (pi) {
+    case CL_PROGRAM_REFERENCE_COUNT:
+    case CL_PROGRAM_NUM_DEVICES:
+        return UINT2NUM(*(cl_uint *)param_value);
+    case CL_PROGRAM_CONTEXT:
+        return RContext(*(cl_context *)param_value);
+    case CL_PROGRAM_DEVICES:
+        return build_device_array((cl_device_id *)param_value, sz_ret);
+    case CL_PROGRAM_BINARY_SIZES:
+        num_szs = sz_ret / sizeof(size_t);
+        VALUE szs = rb_ary_new2(num_szs);
+        for (int i = 0; i < num_szs; i++) {
+            rb_ary_push(szs, UINT2NUM(((size_t *)(param_value))[i]));
+        }
+        return szs;
+    case CL_PROGRAM_SOURCE:
+        return rb_str_new2(param_value);
+    case CL_PROGRAM_BINARIES:
+        rb_notimplement();
+        break;
+    default:
+        break;
+    }
+    
+    return Qnil;
+}
+
+static inline VALUE RKernel(cl_kernel);
+
+/*
+ * call-seq:
+ *      Program#create_kernels  -> [Kernel, ...]
+ *
+ * Wrapps +clCreateKernelsInProgram()+.
+ */
+static VALUE
+rcl_program_create_kernels(VALUE self)
+{
+    cl_kernel kernels[128];
+    cl_program prog = Program_Ptr(self);
+    
+    cl_uint num_ret;
+    cl_int res = clCreateKernelsInProgram(prog, 128, kernels, &num_ret);
+    Check_And_Raise(res);
+    
+    VALUE ary = rb_ary_new2(num_ret);
+    for (int i = 0; i < num_ret; i++) {
+        rb_ary_push(ary, RKernel(kernels[i]));
+    }
+    return ary;
+}
+
+/*
+ * call-seq:
+ *      Capi.unload_compiler    -> Capi
+ *
+ * Wrapps +clUnloadCompiler()+.
+ */
+
+static VALUE
+rcl_unload_compiler(VALUE self)
+{
+    cl_int res = clUnloadCompiler();
+    Check_And_Raise(res);
+    
+    return self;
+}
 
 static void
 define_class_program(void)
 {
     rb_cProgram = rb_define_class_under(rb_mCapi, "Program", rb_cObject);
+    rb_define_alloc_func(rb_cProgram, rcl_program_alloc);
+    rb_define_method(rb_cProgram, "initialize", rcl_program_init, -1);
+    rb_define_method(rb_cProgram, "initialize_copy", rcl_program_init_copy, 1);
+    rb_define_method(rb_cProgram, "build", rcl_program_build, 3);
+    rb_define_method(rb_cProgram, "build_info", rcl_program_build_info, 2);
+    rb_define_method(rb_cProgram, "info", rcl_program_info, 1);
+    rb_define_method(rb_cProgram, "create_kernels", rcl_program_create_kernels, 0);
+    rb_define_module_function(rb_mCapi, "unload_compiler", rcl_unload_compiler, 0);
 }
 
 /*
  * class Kernel
  */
 
-static VALUE rb_cKernel;
-
 typedef struct {
     cl_kernel k;
 } rcl_kernel_t;
 
 static void
+rcl_kernel_free(void *ptr)
+{
+    clReleaseKernel(((rcl_kernel_t *)ptr)->k);
+    free(ptr);
+}
+
+static inline VALUE
+RKernel(cl_kernel k)
+{
+    rcl_kernel_t *p;
+    VALUE ret = Data_Make_Struct(rb_cKernel, rcl_kernel_t, 0, rcl_kernel_free, p);
+    
+    p->k = k;
+    return ret;
+}
+
+static inline cl_kernel
+Kernel_Ptr(VALUE ro)
+{
+    Expect_RCL_Type(ro, Kernel);
+    
+    rcl_kernel_t *p;
+    Data_Get_Struct(ro, rcl_kernel_t, p);
+    
+    return p->k;
+}
+
+static VALUE
+rcl_kernel_alloc(VALUE klass)
+{
+    return RKernel(NULL);
+}
+
+static VALUE
+rcl_kernel_init(VALUE self, VALUE program, VALUE name)
+{
+    Expect_RCL_Type(program, Program);
+    Check_Type(name, T_STRING);
+    
+    cl_program prog = Program_Ptr(program);
+    char *str = RSTRING_PTR(name);
+    
+    cl_int res;
+    cl_kernel k = clCreateKernel(prog, str, &res);
+    Check_And_Raise(res);
+    
+    rcl_kernel_t *pk;
+    Data_Get_Struct(self, rcl_kernel_t, pk);
+    
+    pk->k = k;
+    return self;
+}
+
+static VALUE
+rcl_kernel_init_copy(VALUE copy, VALUE orig)
+{
+    if (copy == orig) return copy;
+    Expect_RCL_Type(orig, Kernel);
+    
+    rcl_kernel_t *copy_p, *orig_p;
+    Data_Get_Struct(copy, rcl_kernel_t, copy_p);
+    Data_Get_Struct(orig, rcl_kernel_t, orig_p);
+    
+    if (copy_p->k == orig_p->k) return copy;
+    
+    cl_int res;
+    if (copy_p->k != NULL) {
+        res = clReleaseKernel(copy_p->k);
+        Check_And_Raise(res);
+    }
+    res = clRetainKernel(orig_p->k);
+    Check_And_Raise(res);
+    
+    copy_p->k = orig_p->k;
+    return copy;
+}
+
+static VALUE
+rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
+{
+    // TODO: impl.
+    return self;
+}
+
+static VALUE
+rcl_kernel_info(VALUE self, VALUE param_name)
+{
+    Expect_RCL_Const(param_name);
+    
+    cl_kernel k = Kernel_Ptr(self);
+    cl_kernel_info ki = FIX2UINT(param_name);
+    
+    char param_value[128];
+    size_t sz_ret;
+    cl_int res = clGetKernelInfo(k, ki, 128, param_value, &sz_ret);
+    Check_And_Raise(res);
+    
+    switch (ki) {
+    case CL_KERNEL_FUNCTION_NAME:
+        return rb_str_new(param_value, sz_ret);
+    case CL_KERNEL_NUM_ARGS:
+    case CL_KERNEL_REFERENCE_COUNT:
+        return UINT2NUM((*(cl_uint *)param_value));        
+    case CL_KERNEL_CONTEXT:
+        return RContext(*(cl_context *)param_value);
+    case CL_KERNEL_PROGRAM:
+        return RProgram(*(cl_program *)param_value);
+    default:
+        break;
+    }
+    return Qnil;
+}
+
+static VALUE
+rcl_kernel_workgroup_info(VALUE self, VALUE device, VALUE param_name)
+{
+    Expect_RCL_Type(device, Device);
+    Expect_RCL_Const(param_name);
+    
+    cl_kernel k = Kernel_Ptr(self);
+    cl_device_id dev = Device_Ptr(device);
+    cl_kernel_work_group_info kwi = FIX2UINT(param_name);
+    
+    size_t param_value[3];
+    
+    cl_uint res = clGetKernelWorkGroupInfo(k, dev, kwi, sizeof(size_t) * 3, param_value, NULL);
+    Check_And_Raise(res);
+    
+    VALUE ret = Qnil;
+    switch (kwi) {
+    case CL_KERNEL_WORK_GROUP_SIZE:
+    case CL_KERNEL_LOCAL_MEM_SIZE:
+        return ULONG2NUM(param_value[0]);
+    case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
+        ret = rb_ary_new2(3);
+        for (int i = 0; i < 3; i++) {
+            rb_ary_push(ret, ULONG2NUM(param_value[i]));
+        }
+        return ret;
+    default:
+        break;
+    }
+    return Qnil;
+}
+
+static void
 define_class_kernel(void)
 {
     rb_cKernel = rb_define_class_under(rb_mCapi, "Kernel", rb_cObject);
-}
-
-/*
- * Execution
- */
- 
-/*
- * Misc
- */
- 
- 
-static void
-define_capi_methods(void)
-{
+    rb_define_alloc_func(rb_cKernel, rcl_kernel_alloc);
+    rb_define_method(rb_cKernel, "initialize", rcl_kernel_init, 2);
+    rb_define_method(rb_cKernel, "initialize_copy", rcl_kernel_init_copy, 1);
+    rb_define_method(rb_cKernel, "set_arg", rcl_kernel_set_arg, 2);
+    rb_define_method(rb_cKernel, "info", rcl_kernel_info, 1);
+    rb_define_method(rb_cKernel, "workgroup_info", rcl_kernel_workgroup_info, 2);
 }
 
 /*
@@ -1396,6 +2165,4 @@ Init_capi()
     define_class_memory();
     define_class_program();
     define_class_kernel();
-    
-    define_capi_methods();    
 }
