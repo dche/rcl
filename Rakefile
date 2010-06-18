@@ -6,7 +6,7 @@ require 'fileutils'
 include FileUtils
 
 spec = Gem::Specification.new do |s|
-  s.name = 'opencl'
+  s.name = 'rcl'
   s.version = '0.1'
   s.summary = 'Exploiting the power of GPUs.'
   s.description = s.summary
