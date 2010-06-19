@@ -150,9 +150,9 @@ RImageFormat(cl_image_format *imf)
 {
     VALUE ro = rb_obj_alloc(rb_cImageFormat);
     rb_iv_set(ro, "@channel_order", 
-              UINT2FIX(imf->image_channel_order));
+              LONG2FIX(imf->image_channel_order));
     rb_iv_set(ro, "@channel_data_type", 
-              UINT2FIX(imf->image_channel_data_type));
+              LONG2FIX(imf->image_channel_data_type));
     
     return ro;
 }
@@ -593,6 +593,7 @@ define_opencl_constants(void)
 // CHECK: add equality check for all classes?
 // TODO: check all Array that might get an empty value.
 // TODO: check all arguments that can be +nil+.
+// TODO: check all value conversions.
 
 /*
  * Capi::CLError
@@ -720,7 +721,7 @@ define_class_clerror(void)
  */
 
 // Storages for types.
-static VALUE rcl_types;
+static VALUE rcl_types;         // { type tag => type size }
 static VALUE rcl_vector_types;
 
 #define CL_TYPE_ID(type)   (rb_intern( #type ))
@@ -729,7 +730,7 @@ static VALUE rcl_vector_types;
     do { \
         ID id = CL_TYPE_ID(type); \
         size_t sz = sizeof(type); \
-        rb_hash_aset(rcl_types, ID2SYM(id), UINT2FIX(sz)); \
+        rb_hash_aset(rcl_types, ID2SYM(id), LONG2FIX(sz)); \
     } while (0)
     
 #define DEF_CL_VECTOR_TYPE(type) \
@@ -741,8 +742,8 @@ static VALUE rcl_vector_types;
         for (int i = 0; i < 4; i++) { \
             snprintf(type_name, 32, "%s%d", #type, n << i); \
             id = rb_intern(type_name); \
-            sz = sizeof(type) * n; \
-            rb_hash_aset(rcl_vector_types, ID2SYM(id), UINT2FIX(sz)); \
+            sz = sizeof(type) * (n << i); \
+            rb_hash_aset(rcl_vector_types, ID2SYM(id), LONG2FIX(sz)); \
         } \
     } while (0)
 
@@ -751,7 +752,7 @@ static void define_cl_types(void)
     rcl_types = rb_hash_new();
     rcl_vector_types = rb_hash_new();
     
-    // DEF_CL_TYPE(bool);
+    DEF_CL_TYPE(cl_bool);
     DEF_CL_TYPE(cl_char);
     DEF_CL_TYPE(cl_uchar);
     DEF_CL_TYPE(cl_short);
@@ -799,7 +800,9 @@ Type_Size(ID id)
     VALUE type = ID2SYM(id);
     VALUE sz = rb_hash_lookup(rcl_types, type);
     
-    if (NIL_P(sz)) sz = rb_hash_lookup(rcl_vector_types, type);
+    if (NIL_P(sz)) {
+        sz = rb_hash_lookup(rcl_vector_types, type);
+    }
     
     assert(FIXNUM_P(sz));
     return FIX2UINT(sz);
@@ -812,6 +815,7 @@ static inline void Ruby2Native(ID type, void *address, VALUE value)
 
 static inline VALUE Native2Ruby(ID type, void *address)
 {
+    
     return Qnil;
 }
 
@@ -823,7 +827,8 @@ typedef struct {
     
     int8_t  *alloc_address;
     void    *address;
-    size_t   size;    // in number of elements.
+    size_t   size;              // in number of elements.
+    size_t   type_size;
     ID       type;
     
 } rcl_pointer_t;
@@ -842,22 +847,26 @@ Pointer_Ptr(VALUE ptr)
 static inline int
 Is_Immediate_Value(rcl_pointer_t *p)
 {
-    return !Is_Type_Vector(ID2SYM(p->type)) && (p->size == 1);
+    return !Is_Type_Vector(p->type) && (p->size == 1);
 }
 
-// Returns the memory address that holds value. Note that for
-// immediate types, this address is not the 'address' field of pointer.
 static inline void *
 Pointer_Address(VALUE ptr)
 {
     rcl_pointer_t *p = Pointer_Ptr(ptr);
     
     if (p->alloc_address == NULL) {
-        assert(Is_Immediate_Value(p));
-        return &(p->address);
+        return p->size == 0 ? NULL : &(p->address);
     } else {
         return p->address;        
     }
+}
+
+static inline size_t
+Pointer_Size(VALUE ptr)
+{
+    rcl_pointer_t *p = Pointer_Ptr(ptr);
+    return p->size * Type_Size(p->type);
 }
 
 static void
@@ -888,7 +897,7 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
         rb_raise(rb_eTypeError, "Invalid type tag, Expected a Symbol.");
     }
     p->type = SYM2ID(type);
-    if (!Is_Type_Valid(type)) {
+    if (!Is_Type_Valid(p->type)) {
         rb_raise(rb_eArgError, "Unrecognized type tag.");
     }
     if (!FIXNUM_P(size) || FIX2UINT(size) < 1) {
@@ -937,7 +946,7 @@ rcl_pointer_aref(VALUE self, VALUE index)
     Extract_Size(index, i);
     
     if (p->size == 0 || i > p->size - 1) {
-        rb_raise(rb_eRuntimeError, "");
+        rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
     }
     
     return Is_Immediate_Value(p) ? Native2Ruby(p->type, &p->address) : Native2Ruby(p->type, p->address);
@@ -950,7 +959,7 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
     Extract_Size(index, i);
     
     if (p->size == 0 || i > p->size - 1) {
-        rb_raise(rb_eRuntimeError, "");
+        rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
     }
     
     Is_Immediate_Value(p) ? Ruby2Native(p->type, &p->address, value) : Ruby2Native(p->type, p->address, value);
@@ -960,13 +969,8 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
 static VALUE
 rcl_pointer_address(VALUE self)
 {    
-    rcl_pointer_t *p = Pointer_Ptr(self);
-    
-    if (p->alloc_address == NULL) {
-        return Qnil;
-    }
-    cl_ulong a = (cl_ulong)(Is_Immediate_Value(p) ? &(p->address) : p->address);
-    return UINT2FIX(a);
+    cl_ulong addr = (cl_ulong)Pointer_Address(self);
+    return addr == 0 ? Qnil : LONG2FIX(addr);
 }
 
 static VALUE
@@ -978,14 +982,14 @@ rcl_pointer_type(VALUE self)
 static VALUE
 rcl_pointer_size(VALUE self)
 {    
-    return UINT2FIX(Pointer_Ptr(self)->size);
+    return LONG2FIX(Pointer_Ptr(self)->size);
 }
 
 static VALUE
 rcl_pointer_free(VALUE self)
 {
     rcl_pointer_t *ptr = Pointer_Ptr(self);
-    if (ptr->alloc_address == NULL) {
+    if (ptr->alloc_address == NULL && ptr->size == 0) {
         return self;
     }   
     if (!Is_Immediate_Value(ptr)) {
@@ -1000,14 +1004,24 @@ rcl_pointer_free(VALUE self)
 }
 
 static VALUE
-rcl_pointer_set(VALUE self, VALUE value)
+rcl_pointer_clear(VALUE self)
 {
+    rcl_pointer_t *p = Pointer_Ptr(self);
+    if (p->size > 0) {
+        if (Is_Immediate_Value(p)) {
+            p->address = 0;
+        } else {
+            bzero(p->address, p->size * Type_Size(p->type));
+        }
+    }
     return self;
 }
 
 static VALUE
 rcl_pointer_copy(VALUE self, VALUE dst)
 {
+    Expect_RCL_Type(dst, Pointer);
+    
     return self;
 }
 
@@ -1032,7 +1046,7 @@ define_class_pointer(void)
     rb_define_method(rb_cPointer, "type", rcl_pointer_type, 0);
     rb_define_method(rb_cPointer, "size", rcl_pointer_size, 0);
     rb_define_method(rb_cPointer, "free", rcl_pointer_free, 0);
-    rb_define_method(rb_cPointer, "set", rcl_pointer_set, 1);
+    rb_define_method(rb_cPointer, "clear", rcl_pointer_clear, 0);
     rb_define_method(rb_cPointer, "copy", rcl_pointer_copy, 1);
     rb_define_method(rb_cPointer, "ncopy", rcl_pointer_ncopy, 2);
 }
@@ -2052,7 +2066,7 @@ rcl_sampler_info(VALUE self, VALUE sampler_info)
     case CL_SAMPLER_REFERENCE_COUNT:
     case CL_SAMPLER_ADDRESSING_MODE:
     case CL_SAMPLER_FILTER_MODE:
-        return UINT2FIX(param_value);
+        return LONG2FIX(param_value);
     case CL_SAMPLER_CONTEXT:
         return RContext((cl_context)param_value);
     case CL_SAMPLER_NORMALIZED_COORDS:
@@ -2125,7 +2139,7 @@ rcl_event_info(VALUE self, VALUE event_info)
             return RCommandQueue((cl_command_queue)param_value);
         case CL_EVENT_COMMAND_TYPE:
         case CL_EVENT_REFERENCE_COUNT:
-            return UINT2FIX((cl_uint)param_value);
+            return LONG2FIX((cl_uint)param_value);
         case CL_EVENT_COMMAND_EXECUTION_STATUS:
             return INT2FIX((cl_int)param_value);
         default:
@@ -2206,7 +2220,7 @@ rcl_mem_info(VALUE self, VALUE param_name)
     case CL_MEM_HOST_PTR:
     case CL_MEM_MAP_COUNT:
     case CL_MEM_REFERENCE_COUNT:
-        return UINT2FIX(param_value);
+        return LONG2FIX(param_value);
     case CL_MEM_CONTEXT:
         return RContext((cl_context)param_value);
     default:
@@ -2639,17 +2653,18 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
         rb_raise(rb_eArgError, "Expected index is of type Fixnum.");
     }
     
-    size_t arg_size;
-    void *arg_ptr;
+    size_t arg_size = 0;
+    void *arg_ptr = NULL;
     
     VALUE klass = CLASS_OF(arg_value);
     if (klass == rb_cPointer) {
-        ;
+        arg_ptr = Pointer_Address(arg_value);
+        arg_size = Pointer_Size(arg_value);
     } else if (klass == rb_cSampler) {
-        arg_value = (void *)Sampler_Ptr(arg_value);
+        arg_ptr = (void *)Sampler_Ptr(arg_value);
         arg_size = sizeof(cl_sampler); 
     } else if (NIL_P(arg_value)) {
-        arg_value = NULL;
+        arg_ptr = NULL;
         arg_size = 0;        
     } else if (klass == rb_cEvent) {
         ;
@@ -2658,7 +2673,7 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
     }
     
     cl_kernel k = Kernel_Ptr(self);
-    cl_int res = clSetKernelArg(self, FIX2UINT(index), arg_size, arg_ptr);
+    cl_int res = clSetKernelArg(k, FIX2UINT(index), arg_size, arg_ptr);
     Check_And_Raise(res);
     
     return self;
