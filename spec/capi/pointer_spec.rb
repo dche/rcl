@@ -1,43 +1,44 @@
 
 require File.join(File.dirname(__FILE__), '../spec_helper')
 
-include OpenCL
+include OpenCL::Capi
 
-describe Pointer do
+describe HostPointer do
   
   before do
-    @p = Pointer.new(:cl_int, 1024);
+    @p = HostPointer.new(:cl_int, 1024);
+    @scalar = [:cl_char, :cl_uchar, :cl_short, :cl_ushort, :cl_int, :cl_uint,
+               :cl_long, :cl_ulong, :cl_half, :cl_float]
   end
   
   it "should reject invalid type." do
-    should.raise(TypeError) { Pointer.new 'cl_int', 1024 }
-    should.raise(ArgumentError) { Pointer.new :cl_int64, 1024 }
-    should.raise(ArgumentError) { Pointer.new :float, 2 }
+    should.raise(TypeError) { HostPointer.new 'cl_int', 1024 }
+    should.raise(ArgumentError) { HostPointer.new :cl_int64, 1024 }
+    should.raise(ArgumentError) { HostPointer.new :float, 2 }
   end
   
   it "should reject 0 size" do
-    should.raise(ArgumentError) { Pointer.new :cl_ulong, 0 }
-    should.raise(ArgumentError) { Pointer.new :cl_ulong, 1.5 }
-    should.not.raise(Exception) { Pointer.new :cl_ulong, 1 }
+    should.raise(ArgumentError) { HostPointer.new :cl_ulong, 0 }
+    should.raise(ArgumentError) { HostPointer.new :cl_ulong, 1.5 }
+    should.not.raise(Exception) { HostPointer.new :cl_ulong, 1 }
   end
   
-  the 'Pointer address should be 128 bytes aligned.' do
-    (Pointer.new(:cl_float4, 1).address & 0x7F).should.equal 0
+  the 'HostPointer address should be 128 bytes aligned.' do
+    (HostPointer.new(:cl_float4, 1).address & 0x7F).should.equal 0
     (@p.address & 0x7F).should.equal 0
   end
   
   the 'type()' do
     @p.type.should.equal :cl_int
     
-    [:cl_char, :cl_uchar, :cl_short, :cl_ushort, :cl_int, :cl_uint, :cl_long,
-     :cl_ulong, :cl_half, :cl_float].each do |t|
-       Pointer.new(t, 1).type.should.equal t
-     end
+    @scalar.each do |t|
+       HostPointer.new(t, 1).type.should.equal t
+    end
      
      ['char', 'short', 'int', 'long'].map do |t|
        ['cl_' + t, 'cl_u' + t]
      end.flatten.push('cl_float').map(&:to_sym).each do |t|
-       Pointer.new(t, 123).type.should.equal t
+       HostPointer.new(t, 123).type.should.equal t
      end
   end
   
@@ -46,7 +47,7 @@ describe Pointer do
   end
   
   the 'free()' do
-    p = Pointer.new :cl_char8, 256
+    p = HostPointer.new :cl_char8, 256
     p.address.should.not.equal 0
     should.not.raise(RuntimeError) { p[0] }
     p.free
@@ -62,4 +63,201 @@ describe Pointer do
     should.raise(RuntimeError) { @p[@p.size] = 1 }
   end
   
+  the 'immediate values' do
+    @scalar.each do |t|
+      p = HostPointer.new t, 1
+      p.size.should.equal 1
+      p.address.should.not.be.nil
+      p.free
+      p.address.should.be.nil
+      p.size.should.equal 0
+    end
+  end
+  
+  the 'getter and setter' do
+    @p[1].should.equal 0
+    @p[1] = 0x71115811
+    @p[1].should.equal 0x71115811
+  end
+  
+  the "half float type" do
+    p = HostPointer.new :cl_half, 1
+    p[0] = 0
+    p[0].should.equal 0
+    p[0] = 1
+    p[0].should.equal 1
+    p[0] = 1.234567
+    ((p[0] - 1.234567).abs < 0.001).should.be.true
+  end
+  
+  the "float type" do
+    p = HostPointer.new :cl_float, 300 * 300
+    p[0] = 0
+    p[0].should.equal 0
+    p[0] = 1
+    p[0].should.equal 1
+    p[0] = 1.234567
+    ((p[0] - 1.234567).abs < 0.001).should.be.true
+  end
+  
+  the 'scalar types' do
+    @scalar.each do |t|
+      p = HostPointer.new t, 1
+      p[0].should.equal 0
+      p[0] = 1
+      p[0].should.equal 1
+      p = HostPointer.new t, 6
+      p[1] = 23
+      p[2] = 34
+      p[3] = 45
+      p[4] = 56
+      p[1].should.equal 23
+      p[2].should.equal 34
+      p[3].should.equal 45
+      p[4].should.equal 56
+    end
+  end
+  
+  the 'cl_bool type' do
+    p = HostPointer.new :cl_bool, 1
+    p[0].should.be.false
+    p[0] = true
+    p[0].should.be.true
+    should.raise(TypeError) { p[0] = 1 }
+  end
+  
+  the 'cl_char type' do
+    p = HostPointer.new :cl_char, 200
+    p[0].should.equal 0
+    p[0] = 97
+    p[0].should.equal 97
+    p[199] = 127
+    p[199].should.equal 127
+    should.raise(TypeError) { p[123] = 1.234 }
+  end
+  
+  the 'cl_uint4 type' do
+    p = HostPointer.new :cl_uint4, 20
+    p.size.should.equal 20
+    p[15].should.equal [0, 0, 0, 0]
+    should.not.raise(Exception) { p[15] = [1, 2, 3, 4] }
+    p[15].should.equal [1, 2, 3, 4]
+    p[0].should.be.instance_of Array
+  end
+  
+  the 'cl_float2 type' do
+    p = HostPointer.new :cl_float2, 4
+    p.size.should.equal 4
+    p.type.should.equal :cl_float2
+    should.raise(TypeError) { p[1] = 1.234 }
+    should.raise(TypeError) { p[3] = ['a', 3.0, 4] }
+    should.raise(ArgumentError) { p[0] = [1] }
+    should.not.raise(Exception) { p[2] = [1, 2, 3, 4] }
+    p[2].should.equal [1, 2]
+    p[2].should.equal [1.0, 2.0]
+  end
+    
+  the 'dup and clone' do    
+    @p[0] = 4345
+    @p[331] = 111
+    @p[1023] = 4543
+    
+    p = @p.clone
+    p.size.should.equal @p.size
+    p.address.should.not.equal @p.address
+    
+    p[0].should.equal 4345
+    p[331].should.equal 111
+    p[1023].should.equal 4543
+    
+    @p.free
+    @p.size.should.equal 0
+    p.size.should.not.equal 0
+    should.raise(RuntimeError) { @p[0] }
+    p[0].should.equal 4345
+  end
+  
+  it "should be able to clone when size is 1" do
+    p = HostPointer.new :cl_double, 1
+    p[0] = 1.234
+    q = p.dup
+    q.size.should.equal 1
+    q[0].should.equal 1.234
+    p.free
+    q.size.should.equal 1
+    q[0].should.equal 1.234
+  end
+  
+  the 'copy_from() method' do
+    ps = HostPointer.new :cl_double, 200
+    pd1 = HostPointer.new :cl_double, 200
+    pd2 = HostPointer.new :cl_float, 200
+    pd3 = HostPointer.new :cl_double, 201
+    
+    ps[0] = 1
+    ps[112] = -1.234
+    ps[199] = 5
+    should.raise(RuntimeError) { pd2.copy_from ps }
+    should.raise(RuntimeError) { pd3.copy_from ps }
+    should.not.raise(Exception) { pd1.copy_from ps }
+    pd1[0].should.equal 1
+    pd1[112].should.equal -1.234
+    pd1[199].should.equal 5
+  end
+  
+  it 'should be able to copy from pointer wiht size 1' do
+    ps = HostPointer.new :cl_uint, 1
+    pd = HostPointer.new :cl_uint, 1
+    ps[0] = 0x80008000
+    pd[0].should.equal 0
+    pd.copy_from ps
+    pd[0].should.equal 0x80008000
+    ps.free
+    pd.size.should.equal 1
+    pd[0].should.equal 0x80008000
+  end
+  
+  the 'slice() method' do
+    ps = HostPointer.new :cl_uint2, 200
+    ps[101] = [3, 4]
+    ps[102] = [0xFFE, 0xEEF]
+    pd = ps.slice(100, 4)
+    ps.free
+    pd.size.should.equal 4
+    pd.type.should.equal :cl_uint2
+    pd[0].should.equal [0, 0]
+    pd[3].should.equal [0, 0]
+    pd[1].should.equal [3, 4]
+    pd[2].should.equal [0xFFE, 0xEEF]
+  end
+  
+  it 'should be albe to slice with size 1' do
+    p = HostPointer.new :cl_uchar, 1
+    p[0] = 127
+    p.slice(1, 1).should.be.nil
+    p.slice(0, 2).should.be.nil
+    q = p.slice(0, 1)
+    q.should.not.be.nil
+    q.should.be.instance_of HostPointer
+    q.type.should.equal :cl_uchar
+    q.size.should.equal 1
+    q[0].should.equal 127
+    p.free
+    q[0].should.equal 127
+  end
+  
+  the 'clear() method' do
+    0.upto(1023) do |i|
+      @p[i] = 1025 - i
+    end
+    @p.clear
+    0.upto(1023) do |i|
+      @p[i].should.equal 0
+    end
+    
+    p = HostPointer.new :cl_uchar, 1
+    p[0] = 97
+    p.clear
+    p[0].should.equal 0
+  end  
 end
