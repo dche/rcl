@@ -4,12 +4,7 @@
 // 
 // Copyright (c) 2010, Diego Che
 
-#include <ruby.h>
-#include <assert.h>
-
-#include <OpenCL/opencl.h>
-
-#define TRACE(...)     fprintf(stderr, __VA_ARGS__)
+#include "capi.h"
 
 /*
  * Modules.
@@ -19,62 +14,31 @@
  
 // Modules
 static VALUE rcl_mOpenCL;
-static VALUE rcl_mCapi;
+VALUE rcl_mCapi;
 
 // CL objects
-static VALUE rb_cPlatform;
-static VALUE rb_cDevice;
-static VALUE rb_cContext;
-static VALUE rb_cImageFormat;
-static VALUE rb_cCommandQueue;
-static VALUE rb_cSampler;
-static VALUE rb_cEvent;
-static VALUE rb_cMemory;
-static VALUE rb_cProgram;
-static VALUE rb_cKernel;
+static VALUE rcl_cPlatform;
+static VALUE rcl_cDevice;
+static VALUE rcl_cContext;
+static VALUE rcl_cImageFormat;
+static VALUE rcl_cCommandQueue;
+static VALUE rcl_cSampler;
+static VALUE rcl_cEvent;
+static VALUE rcl_cMemory;
+static VALUE rcl_cProgram;
+static VALUE rcl_cKernel;
 
 // Support classes
-static VALUE rb_cPointer;
+VALUE rcl_cPointer;
 
-// NOTE: this macro needs local defined class variables 
-//       take specific pattern of name, /rb_c\w+/
-#define Expect_RCL_Type(o, klass) \
-    do { \
-        Check_Type(o, T_DATA); \
-        if (rb_class_of(o) != rb_c##klass) { \
-            rb_raise(rb_eTypeError, "Expected %s is a instance of %s.", #o, #klass); \
-        } \
-    } while (0)
+extern void * Pointer_Address(VALUE);
+extern size_t Pointer_Size(VALUE);
 
 #define Expect_RCL_Const(ro) \
     do { \
         if (!FIXNUM_P(ro)) \
             rb_raise(rb_eTypeError, \
                     "Expected %s an OpenCL enumerated constant. ", #ro); \
-    } while (0)
-
-#define Expect_Boolean(ro) \
-    do { \
-        if (ro != Qtrue && ro != Qfalse) \
-            rb_raise(rb_eTypeError, \
-                    "Expected %s is true or false.", #ro); \
-    } while (0)
-    
-#define Expect_Array(ro) \
-    do { \
-        if (TYPE(ro) != T_ARRAY) \
-            rb_raise(rb_eTypeError, \
-                    "Expected %s is an Array.", #ro); \
-    } while (0)
-    
-#define Expect_NonEmpty_Array(ro) \
-    do { \
-        if (TYPE(ro) != T_ARRAY) \
-            rb_raise(rb_eTypeError, \
-                    "Expected %s is an Array.", #ro); \
-        if (RARRAY_LEN(ro) == 0) \
-            rb_raise(rb_eArgError, \
-                    "Expected %s is not empty.", #ro); \
     } while (0)
 
 #define CL_Pointers(ra, klass, c_type, svar) \
@@ -94,7 +58,7 @@ static VALUE rb_cPointer;
     } while (0)
 
 
-#define RPlatform(ptr)      (Data_Wrap_Struct(rb_cPlatform, 0, 0, (ptr)))
+#define RPlatform(ptr)      (Data_Wrap_Struct(rcl_cPlatform, 0, 0, (ptr)))
 
 static inline cl_platform_id
 Platform_Ptr(VALUE ro)
@@ -103,7 +67,7 @@ Platform_Ptr(VALUE ro)
     return DATA_PTR(ro);
 }
 
-#define RDevice(ptr)      Data_Wrap_Struct(rb_cDevice, 0, 0, (ptr))
+#define RDevice(ptr)      Data_Wrap_Struct(rcl_cDevice, 0, 0, (ptr))
 
 static inline cl_device_id
 Device_Ptr(VALUE ro)
@@ -139,7 +103,7 @@ static inline VALUE
 RContext(cl_context ptr)
 {
     rcl_context_t *p;
-    VALUE ret = Data_Make_Struct(rb_cContext, rcl_context_t, 0, rcl_context_free, p);
+    VALUE ret = Data_Make_Struct(rcl_cContext, rcl_context_t, 0, rcl_context_free, p);
     
     p->c = ptr;
     return ret;   
@@ -148,7 +112,7 @@ RContext(cl_context ptr)
 static inline VALUE
 RImageFormat(cl_image_format *imf)
 {
-    VALUE ro = rb_obj_alloc(rb_cImageFormat);
+    VALUE ro = rb_obj_alloc(rcl_cImageFormat);
     rb_iv_set(ro, "@channel_order", 
               LONG2FIX(imf->image_channel_order));
     rb_iv_set(ro, "@channel_data_type", 
@@ -172,7 +136,7 @@ static inline VALUE
 RCommandQueue(cl_command_queue ptr)
 {
     rcl_command_queue_t *p;
-    VALUE ret = Data_Make_Struct(rb_cCommandQueue, rcl_command_queue_t, 
+    VALUE ret = Data_Make_Struct(rcl_cCommandQueue, rcl_command_queue_t, 
                                  0, rcl_command_queue_free, p);
     p->cq = ptr;
     return ret;
@@ -228,7 +192,7 @@ REvent(cl_event ptr)
     rcl_event_t *p = ALLOC_N(rcl_event_t, 1);
     p->e = ptr;
     
-    return Data_Wrap_Struct(rb_cEvent, 0, rcl_event_free, p);
+    return Data_Wrap_Struct(rcl_cEvent, 0, rcl_event_free, p);
 }
 
 static inline cl_event
@@ -279,7 +243,7 @@ static inline VALUE
 RProgram(cl_program prog)
 {
     rcl_program_t *sp;
-    VALUE ret = Data_Make_Struct(rb_cProgram, rcl_program_t, 0, rcl_program_free, sp);
+    VALUE ret = Data_Make_Struct(rcl_cProgram, rcl_program_t, 0, rcl_program_free, sp);
 
     sp->p = prog;
     return ret;
@@ -313,7 +277,7 @@ static inline VALUE
 RKernel(cl_kernel k)
 {
     rcl_kernel_t *p;
-    VALUE ret = Data_Make_Struct(rb_cKernel, rcl_kernel_t, 0, rcl_kernel_free, p);
+    VALUE ret = Data_Make_Struct(rcl_cKernel, rcl_kernel_t, 0, rcl_kernel_free, p);
     
     p->k = k;
     p->argc = 0;
@@ -717,341 +681,6 @@ define_class_clerror(void)
 }
 
 /*
- * CL types.
- */
-
-// Storages for types.
-static VALUE rcl_types;         // { type tag => type size }
-static VALUE rcl_vector_types;
-
-#define CL_TYPE_ID(type)   (rb_intern( #type ))
-
-#define DEF_CL_TYPE(type) \
-    do { \
-        ID id = CL_TYPE_ID(type); \
-        size_t sz = sizeof(type); \
-        rb_hash_aset(rcl_types, ID2SYM(id), LONG2FIX(sz)); \
-    } while (0)
-    
-#define DEF_CL_VECTOR_TYPE(type) \
-    do { \
-        int n = 2; \
-        ID id; \
-        size_t sz; \
-        char type_name[32]; \
-        for (int i = 0; i < 4; i++) { \
-            snprintf(type_name, 32, "%s%d", #type, n << i); \
-            id = rb_intern(type_name); \
-            sz = sizeof(type) * (n << i); \
-            rb_hash_aset(rcl_vector_types, ID2SYM(id), LONG2FIX(sz)); \
-        } \
-    } while (0)
-
-static void define_cl_types(void)
-{
-    rcl_types = rb_hash_new();
-    rcl_vector_types = rb_hash_new();
-    
-    DEF_CL_TYPE(cl_bool);
-    DEF_CL_TYPE(cl_char);
-    DEF_CL_TYPE(cl_uchar);
-    DEF_CL_TYPE(cl_short);
-    DEF_CL_TYPE(cl_ushort);
-    DEF_CL_TYPE(cl_int);
-    DEF_CL_TYPE(cl_uint);
-    DEF_CL_TYPE(cl_long);
-    DEF_CL_TYPE(cl_ulong);
-    DEF_CL_TYPE(cl_float);
-    DEF_CL_TYPE(cl_half);
-    DEF_CL_TYPE(size_t);
-    
-    rb_obj_freeze(rcl_types);
-
-    DEF_CL_VECTOR_TYPE(cl_char);
-    DEF_CL_VECTOR_TYPE(cl_uchar);
-    DEF_CL_VECTOR_TYPE(cl_short);    
-    DEF_CL_VECTOR_TYPE(cl_ushort);
-    DEF_CL_VECTOR_TYPE(cl_int);
-    DEF_CL_VECTOR_TYPE(cl_uint);
-    DEF_CL_VECTOR_TYPE(cl_long);
-    DEF_CL_VECTOR_TYPE(cl_ulong);
-    DEF_CL_VECTOR_TYPE(cl_float);
-    
-    rb_obj_freeze(rcl_vector_types);
-}
-
-#define Is_Type_Valid(id)  (!NIL_P(rb_hash_lookup(rcl_types, ID2SYM(id))) || !NIL_P(rb_hash_lookup(rcl_vector_types, ID2SYM(id))))
-
-#define Is_Type_Vector(id) (!NIL_P(rb_hash_lookup(rcl_vector_types, ID2SYM(id))))
-
-#define Extract_Size(sizet, var) \
-    size_t var; \
-    do { \
-        if (!FIXNUM_P(sizet)) { \
-            rb_raise(rb_eTypeError, "Expected %s a Fixnum.", #sizet); \
-        } \
-        var = FIX2UINT(sizet); \
-    } while (0)
-
-
-static inline size_t
-Type_Size(ID id)
-{
-    VALUE type = ID2SYM(id);
-    VALUE sz = rb_hash_lookup(rcl_types, type);
-    
-    if (NIL_P(sz)) {
-        sz = rb_hash_lookup(rcl_vector_types, type);
-    }
-    
-    assert(FIXNUM_P(sz));
-    return FIX2UINT(sz);
-}
-
-static inline void Ruby2Native(ID type, void *address, VALUE value)
-{
-    
-}
-
-static inline VALUE Native2Ruby(ID type, void *address)
-{
-    
-    return Qnil;
-}
-
-/*
- * class Pointer
- */
-
-typedef struct {
-    
-    int8_t  *alloc_address;
-    void    *address;
-    size_t   size;              // in number of elements.
-    size_t   type_size;
-    ID       type;
-    
-} rcl_pointer_t;
-
-static inline rcl_pointer_t *
-Pointer_Ptr(VALUE ptr)
-{
-    Expect_RCL_Type(ptr, Pointer);
-    
-    rcl_pointer_t *p;
-    Data_Get_Struct(ptr, rcl_pointer_t, p);
-    
-    return p;
-}
-
-static inline int
-Is_Immediate_Value(rcl_pointer_t *p)
-{
-    return !Is_Type_Vector(p->type) && (p->size == 1);
-}
-
-static inline void *
-Pointer_Address(VALUE ptr)
-{
-    rcl_pointer_t *p = Pointer_Ptr(ptr);
-    
-    if (p->alloc_address == NULL) {
-        return p->size == 0 ? NULL : &(p->address);
-    } else {
-        return p->address;        
-    }
-}
-
-static inline size_t
-Pointer_Size(VALUE ptr)
-{
-    rcl_pointer_t *p = Pointer_Ptr(ptr);
-    return p->size * Type_Size(p->type);
-}
-
-static void
-rcl_pointer_free_func(void *ptr)
-{
-    rcl_pointer_t *p = (rcl_pointer_t *)ptr;
-    
-    if (!Is_Immediate_Value(p)) {
-        free(p->alloc_address);
-    }
-    free(ptr);
-}
-
-static VALUE
-rcl_pointer_alloc(VALUE klass)
-{
-    rcl_pointer_t *p;
-    return Data_Make_Struct(klass, rcl_pointer_t, 0, rcl_pointer_free_func, p);
-}
-
-static VALUE
-rcl_pointer_init(VALUE self, VALUE type, VALUE size)
-{
-    rcl_pointer_t *p;
-    Data_Get_Struct(self, rcl_pointer_t, p);
-    
-    if (!SYMBOL_P(type)) {
-        rb_raise(rb_eTypeError, "Invalid type tag, Expected a Symbol.");
-    }
-    p->type = SYM2ID(type);
-    if (!Is_Type_Valid(p->type)) {
-        rb_raise(rb_eArgError, "Unrecognized type tag.");
-    }
-    if (!FIXNUM_P(size) || FIX2UINT(size) < 1) {
-        rb_raise(rb_eArgError, "Invalid size.");
-    }
-    p->size = FIX2UINT(size);
-    
-    if (!Is_Immediate_Value(p)) {    
-        // Allocate memory.
-        size_t alloc_sz = p->size * Type_Size(p->type);
-        if (p->size > 1) {
-            alloc_sz += 0x80;     // align in 128bytes.
-        }
-        p->alloc_address = (int8_t *)ALLOC_N(int8_t, alloc_sz);
-        if (p->alloc_address == NULL) {
-            rb_raise(rb_eRuntimeError, "Out of host memory.");
-        }
-        p->address = (void *)(((intptr_t)(p->alloc_address) + 0x80) & ~0x7F);
-    }
-    return self;
-}
-
-static VALUE
-rcl_pointer_init_copy(VALUE copy, VALUE orig)
-{
-    Expect_RCL_Type(orig, Pointer);
-    
-    rcl_pointer_t *copy_p, *orig_p;
-    Data_Get_Struct(copy, rcl_pointer_t, copy_p);
-    Data_Get_Struct(orig, rcl_pointer_t, orig_p);
-    
-    assert(copy_p->address != orig_p->address);
-}
-
-/*
- * call-seq:
- *      Pointer#[0] ->  1.234 
- * 
- * Returns the n-th element stored in the memory region managed by 
- * the receiver.
- */
-static VALUE
-rcl_pointer_aref(VALUE self, VALUE index)
-{
-    rcl_pointer_t *p = Pointer_Ptr(self);
-    Extract_Size(index, i);
-    
-    if (p->size == 0 || i > p->size - 1) {
-        rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
-    }
-    
-    return Is_Immediate_Value(p) ? Native2Ruby(p->type, &p->address) : Native2Ruby(p->type, p->address);
-}
-
-static VALUE
-rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
-{
-    rcl_pointer_t *p = Pointer_Ptr(self);
-    Extract_Size(index, i);
-    
-    if (p->size == 0 || i > p->size - 1) {
-        rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
-    }
-    
-    Is_Immediate_Value(p) ? Ruby2Native(p->type, &p->address, value) : Ruby2Native(p->type, p->address, value);
-    return self;
-}
-
-static VALUE
-rcl_pointer_address(VALUE self)
-{    
-    cl_ulong addr = (cl_ulong)Pointer_Address(self);
-    return addr == 0 ? Qnil : LONG2FIX(addr);
-}
-
-static VALUE
-rcl_pointer_type(VALUE self)
-{    
-    return ID2SYM(Pointer_Ptr(self)->type);
-}
-
-static VALUE
-rcl_pointer_size(VALUE self)
-{    
-    return LONG2FIX(Pointer_Ptr(self)->size);
-}
-
-static VALUE
-rcl_pointer_free(VALUE self)
-{
-    rcl_pointer_t *ptr = Pointer_Ptr(self);
-    if (ptr->alloc_address == NULL && ptr->size == 0) {
-        return self;
-    }   
-    if (!Is_Immediate_Value(ptr)) {
-        free(ptr->alloc_address);        
-    }
-    
-    ptr->alloc_address = NULL;
-    ptr->address = NULL;
-    ptr->size = 0;
-    
-    return self;
-}
-
-static VALUE
-rcl_pointer_clear(VALUE self)
-{
-    rcl_pointer_t *p = Pointer_Ptr(self);
-    if (p->size > 0) {
-        if (Is_Immediate_Value(p)) {
-            p->address = 0;
-        } else {
-            bzero(p->address, p->size * Type_Size(p->type));
-        }
-    }
-    return self;
-}
-
-static VALUE
-rcl_pointer_copy(VALUE self, VALUE dst)
-{
-    Expect_RCL_Type(dst, Pointer);
-    
-    return self;
-}
-
-static VALUE
-rcl_pointer_ncopy(VALUE self, VALUE src, VALUE size)
-{
-    return self;
-}
-
-static void
-define_class_pointer(void)
-{
-    define_cl_types();
-    
-    rb_cPointer = rb_define_class_under(rcl_mOpenCL, "Pointer", rb_cObject);
-    rb_define_alloc_func(rb_cPointer, rcl_pointer_alloc);
-    rb_define_method(rb_cPointer, "initialize", rcl_pointer_init, 2);
-    rb_define_method(rb_cPointer, "initialize_copy", rcl_pointer_init_copy, 1);
-    rb_define_method(rb_cPointer, "[]", rcl_pointer_aref, 1);
-    rb_define_method(rb_cPointer, "[]=", rcl_pointer_aset, 2);
-    rb_define_method(rb_cPointer, "address", rcl_pointer_address, 0);
-    rb_define_method(rb_cPointer, "type", rcl_pointer_type, 0);
-    rb_define_method(rb_cPointer, "size", rcl_pointer_size, 0);
-    rb_define_method(rb_cPointer, "free", rcl_pointer_free, 0);
-    rb_define_method(rb_cPointer, "clear", rcl_pointer_clear, 0);
-    rb_define_method(rb_cPointer, "copy", rcl_pointer_copy, 1);
-    rb_define_method(rb_cPointer, "ncopy", rcl_pointer_ncopy, 2);
-}
-
-/*
  * class Platform
  */
 static VALUE
@@ -1115,10 +744,10 @@ rcl_platform_info(VALUE self, VALUE platform_info)
 static void
 define_class_platform(void)
 {
-    rb_cPlatform = rb_define_class_under(rcl_mCapi, "Platform", rb_cObject);
+    rcl_cPlatform = rb_define_class_under(rcl_mCapi, "Platform", rb_cObject);
     rb_define_module_function(rcl_mCapi, "platforms", rcl_platforms, 0);
-    rb_define_alloc_func(rb_cPlatform, rcl_platform_alloc);
-    rb_define_method(rb_cPlatform, "info", rcl_platform_info, 1);    
+    rb_define_alloc_func(rcl_cPlatform, rcl_platform_alloc);
+    rb_define_method(rcl_cPlatform, "info", rcl_platform_info, 1);    
 }
 
 /*
@@ -1261,12 +890,12 @@ rcl_device_is_available(VALUE self)
 static void
 define_class_device(void)
 {
-    rb_cDevice = rb_define_class_under(rcl_mCapi, "Device", rb_cObject);
+    rcl_cDevice = rb_define_class_under(rcl_mCapi, "Device", rb_cObject);
     rb_define_module_function(rcl_mCapi, "devices", rcl_devices, 2);
-    rb_define_alloc_func(rb_cDevice, rcl_device_alloc);
-    rb_define_method(rb_cDevice, "info", rcl_device_info, 1);
-    rb_define_method(rb_cDevice, "available?", rcl_device_is_available, 0);
-    rb_define_attr(rb_cDevice, "type", 1, 0);    
+    rb_define_alloc_func(rcl_cDevice, rcl_device_alloc);
+    rb_define_method(rcl_cDevice, "info", rcl_device_info, 1);
+    rb_define_method(rcl_cDevice, "available?", rcl_device_is_available, 0);
+    rb_define_attr(rcl_cDevice, "type", 1, 0);    
 }
 
 /*
@@ -1448,12 +1077,12 @@ rcl_context_info(VALUE self, VALUE context_info)
 static void
 define_class_context(void)
 {
-    rb_cContext = rb_define_class_under(rcl_mCapi, "Context", rb_cObject);
-    rb_define_alloc_func(rb_cContext, rcl_context_alloc);
-    rb_define_method(rb_cContext, "initialize", rcl_context_init, 2);
-    rb_define_method(rb_cContext, "initialize_copy", 
+    rcl_cContext = rb_define_class_under(rcl_mCapi, "Context", rb_cObject);
+    rb_define_alloc_func(rcl_cContext, rcl_context_alloc);
+    rb_define_method(rcl_cContext, "initialize", rcl_context_init, 2);
+    rb_define_method(rcl_cContext, "initialize_copy", 
                                   rcl_context_init_copy, 1);
-    rb_define_method(rb_cContext, "info", rcl_context_info, 1);
+    rb_define_method(rcl_cContext, "info", rcl_context_info, 1);
 }
 
 /*
@@ -1501,11 +1130,11 @@ rcl_context_supported_image_formats(VALUE self, VALUE mem_flag, VALUE mem_obj_ty
 static void
 define_class_image_format(void)
 {
-    rb_cImageFormat = rb_define_class_under(rcl_mCapi, "ImageFormat", rb_cObject);
-    rb_define_attr(rb_cImageFormat, "channel_order", 1, 0);
-    rb_define_attr(rb_cImageFormat, "channel_data_type", 1, 0);
-    rb_define_method(rb_cImageFormat, "initialize", rcl_image_format_init, 2);
-    rb_define_method(rb_cContext, "supported_image_formats", 
+    rcl_cImageFormat = rb_define_class_under(rcl_mCapi, "ImageFormat", rb_cObject);
+    rb_define_attr(rcl_cImageFormat, "channel_order", 1, 0);
+    rb_define_attr(rcl_cImageFormat, "channel_data_type", 1, 0);
+    rb_define_method(rcl_cImageFormat, "initialize", rcl_image_format_init, 2);
+    rb_define_method(rcl_cContext, "supported_image_formats", 
                                   rcl_context_supported_image_formats, 2);
                                   
 }
@@ -1950,42 +1579,42 @@ rcl_cq_enqueue_release_gl_objects(VALUE self, VALUE mem_objects, VALUE events)
 static void
 define_class_command_queue(void)
 {
-    rb_cCommandQueue = rb_define_class_under(rcl_mCapi, "CommandQueue", rb_cObject);
-    rb_define_alloc_func(rb_cCommandQueue, rcl_command_queue_alloc);
-    rb_define_method(rb_cCommandQueue, "initialize", rcl_command_queue_init, 3);
-    rb_define_method(rb_cCommandQueue, "initialize_copy", rcl_command_queue_init_copy, 1);
-    rb_define_method(rb_cCommandQueue, "info", rcl_command_queue_info, 1);
-    rb_define_method(rb_cCommandQueue, "set_property", rcl_command_queue_set_property, 2);
+    rcl_cCommandQueue = rb_define_class_under(rcl_mCapi, "CommandQueue", rb_cObject);
+    rb_define_alloc_func(rcl_cCommandQueue, rcl_command_queue_alloc);
+    rb_define_method(rcl_cCommandQueue, "initialize", rcl_command_queue_init, 3);
+    rb_define_method(rcl_cCommandQueue, "initialize_copy", rcl_command_queue_init_copy, 1);
+    rb_define_method(rcl_cCommandQueue, "info", rcl_command_queue_info, 1);
+    rb_define_method(rcl_cCommandQueue, "set_property", rcl_command_queue_set_property, 2);
     
     // mem
-    rb_define_method(rb_cCommandQueue, "enqueue_read_buffer", rcl_cq_enqueue_read_buffer, 6);
-    rb_define_method(rb_cCommandQueue, "enqueue_write_buffer", rcl_cq_enqueue_write_buffer, 6);
-    rb_define_method(rb_cCommandQueue, "enqueue_copy_buffer", rcl_cq_enqueue_copy_buffer, 6);
-    rb_define_method(rb_cCommandQueue, "enqueue_read_image", rcl_cq_enqueue_read_image, 8);
-    rb_define_method(rb_cCommandQueue, "enqueue_write_image", rcl_cq_enqueue_write_image, 8);
-    rb_define_method(rb_cCommandQueue, "enqueue_copy_image", rcl_cq_enqueue_copy_image, 6);
-    rb_define_method(rb_cCommandQueue, "enqueue_copy_image_to_buffer", rcl_cq_enqueue_copy_image_to_buffer, 6);
-    rb_define_method(rb_cCommandQueue, "enqueue_copy_buffer_to_image", rcl_cq_enqueue_copy_buffer_to_image, 6);
-    // rb_define_method(rb_cCommandQueue, "enqueue_map_buffer", rcl_cq_enqueue_map_buffer, );
-    // rb_define_method(rb_cCommandQueue, "enqueue_map_image", rcl_cq_enqueue_map_image, );
-    // rb_define_method(rb_cCommandQueue, "enqueue_unmap_mem_object", rcl_cq_enqueue_unmap_mem_obj, );
+    rb_define_method(rcl_cCommandQueue, "enqueue_read_buffer", rcl_cq_enqueue_read_buffer, 6);
+    rb_define_method(rcl_cCommandQueue, "enqueue_write_buffer", rcl_cq_enqueue_write_buffer, 6);
+    rb_define_method(rcl_cCommandQueue, "enqueue_copy_buffer", rcl_cq_enqueue_copy_buffer, 6);
+    rb_define_method(rcl_cCommandQueue, "enqueue_read_image", rcl_cq_enqueue_read_image, 8);
+    rb_define_method(rcl_cCommandQueue, "enqueue_write_image", rcl_cq_enqueue_write_image, 8);
+    rb_define_method(rcl_cCommandQueue, "enqueue_copy_image", rcl_cq_enqueue_copy_image, 6);
+    rb_define_method(rcl_cCommandQueue, "enqueue_copy_image_to_buffer", rcl_cq_enqueue_copy_image_to_buffer, 6);
+    rb_define_method(rcl_cCommandQueue, "enqueue_copy_buffer_to_image", rcl_cq_enqueue_copy_buffer_to_image, 6);
+    // rb_define_method(rcl_cCommandQueue, "enqueue_map_buffer", rcl_cq_enqueue_map_buffer, );
+    // rb_define_method(rcl_cCommandQueue, "enqueue_map_image", rcl_cq_enqueue_map_image, );
+    // rb_define_method(rcl_cCommandQueue, "enqueue_unmap_mem_object", rcl_cq_enqueue_unmap_mem_obj, );
     // 
     // // execution
-    // rb_define_method(rb_cCommandQueue, "enqueue_NDRange_kernel", rcl_cq_enqueue_ndrange_kernel, 6);
-    // rb_define_method(rb_cCommandQueue, "enqueue_task", rcl_cq_enqueue_task, 2);
-    // rb_define_method(rb_cCommandQueue, "enqueue_native_kernel", rcl_cq_enqueue_native_kernel, 5);
+    // rb_define_method(rcl_cCommandQueue, "enqueue_NDRange_kernel", rcl_cq_enqueue_ndrange_kernel, 6);
+    // rb_define_method(rcl_cCommandQueue, "enqueue_task", rcl_cq_enqueue_task, 2);
+    // rb_define_method(rcl_cCommandQueue, "enqueue_native_kernel", rcl_cq_enqueue_native_kernel, 5);
     
     // sync 
-    rb_define_method(rb_cCommandQueue, "enqueue_marker",rcl_cq_enqueue_marker, 0);
-    rb_define_method(rb_cCommandQueue, "enqueue_wait_for_events", rcl_cq_enqueue_waitfor_events, 1);
-    rb_define_method(rb_cCommandQueue, "enequeu_barrier", rcl_cq_enqueue_barrier, 0);
+    rb_define_method(rcl_cCommandQueue, "enqueue_marker",rcl_cq_enqueue_marker, 0);
+    rb_define_method(rcl_cCommandQueue, "enqueue_wait_for_events", rcl_cq_enqueue_waitfor_events, 1);
+    rb_define_method(rcl_cCommandQueue, "enequeu_barrier", rcl_cq_enqueue_barrier, 0);
     
-    rb_define_method(rb_cCommandQueue, "flush", rcl_flush, 0);
-    rb_define_method(rb_cCommandQueue, "finish", rcl_finish, 0);
+    rb_define_method(rcl_cCommandQueue, "flush", rcl_flush, 0);
+    rb_define_method(rcl_cCommandQueue, "finish", rcl_finish, 0);
     
     // gl interoperation
-    rb_define_method(rb_cCommandQueue, "enqueue_acquire_gl_objects", rcl_cq_enqueue_acquire_gl_objects, 2);
-    rb_define_method(rb_cCommandQueue, "enqueue_release_gl_objects", rcl_cq_enqueue_release_gl_objects, 2);
+    rb_define_method(rcl_cCommandQueue, "enqueue_acquire_gl_objects", rcl_cq_enqueue_acquire_gl_objects, 2);
+    rb_define_method(rcl_cCommandQueue, "enqueue_release_gl_objects", rcl_cq_enqueue_release_gl_objects, 2);
     
 }
 
@@ -2016,7 +1645,7 @@ rcl_sampler_init(VALUE self, VALUE context, VALUE normalized_coords,
     cl_sampler s = clCreateSampler(cxt, normalized_coords, am, fm, &res);
     Check_And_Raise(res);
     
-    return Data_Wrap_Struct(rb_cSampler, 0, rcl_sampler_free, s);
+    return Data_Wrap_Struct(rcl_cSampler, 0, rcl_sampler_free, s);
 }
 
 static VALUE
@@ -2080,11 +1709,11 @@ rcl_sampler_info(VALUE self, VALUE sampler_info)
 static void
 define_class_sampler(void)
 {
-    rb_cSampler = rb_define_class_under(rcl_mCapi, "Sampler", rb_cObject);
-    rb_define_alloc_func(rb_cSampler, rcl_sampler_alloc);
-    rb_define_method(rb_cSampler, "initialize", rcl_sampler_init, 4);
-    rb_define_method(rb_cSampler, "initialize_copy", rcl_sampler_init_copy, 1);
-    rb_define_method(rb_cSampler, "info", rcl_sampler_info, 1);       
+    rcl_cSampler = rb_define_class_under(rcl_mCapi, "Sampler", rb_cObject);
+    rb_define_alloc_func(rcl_cSampler, rcl_sampler_alloc);
+    rb_define_method(rcl_cSampler, "initialize", rcl_sampler_init, 4);
+    rb_define_method(rcl_cSampler, "initialize_copy", rcl_sampler_init_copy, 1);
+    rb_define_method(rcl_cSampler, "info", rcl_sampler_info, 1);       
 }
 
 /*
@@ -2183,12 +1812,12 @@ rcl_event_profiling_info(VALUE self, VALUE profiling_info)
 static void
 define_class_event(void)
 {
-    rb_cEvent = rb_define_class_under(rcl_mCapi, "Event", rb_cObject);
-    rb_define_alloc_func(rb_cEvent, rcl_event_alloc);
-    rb_define_method(rb_cEvent, "initialize_copy", rcl_event_init_copy, 1);
-    rb_define_method(rb_cEvent, "info", rcl_event_info, 1);
+    rcl_cEvent = rb_define_class_under(rcl_mCapi, "Event", rb_cObject);
+    rb_define_alloc_func(rcl_cEvent, rcl_event_alloc);
+    rb_define_method(rcl_cEvent, "initialize_copy", rcl_event_init_copy, 1);
+    rb_define_method(rcl_cEvent, "info", rcl_event_info, 1);
     rb_define_module_function(rcl_mCapi, "wait_for_events", rcl_wait_for_events, 1);
-    rb_define_method(rb_cEvent, "profiling_info", rcl_event_profiling_info, 1);
+    rb_define_method(rcl_cEvent, "profiling_info", rcl_event_profiling_info, 1);
 }
 
 /*
@@ -2251,22 +1880,22 @@ rcl_mem_gl_texture_info(VALUE self)
 static void
 define_class_memory(void)
 {
-    rb_cMemory = rb_define_class_under(rcl_mCapi, "Memory", rb_cObject);
-    rb_define_alloc_func(rb_cMemory, rcl_mem_alloc);
-    // rb_define_method(rb_cMemory, "initialize", rcl_mem_init, -1);
-    // rb_deinfe_singleton_method(rb_cMemory, "create_buffer", rcl_mem_create_buffer, -1);
-    // rb_define_singleton_method(rb_cMemory, "create_image2d", rcl_mem_create_image_2d, -1);
-    // rb_define_singleton_method(rb_cMemory, "create_image3d", rcl_mem_create_image_3d, -1);
-    rb_define_method(rb_cMemory, "info", rcl_mem_info, 1);
-    rb_define_method(rb_cMemory, "image_info", rcl_mem_image_info, -1);
+    rcl_cMemory = rb_define_class_under(rcl_mCapi, "Memory", rb_cObject);
+    rb_define_alloc_func(rcl_cMemory, rcl_mem_alloc);
+    // rb_define_method(rcl_cMemory, "initialize", rcl_mem_init, -1);
+    // rb_deinfe_singleton_method(rcl_cMemory, "create_buffer", rcl_mem_create_buffer, -1);
+    // rb_define_singleton_method(rcl_cMemory, "create_image2d", rcl_mem_create_image_2d, -1);
+    // rb_define_singleton_method(rcl_cMemory, "create_image3d", rcl_mem_create_image_3d, -1);
+    rb_define_method(rcl_cMemory, "info", rcl_mem_info, 1);
+    rb_define_method(rcl_cMemory, "image_info", rcl_mem_image_info, -1);
 
     // GL sharing API.
-    // rb_define_singleton_method(rb_cMemory, "create_from_gl_buffer", rcl_mem_create_from_gl_buffer, -1);
-    // rb_define_singleton_method(rb_cMemory, "create_from_gl_render_buffer", rcl_mem_create_from_gl_render_buffer, -1);
-    // rb_define_singleton_method(rb_cMemory, "create_from_gl_texture_2d", rcm_mem_create_from_gl_texture_2d, -1);
-    // rb_define_singleton_method(rb_cMemory, "create_from_gl_texture_3d", rb_mem_create_from_gl_texture_3d, -1);
-    rb_define_method(rb_cMemory, "gl_object_info", rcl_mem_gl_obj_info, -1);
-    rb_define_method(rb_cMemory, "gl_texture_info", rcl_mem_gl_texture_info, -1);
+    // rb_define_singleton_method(rcl_cMemory, "create_from_gl_buffer", rcl_mem_create_from_gl_buffer, -1);
+    // rb_define_singleton_method(rcl_cMemory, "create_from_gl_render_buffer", rcl_mem_create_from_gl_render_buffer, -1);
+    // rb_define_singleton_method(rcl_cMemory, "create_from_gl_texture_2d", rcm_mem_create_from_gl_texture_2d, -1);
+    // rb_define_singleton_method(rcl_cMemory, "create_from_gl_texture_3d", rb_mem_create_from_gl_texture_3d, -1);
+    rb_define_method(rcl_cMemory, "gl_object_info", rcl_mem_gl_obj_info, -1);
+    rb_define_method(rcl_cMemory, "gl_texture_info", rcl_mem_gl_texture_info, -1);
 }
 
 /*
@@ -2564,14 +2193,14 @@ rcl_unload_compiler(VALUE self)
 static void
 define_class_program(void)
 {
-    rb_cProgram = rb_define_class_under(rcl_mCapi, "Program", rb_cObject);
-    rb_define_alloc_func(rb_cProgram, rcl_program_alloc);
-    rb_define_method(rb_cProgram, "initialize", rcl_program_init, -1);
-    rb_define_method(rb_cProgram, "initialize_copy", rcl_program_init_copy, 1);
-    rb_define_method(rb_cProgram, "build", rcl_program_build, 3);
-    rb_define_method(rb_cProgram, "build_info", rcl_program_build_info, 2);
-    rb_define_method(rb_cProgram, "info", rcl_program_info, 1);
-    rb_define_method(rb_cProgram, "create_kernels", rcl_program_create_kernels, 0);
+    rcl_cProgram = rb_define_class_under(rcl_mCapi, "Program", rb_cObject);
+    rb_define_alloc_func(rcl_cProgram, rcl_program_alloc);
+    rb_define_method(rcl_cProgram, "initialize", rcl_program_init, -1);
+    rb_define_method(rcl_cProgram, "initialize_copy", rcl_program_init_copy, 1);
+    rb_define_method(rcl_cProgram, "build", rcl_program_build, 3);
+    rb_define_method(rcl_cProgram, "build_info", rcl_program_build_info, 2);
+    rb_define_method(rcl_cProgram, "info", rcl_program_info, 1);
+    rb_define_method(rcl_cProgram, "create_kernels", rcl_program_create_kernels, 0);
     rb_define_module_function(rcl_mCapi, "unload_compiler", rcl_unload_compiler, 0);
 }
 
@@ -2657,16 +2286,16 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
     void *arg_ptr = NULL;
     
     VALUE klass = CLASS_OF(arg_value);
-    if (klass == rb_cPointer) {
+    if (klass == rcl_cPointer) {
         arg_ptr = Pointer_Address(arg_value);
         arg_size = Pointer_Size(arg_value);
-    } else if (klass == rb_cSampler) {
+    } else if (klass == rcl_cSampler) {
         arg_ptr = (void *)Sampler_Ptr(arg_value);
         arg_size = sizeof(cl_sampler); 
     } else if (NIL_P(arg_value)) {
         arg_ptr = NULL;
         arg_size = 0;        
-    } else if (klass == rb_cEvent) {
+    } else if (klass == rcl_cEvent) {
         ;
     } else {
         rb_raise(rb_eArgError, "Invalid kernel argument type.");
@@ -2755,19 +2384,21 @@ rcl_kernel_workgroup_info(VALUE self, VALUE device, VALUE param_name)
 static void
 define_class_kernel(void)
 {
-    rb_cKernel = rb_define_class_under(rcl_mCapi, "Kernel", rb_cObject);
-    rb_define_alloc_func(rb_cKernel, rcl_kernel_alloc);
-    rb_define_method(rb_cKernel, "initialize", rcl_kernel_init, 2);
-    rb_define_method(rb_cKernel, "initialize_copy", rcl_kernel_init_copy, 1);
-    rb_define_method(rb_cKernel, "set_arg", rcl_kernel_set_arg, 2);
-    rb_define_method(rb_cKernel, "info", rcl_kernel_info, 1);
-    rb_define_method(rb_cKernel, "workgroup_info", rcl_kernel_workgroup_info, 2);
+    rcl_cKernel = rb_define_class_under(rcl_mCapi, "Kernel", rb_cObject);
+    rb_define_alloc_func(rcl_cKernel, rcl_kernel_alloc);
+    rb_define_method(rcl_cKernel, "initialize", rcl_kernel_init, 2);
+    rb_define_method(rcl_cKernel, "initialize_copy", rcl_kernel_init_copy, 1);
+    rb_define_method(rcl_cKernel, "set_arg", rcl_kernel_set_arg, 2);
+    rb_define_method(rcl_cKernel, "info", rcl_kernel_info, 1);
+    rb_define_method(rcl_cKernel, "workgroup_info", rcl_kernel_workgroup_info, 2);
 }
 
 /*
  * Entry point
  */
  
+extern void define_rcl_class_pointer(void);
+
 void 
 Init_capi()
 {
@@ -2790,5 +2421,5 @@ Init_capi()
     define_class_program();
     define_class_kernel();
     
-    define_class_pointer();
+    define_rcl_class_pointer();
 }

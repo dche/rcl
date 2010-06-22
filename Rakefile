@@ -37,7 +37,7 @@ end
 
 dir = File.dirname(__FILE__)
 extdir = File.join(dir, 'ext')
-libdir = File.join(dir, 'lib/opencl')
+libdir = File.join(dir, 'lib/capi')
 
 task :default => :spec
 
@@ -58,7 +58,7 @@ task :spec => :build do
   Bacon.handle_summary
 end
 
-rule File.join(extdir, 'capi.bundle') => File.join(extdir, 'capi.c') do  
+rule File.join(extdir, 'capi.bundle') => FileList[File.join(extdir, '*.{c,h}')] do  
   cd(extdir) do
     system 'ruby extconf.rb && make'
   end
