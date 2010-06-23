@@ -1,4 +1,4 @@
-
+// Copyright (c) 2010, Diego che
 
 #include <math.h>
 #include "capi.h"
@@ -7,7 +7,6 @@ extern VALUE rcl_mCapi;
 extern VALUE rcl_cPointer;
 
 // Macros for float composition
-#define RCL_HLF_MAX         65200
 #define RCL_HALF_BIAS       15
 #define RCL_HALF_MANT_DIG   11
 #define RCL_DOUBLE_BIAS     (CL_DBL_MAX_EXP - 1)
@@ -393,7 +392,7 @@ typedef struct {
     
     int8_t  *alloc_address;
     void    *address;           // FIXME: can't hold double in 32-bit machine.
-    size_t   size;              // in number of elements.
+    size_t   size;              // in number of elements, not in byte.
     size_t   type_size;
     ID       type;
     
@@ -408,6 +407,7 @@ Alloc_Memory(rcl_pointer_t *p)
 
     size_t alloc_sz = BytesOf(p) + 0x80;     // align in 128bytes.
     p->alloc_address = (int8_t *)ALLOC_N(int8_t, alloc_sz);
+    bzero(p->alloc_address, alloc_sz);
     
     if (p->alloc_address == NULL) {
         rb_raise(rb_eRuntimeError, "Out of host memory.");
@@ -430,6 +430,8 @@ Pointer_Ptr(VALUE ptr)
 void *
 Pointer_Address(VALUE ptr)
 {
+    Expect_RCL_Type(ptr, Pointer);
+    
     rcl_pointer_t *p = Pointer_Ptr(ptr);
     
     if (p->alloc_address == NULL) {
@@ -454,6 +456,7 @@ Element_Address(rcl_pointer_t *ptr, size_t index)
 size_t
 Pointer_Size(VALUE ptr)
 {
+    Expect_RCL_Type(ptr, Pointer);
     rcl_pointer_t *p = Pointer_Ptr(ptr);
     return BytesOf(p);
 }
@@ -465,6 +468,12 @@ rcl_pointer_free_func(void *ptr)
     free(ptr);
 }
 
+/*
+ * call-seq:
+ *      HostPointer.allocate    -> a HostPointer object.
+ *
+ * Allocate a HostPointer object.
+ */
 static VALUE
 rcl_pointer_alloc(VALUE klass)
 {
@@ -472,6 +481,7 @@ rcl_pointer_alloc(VALUE klass)
     VALUE ro = Data_Make_Struct(klass, rcl_pointer_t, 0, rcl_pointer_free_func, p);
     
     p->alloc_address = p->address = NULL;
+    p->size = 0;
     p->type = id_type_cl_uint;
     p->type_size = sizeof(cl_uint);
     return ro;
