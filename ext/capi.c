@@ -6,15 +6,9 @@
 
 #include "capi.h"
 
-/*
- * Modules.
- *
- * OpenCL::Capi
- */
- 
 // Modules
 static VALUE rcl_mOpenCL;
-VALUE rcl_mCapi;
+VALUE rcl_mCapi;    // referenced in pointer.c
 
 // CL objects
 static VALUE rcl_cPlatform;
@@ -228,6 +222,16 @@ Memory_Ptr(VALUE ro)
     return p->mem;    
 }
 
+static inline VALUE
+RMemory(cl_mem m)
+{
+    rcl_mem_t *p;
+    VALUE ret = Data_Make_Struct(rcl_cMemory, rcl_mem_t, 0, rcl_mem_free, p);
+    p->mem = m;
+    
+    return ret;
+}
+
 typedef struct {
     cl_program p;
 } rcl_program_t;
@@ -314,7 +318,7 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_ADDRESS_CLAMP);
     RCL_DEF_CONSTANT(CL_ADDRESS_REPEAT);
 
-    // cl_bool	
+    // cl_bool
     RCL_DEF_CONSTANT(CL_FALSE);
     RCL_DEF_CONSTANT(CL_TRUE);
 
@@ -1169,8 +1173,7 @@ rcl_command_queue_init(VALUE self, VALUE context, VALUE device, VALUE props)
     cl_uint properties = FIX2UINT(props);
     
     cl_int res;
-    cl_command_queue q = clCreateCommandQueue(cxt, did, properties, &res);
-    
+    cl_command_queue q = clCreateCommandQueue(cxt, did, properties, &res);    
     Check_And_Raise(res);
     
     rcl_command_queue_t *pcq;
@@ -1302,27 +1305,39 @@ rcl_finish(VALUE self)
 #define Extract_Pointer(ptr, var) \
     void *var; \
     do { \
-        Expect_RCL_Type(ptr, Pointer); \
-        var = Pointer_Address(ptr); \
+        var = NIL_P(ptr) ? NULL : Pointer_Address(ptr); \
     } while (0)
     
 #define Extract_Vector(vec, var) \
-    cl_uint vec[3]; \
+    size_t var[3]; \
     do { \
         if (NIL_P(vec)) { \
-            vec[0] = vec[1] = vec[2] = 0; \
+            var[0] = var[1] = var[2] = 0; \
         } else { \
             Expect_Array(vec); \
             if (RARRAY_LEN(vec) == 0) { \
-                vec[0] = vec[1] = vec[2] = 0; \
+                var[0] = var[1] = var[2] = 0; \
             } else { \
+                if (RARRAY_LEN(vec) < 3) { \
+                    rb_raise(rb_eArgError, "Expected array lenth is 3, but got %d.", RARRAY_LEN(vec)); \
+                } \
                 for (int i = 0; i < 3; i++) { \
-                    VALUE n = rb_ary_entry(vec); \
+                    VALUE n = rb_ary_entry(vec, i); \
                     Extract_Size(n, v); \
-                    vec[i] = v; \
+                    var[i] = v; \
                 } \
             } \
         } \
+    } while (0)
+
+#define Extract_ImageFormat(imgfmt, var) \
+    cl_image_format var; \
+    do { \
+        if (CLASS_OF(image_format) != rcl_cImageFormat) { \
+            rb_raise(rb_eTypeError, "expected %s is a ImageFormat.", #imgfmt); \
+        } \
+        var.image_channel_order = FIX2INT(rb_iv_get(imgfmt, "@channel_order")); \
+        var.image_channel_data_type = FIX2INT(rb_iv_get(imgfmt, "@channel_data_type")); \
     } while (0)
 
 static VALUE
@@ -1356,7 +1371,7 @@ rcl_cq_enqueue_write_buffer(VALUE self, VALUE buffer, VALUE blocking_write,
     Extract_Size(size, cb);
     Extract_Pointer(host_ptr, ptr);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_event e;
     cl_event *ep = blocking_write ? NULL : &e;
@@ -1379,9 +1394,10 @@ rcl_cq_enqueue_copy_buffer(VALUE self, VALUE src_buffer, VALUE dst_buffer,
     Extract_Size(size, cb);
     Extract_Wait_For_Events(events, num_evt, pevts);
     
-    cl_command_queue cq = CommandQueue_Ptr(self);
+    cl_command_queue cq = CommandQueue_Ptr(self);   
+    cl_int res = clEnqueueCopyBuffer(cq, sbuf, dbuf, sos, dos, cb, num_evt, pevts, NULL);
+    Check_And_Raise(res);
     
-
     return self;
 }
 
@@ -1391,10 +1407,23 @@ rcl_cq_enqueue_read_image(VALUE self, VALUE image, VALUE blocking_read,
                           VALUE row_pitch, VALUE slice_pitch, 
                           VALUE host_ptr, VALUE events)
 {
+    Extract_Mem_Object(image, img);
+    Expect_Boolean(blocking_read);
+    Extract_Vector(origin, ovec);
+    Extract_Vector(region, rvec);
+    Extract_Size(row_pitch, rp);
+    Extract_Size(slice_pitch, sp);
+    Extract_Pointer(host_ptr, hp);
+    Extract_Wait_For_Events(events, num_evt, pevts);
+    
+    cl_event e;
+    cl_event *ep = blocking_read ? NULL : &e;
+    
+    cl_command_queue cq = CommandQueue_Ptr(self);
+    cl_int res = clEnqueueReadImage(cq, img, blocking_read, ovec, rvec, rp, sp, hp, num_evt, pevts, ep);
+    Check_And_Raise(res);
 
-
-
-    return self;
+    return blocking_read ? self : REvent(e);
 }
 
 static VALUE
@@ -1403,7 +1432,23 @@ rcl_cq_enqueue_write_image(VALUE self, VALUE image, VALUE blocking_write,
                            VALUE row_pitch, VALUE slice_pitch, 
                            VALUE host_ptr, VALUE events)
 {
-    return self;
+    Extract_Mem_Object(image, img);
+    Expect_Boolean(blocking_write);
+    Extract_Vector(origin, ovec);
+    Extract_Vector(region, rvec);
+    Extract_Size(row_pitch, rp);
+    Extract_Size(slice_pitch, sp);
+    Extract_Pointer(host_ptr, hp);
+    Extract_Wait_For_Events(events, num_evt, pevts);
+    
+    cl_event e;
+    cl_event *ep = blocking_write ? NULL : &e;
+    
+    cl_command_queue cq = CommandQueue_Ptr(self);
+    cl_int res = clEnqueueWriteImage(cq, img, blocking_write, ovec, rvec, rp, sp, hp, num_evt, pevts, ep);
+    Check_And_Raise(res);
+
+    return blocking_write ? self : REvent(e);
 }
 
 static VALUE
@@ -1411,6 +1456,17 @@ rcl_cq_enqueue_copy_image(VALUE self, VALUE src_image, VALUE dst_image,
                           VALUE src_origin, VALUE dst_origin, VALUE region,
                           VALUE events)
 {
+    Extract_Mem_Object(src_image, simg);
+    Extract_Mem_Object(dst_image, dimg);
+    Extract_Vector(src_origin, sovec);
+    Extract_Vector(dst_origin, dovec);
+    Extract_Vector(region, rvec);
+    Extract_Wait_For_Events(events, num_evt, pevts);
+    
+    cl_command_queue cq = CommandQueue_Ptr(self);
+    cl_int res = clEnqueueCopyImage(cq, simg, dimg, sovec, dovec, rvec, num_evt, pevts, NULL);
+    Check_And_Raise(res);
+    
     return self;
 }
 
@@ -1419,6 +1475,17 @@ rcl_cq_enqueue_copy_image_to_buffer(VALUE self, VALUE src_image, VALUE dst_buffe
                                     VALUE src_origin, VALUE region,
                                     VALUE dst_offset, VALUE events)
 {
+    Extract_Mem_Object(src_image, img);
+    Extract_Mem_Object(dst_buffer, buf);
+    Extract_Vector(src_origin, sovec);
+    Extract_Vector(region, rvec);
+    Extract_Size(dst_offset, cb);
+    Extract_Wait_For_Events(events, num_evt, pevts);
+    
+    cl_command_queue cq = CommandQueue_Ptr(self);
+    cl_int res = clEnqueueCopyImageToBuffer(cq, img, buf, sovec, rvec, cb, num_evt, pevts, NULL);
+    Check_And_Raise(res);
+    
     return self;
 }
 
@@ -1427,6 +1494,17 @@ rcl_cq_enqueue_copy_buffer_to_image(VALUE self, VALUE src_buffer, VALUE dst_imag
                                     VALUE src_offset, VALUE dst_origin, 
                                     VALUE region, VALUE events)
 {
+    Extract_Mem_Object(src_buffer, buf);
+    Extract_Mem_Object(dst_image, img);
+    Extract_Size(src_offset, cb);
+    Extract_Vector(dst_origin, sovec);
+    Extract_Vector(region, rvec);
+    Extract_Wait_For_Events(events, num_evt, pevts);
+    
+    cl_command_queue cq = CommandQueue_Ptr(self);
+    cl_int res = clEnqueueCopyBufferToImage(cq, buf, img, cb, sovec, rvec, num_evt, pevts, NULL);
+    Check_And_Raise(res);
+    
     return self;
 }
 
@@ -1448,24 +1526,56 @@ rcl_cq_enqueue_copy_buffer_to_image(VALUE self, VALUE src_buffer, VALUE dst_imag
 //     return self;
 // }
 
-// static VALUE
-// rcl_cq_enqueue_ndrange_kernel(VALUE self, )
-// {
-//     return self;
-// }
-// 
-// static VALUE
-// rcl_cq_enqueue_task(VALUE self, )
-// {
-//     return self;
-// }
-// 
-// static VALUE
-// rcl_cq_enqueue_native_kernel(VALUE self, )
-// {
-//     rb_notimplement();
-//     return self;
-// }
+/*
+ * call-seq:
+ *      ComamndQueue#enqueue_NDRange_kernel()
+ *
+ * Wrapps the +clEnqueueNDRangeKernel()+.
+ */
+static VALUE
+rcl_cq_enqueue_ndrange_kernel(VALUE self, VALUE kernel, VALUE work_dim,
+                              VALUE global_work_offset, 
+                              VALUE global_work_size, VALUE local_work_size,
+                              VALUE events)
+{
+    Expect_RCL_Type(kernel, Kernel);
+    Expect_Fixnum(work_dim);
+    cl_uint wd = FIX2UINT(work_dim);
+    Extract_Wait_For_Events(events, num_evt, pevts);
+    
+    // MUST: finish this.
+    size_t gws[3];
+    size_t lws[3];
+    
+    cl_kernel k = Kernel_Ptr(kernel);
+    cl_command_queue cq = CommandQueue_Ptr(self);
+    
+    cl_int res = clEnqueueNDRangeKernel(cq, k, wd, NULL, gws, lws, num_evt, pevts, NULL);
+    Check_And_Raise(res);
+    
+    return self;
+}
+
+static VALUE
+rcl_cq_enqueue_task(VALUE self, VALUE kernel, VALUE events)
+{
+    Expect_RCL_Type(kernel, Kernel);
+    Extract_Wait_For_Events(events, num_evt, pevts);
+    
+    cl_kernel k = Kernel_Ptr(kernel);
+    cl_command_queue cq = CommandQueue_Ptr(self);
+    cl_int res = clEnqueueTask(cq, k, num_evt, pevts, NULL);
+    Check_And_Raise(res);
+    
+    return self;
+}
+
+static VALUE
+rcl_cq_enqueue_native_kernel(VALUE self)
+{
+    rb_notimplement();
+    return self;
+}
 
 /*
  * call-seq:
@@ -1598,11 +1708,11 @@ define_class_command_queue(void)
     // rb_define_method(rcl_cCommandQueue, "enqueue_map_buffer", rcl_cq_enqueue_map_buffer, );
     // rb_define_method(rcl_cCommandQueue, "enqueue_map_image", rcl_cq_enqueue_map_image, );
     // rb_define_method(rcl_cCommandQueue, "enqueue_unmap_mem_object", rcl_cq_enqueue_unmap_mem_obj, );
-    // 
-    // // execution
-    // rb_define_method(rcl_cCommandQueue, "enqueue_NDRange_kernel", rcl_cq_enqueue_ndrange_kernel, 6);
-    // rb_define_method(rcl_cCommandQueue, "enqueue_task", rcl_cq_enqueue_task, 2);
-    // rb_define_method(rcl_cCommandQueue, "enqueue_native_kernel", rcl_cq_enqueue_native_kernel, 5);
+    
+    // execution
+    rb_define_method(rcl_cCommandQueue, "enqueue_NDRange_kernel", rcl_cq_enqueue_ndrange_kernel, 6);
+    rb_define_method(rcl_cCommandQueue, "enqueue_task", rcl_cq_enqueue_task, 2);
+    rb_define_method(rcl_cCommandQueue, "enqueue_native_kernel", rcl_cq_enqueue_native_kernel, 0);
     
     // sync 
     rb_define_method(rcl_cCommandQueue, "enqueue_marker",rcl_cq_enqueue_marker, 0);
@@ -1823,11 +1933,114 @@ define_class_event(void)
 /*
  * class Memory
  */
+
 static VALUE
 rcl_mem_alloc(VALUE klass)
 {
-    rb_raise(rb_eRuntimeError, "Use class methods instead.");
+    return RMemory(NULL);
+}
+
+/*
+ * call-seq:
+ *      Memory.new(context, CL_MEM_FLAG_READ_ONLY, :buffer, aPointer)
+ *      Memory.new(context, CL_MEM_FLAG_READ_WRITE, :image_2d, format, 200, 300, 16, nil)
+ */
+static VALUE
+rcl_mem_init(int argc, VALUE *argv, VALUE self)
+{   
+    return self;
+}
+
+static VALUE
+rcl_mem_init_copy(VALUE copy, VALUE orig)
+{
     return Qnil;
+}
+
+/*
+ * call-seq:
+ *      Memory.create_buffer(aContext, CL_MEM_FLAG_READ_WRITE, aPointer)
+ */
+static VALUE
+rcl_mem_create_buffer(VALUE mod, VALUE context, VALUE flags, VALUE host_ptr)
+{
+    Expect_RCL_Type(context, Context);
+    Expect_Fixnum(flags);
+    if (!NIL_P(host_ptr)) Expect_RCL_Type(host_ptr, Pointer);
+    
+    cl_context cxt = Context_Ptr(context);
+    cl_mem_flags mf = FIX2INT(flags);
+    
+    size_t sz = 0;
+    void *hp = NULL;
+    if (!NIL_P(host_ptr)) {
+        sz = Pointer_Size(host_ptr);
+        hp = Pointer_Address(host_ptr);
+    }
+    
+    cl_int res;
+    cl_mem mem = clCreateBuffer(cxt, mf, sz, hp, &res);
+    Check_And_Raise(res);
+    
+    return RMemory(mem);
+}
+
+static VALUE
+rcl_mem_create_image_2d(VALUE mod, VALUE context, 
+                                   VALUE flags, 
+                                   VALUE image_format, 
+                                   VALUE width, VALUE height, VALUE row_pitch, 
+                                   VALUE host_ptr)
+{
+    Expect_RCL_Type(context, Context);
+    Expect_Fixnum(flags);
+    
+    Extract_Size(width, w);
+    Extract_Size(height, h);
+    Extract_Size(row_pitch, rp);
+    
+    cl_context cxt = Context_Ptr(context);
+    cl_mem_flags mf = FIX2INT(flags);
+    Extract_ImageFormat(image_format, imgfmt);
+        
+    Extract_Pointer(host_ptr, hp);
+    
+    cl_int res;    
+    cl_mem img = clCreateImage2D(cxt, mf, &imgfmt, w, h, rp, hp, &res);
+    Check_And_Raise(res);
+    
+    return RMemory(img);
+}
+
+static VALUE
+rcl_mem_create_image_3d(VALUE mod, VALUE context, VALUE flags, 
+                                   VALUE image_format,
+                                   VALUE width, VALUE height, VALUE depth,
+                                   VALUE row_pitch, VALUE slice_pitch,
+                                   VALUE host_ptr)
+{
+    Expect_RCL_Type(context, Context);
+    Expect_Fixnum(flags);
+    if (CLASS_OF(image_format) != rcl_cImageFormat) {
+        rb_raise(rb_eTypeError, "expected argument 3 is a ImageFormat.");
+    }
+    cl_mem_flags mf = FIX2INT(flags);
+    
+    Extract_Size(width, w);
+    Extract_Size(height, h);
+    Extract_Size(depth, d);
+    Extract_Size(row_pitch, rp);
+    Extract_Size(slice_pitch, sp);
+    
+    cl_context cxt = Context_Ptr(context);
+    Extract_ImageFormat(image_format, imgfmt);
+    Extract_Pointer(host_ptr, hp);
+    
+    cl_int res;
+    cl_mem img = clCreateImage3D(cxt, mf, &imgfmt, w, h, d, rp, sp, hp, &res);
+    Check_And_Raise(res);
+    
+    return RMemory(img);
 }
 
 static VALUE
@@ -1860,21 +2073,71 @@ rcl_mem_info(VALUE self, VALUE param_name)
 }
 
 static VALUE
-rcl_mem_image_info(VALUE self)
+rcl_mem_image_info(VALUE self, VALUE param_name)
 {
+    Expect_RCL_Const(param_name);
+    cl_image_info ii = FIX2UINT(param_name);
+    cl_mem m = Memory_Ptr(self);
     
+    cl_image_format imgfmt;
+    
+    cl_int res = clGetImageInfo(m, ii, sizeof(cl_image_format), &imgfmt, NULL);
+    Check_And_Raise(res);
+    
+    switch (ii) {
+    case CL_IMAGE_FORMAT:
+        return RImageFormat(&imgfmt);
+    case CL_IMAGE_ELEMENT_SIZE:
+    case CL_IMAGE_ROW_PITCH:
+    case CL_IMAGE_SLICE_PITCH:
+    case CL_IMAGE_WIDTH:
+    case CL_IMAGE_HEIGHT:
+    case CL_IMAGE_DEPTH:
+        return UINT2FIX((size_t)(size_t *)&imgfmt);
+    }
+    return Qnil;
+}
+
+static VALUE
+rcl_mem_create_from_gl_buffer(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
+}
+
+static VALUE
+rcl_mem_create_from_gl_render_buffer(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
+}
+
+static VALUE
+rcl_mem_create_from_gl_texture_2d(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
+}
+
+static VALUE
+rcl_mem_create_from_gl_texture_3d(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
 }
 
 static VALUE
 rcl_mem_gl_obj_info(VALUE self)
 {
-    
+    rb_notimplement();
+    return Qnil;
 }
 
 static VALUE
 rcl_mem_gl_texture_info(VALUE self)
 {
-    
+    rb_notimplement();
+    return Qnil;
 }
 
 static void
@@ -1882,20 +2145,21 @@ define_class_memory(void)
 {
     rcl_cMemory = rb_define_class_under(rcl_mCapi, "Memory", rb_cObject);
     rb_define_alloc_func(rcl_cMemory, rcl_mem_alloc);
-    // rb_define_method(rcl_cMemory, "initialize", rcl_mem_init, -1);
-    // rb_deinfe_singleton_method(rcl_cMemory, "create_buffer", rcl_mem_create_buffer, -1);
-    // rb_define_singleton_method(rcl_cMemory, "create_image2d", rcl_mem_create_image_2d, -1);
-    // rb_define_singleton_method(rcl_cMemory, "create_image3d", rcl_mem_create_image_3d, -1);
+    rb_define_method(rcl_cMemory, "initialize", rcl_mem_init, -1);
+    rb_define_method(rcl_cMemory, "initialize_copy", rcl_mem_init_copy, 1);
+    rb_define_singleton_method(rcl_cMemory, "create_buffer", rcl_mem_create_buffer, 3);
+    rb_define_singleton_method(rcl_cMemory, "create_image2d", rcl_mem_create_image_2d, 7);
+    rb_define_singleton_method(rcl_cMemory, "create_image3d", rcl_mem_create_image_3d, 9);
     rb_define_method(rcl_cMemory, "info", rcl_mem_info, 1);
-    rb_define_method(rcl_cMemory, "image_info", rcl_mem_image_info, -1);
+    rb_define_method(rcl_cMemory, "image_info", rcl_mem_image_info, 1);
 
     // GL sharing API.
-    // rb_define_singleton_method(rcl_cMemory, "create_from_gl_buffer", rcl_mem_create_from_gl_buffer, -1);
-    // rb_define_singleton_method(rcl_cMemory, "create_from_gl_render_buffer", rcl_mem_create_from_gl_render_buffer, -1);
-    // rb_define_singleton_method(rcl_cMemory, "create_from_gl_texture_2d", rcm_mem_create_from_gl_texture_2d, -1);
-    // rb_define_singleton_method(rcl_cMemory, "create_from_gl_texture_3d", rb_mem_create_from_gl_texture_3d, -1);
-    rb_define_method(rcl_cMemory, "gl_object_info", rcl_mem_gl_obj_info, -1);
-    rb_define_method(rcl_cMemory, "gl_texture_info", rcl_mem_gl_texture_info, -1);
+    rb_define_singleton_method(rcl_cMemory, "create_from_gl_buffer", rcl_mem_create_from_gl_buffer, 0);
+    rb_define_singleton_method(rcl_cMemory, "create_from_gl_render_buffer", rcl_mem_create_from_gl_render_buffer, 0);
+    rb_define_singleton_method(rcl_cMemory, "create_from_gl_texture_2d", rcl_mem_create_from_gl_texture_2d, 0);
+    rb_define_singleton_method(rcl_cMemory, "create_from_gl_texture_3d", rcl_mem_create_from_gl_texture_3d, 0);
+    rb_define_method(rcl_cMemory, "gl_object_info", rcl_mem_gl_obj_info, 0);
+    rb_define_method(rcl_cMemory, "gl_texture_info", rcl_mem_gl_texture_info, 0);
 }
 
 /*
@@ -1966,7 +2230,7 @@ rcl_program_create_from_binary(cl_context context, VALUE devices, VALUE binaries
     Check_And_Raise(res);
     
     // FIXME: we got binary status, but do not use these information yet.
-    
+
     return prog;
 }
 
@@ -1974,7 +2238,6 @@ rcl_program_create_from_binary(cl_context context, VALUE devices, VALUE binaries
  * call-seq:
  *      Program.new(Context, [String, ..])
  *      Program.new(Context, [Device, ..], [String, ..])
- *
  */
 static VALUE
 rcl_program_init(int argc, VALUE *argv, VALUE self)
@@ -2066,7 +2329,7 @@ rcl_program_build(VALUE self, VALUE devices, VALUE options, VALUE memo)
 
 /*
  * call-seq:
- *      Program#build_info(Device, CL_PROGRAM_BUILD_LOG)    -> String
+ *      Program#build_info(Device, CL_PROGRAM_BUILD_LOG)    -> a String
  *
  * Wrapps +clGetProgramBuildInfo()+.
  */
@@ -2103,9 +2366,9 @@ rcl_program_build_info(VALUE self, VALUE device, VALUE param_name)
 
 /*
  * call-seq:
- *      
+ *      Program#info(CL_PROGRAM_SOURCE) -> "..."
  *
- * Wrapps 
+ * Wrapps +clGetProgramInfo()+.
  */
 static VALUE
 rcl_program_info(VALUE self, VALUE param_name)
@@ -2176,7 +2439,7 @@ rcl_program_create_kernels(VALUE self)
 
 /*
  * call-seq:
- *      Capi.unload_compiler    -> Capi
+ *      Capi.unload_compiler    -> receiver
  *
  * Wrapps +clUnloadCompiler()+.
  */
@@ -2215,9 +2478,9 @@ rcl_kernel_alloc(VALUE klass)
 
 /*
  * call-seq:
- *      
+ *      Kernel::new(aProgram, name)     -> a Kernel object.
  *
- * Wrapps 
+ * Wrapps +clCreateKernel()+.
  */
 static VALUE
 rcl_kernel_init(VALUE self, VALUE program, VALUE name)
@@ -2239,12 +2502,6 @@ rcl_kernel_init(VALUE self, VALUE program, VALUE name)
     return self;
 }
 
-/*
- * call-seq:
- *      
- *
- * Wrapps 
- */
 static VALUE
 rcl_kernel_init_copy(VALUE copy, VALUE orig)
 {
@@ -2271,16 +2528,17 @@ rcl_kernel_init_copy(VALUE copy, VALUE orig)
 
 /*
  * call-seq:
- *      
+ *      Kernel#set_arg(0, nil)              -> receiver
+ *      Kernel#set_arg(1, aHostPointer)
  *
  * Wrapps +clSetKernelArg()+.
+ *
+ * Returns the receiver when success, or raise CLError.
  */
 static VALUE
 rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
 {
-    if (!FIXNUM_P(index)) {
-        rb_raise(rb_eArgError, "Expected index is of type Fixnum.");
-    }
+    Extract_Size(index, idx);
     
     size_t arg_size = 0;
     void *arg_ptr = NULL;
@@ -2290,19 +2548,26 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
         arg_ptr = Pointer_Address(arg_value);
         arg_size = Pointer_Size(arg_value);
     } else if (klass == rcl_cSampler) {
-        arg_ptr = (void *)Sampler_Ptr(arg_value);
+        rcl_sampler_t *sampler;
+        Data_Get_Struct(arg_value, rcl_sampler_t, sampler);
+        
+        arg_ptr = (void *)(&(sampler->s));
         arg_size = sizeof(cl_sampler); 
     } else if (NIL_P(arg_value)) {
         arg_ptr = NULL;
         arg_size = 0;        
-    } else if (klass == rcl_cEvent) {
-        ;
+    } else if (klass == rcl_cMemory) {
+        rcl_mem_t *mem;
+        Data_Get_Struct(arg_value, rcl_mem_t, mem);
+        
+        arg_ptr = (void *)(&(mem->mem));
+        arg_size = sizeof(cl_mem);
     } else {
         rb_raise(rb_eArgError, "Invalid kernel argument type.");
     }
     
     cl_kernel k = Kernel_Ptr(self);
-    cl_int res = clSetKernelArg(k, FIX2UINT(index), arg_size, arg_ptr);
+    cl_int res = clSetKernelArg(k, idx, arg_size, arg_ptr);
     Check_And_Raise(res);
     
     return self;

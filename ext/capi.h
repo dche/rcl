@@ -1,3 +1,5 @@
+#ifndef RCL_CAPI_H__
+#define RCL_CAPI_H__
 
 #include <ruby.h>
 #include <assert.h>
@@ -39,9 +41,7 @@
     
 #define Expect_NonEmpty_Array(ro) \
     do { \
-        if (TYPE(ro) != T_ARRAY) \
-            rb_raise(rb_eTypeError, \
-                    "Expected %s is an Array.", #ro); \
+        Expect_Array(ro); \
         if (RARRAY_LEN(ro) == 0) \
             rb_raise(rb_eArgError, \
                     "Expected %s is not empty.", #ro); \
@@ -50,8 +50,8 @@
 #define Extract_Size(sizet, var) \
     size_t var; \
     do { \
-        if (!FIXNUM_P(sizet)) { \
-            rb_raise(rb_eTypeError, "Expected %s is a Fixnum.", #sizet); \
-        } \
+        Expect_Fixnum(sizet); \
         var = FIX2UINT(sizet); \
     } while (0)
+
+#endif  // RCL_CAPI_H__
