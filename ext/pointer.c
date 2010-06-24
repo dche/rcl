@@ -4,7 +4,8 @@
 #include "capi.h"
 
 extern VALUE rcl_mCapi;
-extern VALUE rcl_cPointer;
+VALUE rcl_cPointer;
+VALUE rcl_cMappedPointer;
 
 // Macros for float composition
 #define RCL_HALF_BIAS       15
@@ -41,7 +42,6 @@ static ID id_type_cl_ulong;
 static ID id_type_cl_half;
 static ID id_type_cl_float;
 static ID id_type_cl_double;
-static ID id_type_size_t;
 
 static ID id_type_cl_char2;
 static ID id_type_cl_char4;
@@ -119,7 +119,6 @@ static void define_cl_types(void)
     DEF_CL_TYPE(cl_half);
     DEF_CL_TYPE(cl_float);
     DEF_CL_TYPE(cl_double);
-    DEF_CL_TYPE(size_t);
     
     DEF_CL_VECTOR_TYPE(cl_char2);
     DEF_CL_VECTOR_TYPE(cl_char4);
@@ -242,7 +241,6 @@ static inline void Ruby2Native(ID type, void *address, VALUE value)
     IF_TYPE_TO_NATIVE(cl_uint,   Expect_Integer, NUM2UINT);
     IF_TYPE_TO_NATIVE(cl_long,   Expect_Integer, NUM2LONG);
     IF_TYPE_TO_NATIVE(cl_ulong,  Expect_Integer, NUM2ULONG);
-    IF_TYPE_TO_NATIVE(size_t  ,  Expect_Integer, NUM2ULONG);
     IF_TYPE_TO_NATIVE(cl_half,   Expect_Float,   Extract_Half);
     IF_TYPE_TO_NATIVE(cl_float,  Expect_Float,   NUM2DBL);
     IF_TYPE_TO_NATIVE(cl_double, Expect_Float,   NUM2DBL);
@@ -335,7 +333,6 @@ static inline VALUE Native2Ruby(ID type, void *address)
     IF_TYPE_TO_RUBY(cl_uint,    UINT2NUM);
     IF_TYPE_TO_RUBY(cl_long,    LONG2NUM);
     IF_TYPE_TO_RUBY(cl_ulong,   ULONG2NUM);
-    IF_TYPE_TO_RUBY(size_t,     ULONG2NUM);
     IF_TYPE_TO_RUBY(cl_half,    rcl_half_float_new);
     IF_TYPE_TO_RUBY(cl_float,   rb_float_new);
     IF_TYPE_TO_RUBY(cl_double,  rb_float_new);
@@ -418,8 +415,6 @@ Alloc_Memory(rcl_pointer_t *p)
 static inline rcl_pointer_t *
 Pointer_Ptr(VALUE ptr)
 {
-    Expect_RCL_Type(ptr, Pointer);
-    
     rcl_pointer_t *p;
     Data_Get_Struct(ptr, rcl_pointer_t, p);
     
@@ -430,8 +425,6 @@ Pointer_Ptr(VALUE ptr)
 void *
 Pointer_Address(VALUE ptr)
 {
-    Expect_RCL_Type(ptr, Pointer);
-    
     rcl_pointer_t *p = Pointer_Ptr(ptr);
     
     if (p->alloc_address == NULL) {
@@ -456,7 +449,6 @@ Element_Address(rcl_pointer_t *ptr, size_t index)
 size_t
 Pointer_Size(VALUE ptr)
 {
-    Expect_RCL_Type(ptr, Pointer);
     rcl_pointer_t *p = Pointer_Ptr(ptr);
     return BytesOf(p);
 }
@@ -737,6 +729,50 @@ rcl_pointer_slice(VALUE self, VALUE start, VALUE size)
     return ro;
 }
 
+/*
+ * class MappedPointer
+ */
+ 
+VALUE
+rcl_create_mapped_pointer(void *address, size_t size)
+{
+    rcl_pointer_t *p;
+    VALUE mp = Data_Make_Struct(rcl_cMappedPointer, rcl_pointer_t, 0, 0, p);
+    
+    p->type = id_type_cl_uchar;
+    p->type_size = sizeof(cl_uchar);
+    p->alloc_address = p->address = address;
+    p->size = size;
+    
+    return mp;
+}
+
+void
+rcl_invalidate_mapped_pointer(VALUE ptr)
+{
+    rcl_pointer_t *p = Pointer_Ptr(ptr);
+    p->alloc_address = p->address = NULL;
+    p->size = 0;
+}
+
+static VALUE
+rcl_mapped_pointer_alloc(VALUE klass)
+{
+    rb_raise(rb_eRuntimeError, "Can't instantiate a mapped pointer.");
+    return Qnil;
+}
+
+static VALUE
+rcl_mapped_pointer_init_copy(VALUE copy, VALUE orig)
+{
+    rb_raise(rb_eRuntimeError, "Can't clone mapped pointer.");
+    return Qnil;
+}
+
+/*
+ * Exports.
+ */
+
 void
 define_rcl_class_pointer(void)
 {
@@ -755,4 +791,14 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cPointer, "clear", rcl_pointer_clear, 0);
     rb_define_method(rcl_cPointer, "copy_from", rcl_pointer_copy_from, 1);
     rb_define_method(rcl_cPointer, "slice", rcl_pointer_slice, 2);
+    
+    rcl_cMappedPointer = rb_define_class_under(rcl_mCapi, "MappedPointer", rb_cObject);
+    rb_define_alloc_func(rcl_cMappedPointer, rcl_mapped_pointer_alloc);
+    rb_define_method(rcl_cMappedPointer, "initialize_copy", rcl_mapped_pointer_init_copy, 1);
+    rb_define_method(rcl_cMappedPointer, "[]", rcl_pointer_aref, 1);
+    rb_define_method(rcl_cMappedPointer, "[]=", rcl_pointer_aset, 2);
+    rb_define_method(rcl_cMappedPointer, "address", rcl_pointer_address, 0);
+    rb_define_method(rcl_cMappedPointer, "type", rcl_pointer_type, 0);
+    rb_define_method(rcl_cMappedPointer, "size", rcl_pointer_size, 0);
+    rb_define_method(rcl_cMappedPointer, "clear", rcl_pointer_clear, 0);
 }
