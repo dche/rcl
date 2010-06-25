@@ -157,7 +157,7 @@ describe HostPointer do
     p[2].should.equal [1.0, 2.0]
   end
     
-  the 'dup and clone' do    
+  the 'dup() and clone()' do    
     @p[0] = 4345
     @p[331] = 111
     @p[1023] = 4543
@@ -259,5 +259,5 @@ describe HostPointer do
     p[0] = 97
     p.clear
     p[0].should.equal 0
-  end  
+  end
 end

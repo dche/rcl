@@ -17,6 +17,11 @@ describe Context do
   the "info() method" do
     cxt = Context.new(nil, CL_DEVICE_TYPE_CPU);
     cxt.info(CL_CONTEXT_REFERENCE_COUNT).should.is_a Integer
+    devs = cxt.info(CL_CONTEXT_DEVICES)
+    devs.should.is_a Array
+    devs.should.not.be.empty
+    devs.first.should.is_a Device
+    puts devs.first.info(CL_DEVICE_NAME)
   end
   
   the "retainContext should performed." do

@@ -6,7 +6,7 @@ include OpenCL::Capi
 describe ImageFormat do
     
   the "constructor" do
-    should.raise(ArgumentError) { ImageFormat.new("a", 2) }
+    should.raise(TypeError) { ImageFormat.new("a", 2) }
     should.not.raise(Exception) { ImageFormat.new(1, 2) }
   end
   

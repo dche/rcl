@@ -17,14 +17,21 @@ describe Device do
     alldevs.should.is_a Array
     alldevs.first.should.is_a Device
   end
-  
+
   the "info() method should reject invalid param" do
     d = devices(CL_DEVICE_TYPE_ALL, nil).first
-    should.raise(ArgumentError) { d.info("error") }
+    should.raise(TypeError) { d.info("error") }
   end
   
   the "info() method should return value according to the param type." do
-    
+    d = devices(CL_DEVICE_TYPE_ALL, nil).first
+    d.info(CL_DEVICE_NAME).should.is_a String
+    d.info(CL_DEVICE_AVAILABLE).should.be.true
+    d.info(CL_DEVICE_ADDRESS_BITS).should.is_a Fixnum
+    d.info(CL_DEVICE_IMAGE2D_MAX_WIDTH).should.is_a Fixnum
+    d.info(CL_DEVICE_MAX_WORK_ITEM_SIZES).should.is_a Array
+    d.info(CL_DEVICE_PLATFORM).should.is_a Platform
+    puts d.info(CL_DEVICE_PLATFORM).info(CL_PLATFORM_NAME)
   end
 
 end
