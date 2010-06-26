@@ -84,8 +84,10 @@ typedef struct {
 static void
 rcl_context_free(void *ptr)
 {
-    clReleaseContext(((rcl_context_t *)ptr)->c);
-    free(ptr);
+    rcl_context_t *p = (rcl_context_t *)ptr;
+    if (p->c != NULL) clReleaseContext(p->c);
+
+    free(p);
 }
 
 static inline cl_context
@@ -128,8 +130,11 @@ typedef struct {
 static void
 rcl_command_queue_free(void *ptr)
 {
-    clReleaseCommandQueue(((rcl_command_queue_t *)ptr)->cq);
-    free(ptr);
+    rcl_command_queue_t *p = (rcl_command_queue_t *)ptr;
+    if (p->cq != NULL) {
+        clReleaseCommandQueue(p->cq);
+    }
+    free(p);
 }
 
 static inline VALUE
@@ -171,8 +176,11 @@ Sampler_Ptr(VALUE ro)
 static void
 rcl_sampler_free(void *ptr)
 {
-    clReleaseSampler(((rcl_sampler_t *)ptr)->s);
-    free(ptr);
+    rcl_sampler_t *p = (rcl_sampler_t *)ptr;
+    if (p->s != NULL) {
+        clReleaseSampler(p->s);
+    }
+    free(p);
 }
 
 typedef struct {
@@ -182,8 +190,11 @@ typedef struct {
 static void
 rcl_event_free(void *ptr)
 {
-    clReleaseEvent(((rcl_event_t *)ptr)->e);
-    free(ptr);
+    rcl_event_t *p = (rcl_event_t *)ptr;
+    if (p->e != NULL) {
+        clReleaseEvent(p->e);
+    }
+    free(p);
 }
 
 static inline VALUE
@@ -213,8 +224,11 @@ typedef struct {
 static void
 rcl_mem_free(void *ptr)
 {
-    clReleaseMemObject(((rcl_mem_t *)ptr)->mem);
-    free(ptr);
+    rcl_mem_t *p = (rcl_mem_t *)ptr;
+    if (p->mem != NULL) {
+        clReleaseMemObject(p->mem);
+    }
+    free(p);
 }
 
 static inline cl_mem
@@ -245,7 +259,10 @@ typedef struct {
 static void
 rcl_program_free(void *ptr)
 {
-    clReleaseProgram(((rcl_program_t *)ptr)->p);
+    rcl_program_t *p = (rcl_program_t *)ptr;
+    if (p->p != NULL) {
+        clReleaseProgram(p->p);
+    }
     free(ptr);
 }
 
@@ -273,13 +290,15 @@ Program_Ptr(VALUE ro)
 
 typedef struct {
     cl_kernel k;
-    size_t    argc;
 } rcl_kernel_t;
 
 static void
 rcl_kernel_free(void *ptr)
 {
-    clReleaseKernel(((rcl_kernel_t *)ptr)->k);
+    rcl_kernel_t *p = (rcl_kernel_t *)ptr;
+    if (p->k != NULL) {
+        clReleaseKernel(p->k);
+    }
     free(ptr);
 }
 
