@@ -1339,15 +1339,20 @@ rcl_finish(VALUE self)
     cl_uint num_evt; \
     cl_event *pevts; \
     do { \
-        Expect_Array(events); \
-        num_evt = RARRAY_LEN(events); \
-        CL_Pointers(events, Event, cl_event, pevts); \
+        if (NIL_P(events)) { \
+            num_evt = 0; \
+            pevts = NULL; \
+        } else { \
+            Expect_Array(events); \
+            num_evt = RARRAY_LEN(events); \
+            CL_Pointers(events, Event, cl_event, pevts); \
+        } \
     } while (0)
     
 #define Extract_Pointer(ptr, var) \
     void *var; \
     do { \
-        Expect_RCL_Type(ptr, Pointer); \
+        if (!NIL_P(ptr)) Expect_RCL_Type(ptr, Pointer); \
         var = NIL_P(ptr) ? NULL : Pointer_Address(ptr); \
     } while (0)
     
