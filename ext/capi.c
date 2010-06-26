@@ -1441,11 +1441,12 @@ rcl_cq_enqueue_copy_buffer(VALUE self, VALUE src_buffer, VALUE dst_buffer,
     Extract_Size(size, cb);
     Extract_Wait_For_Events(events, num_evt, pevts);
     
-    cl_command_queue cq = CommandQueue_Ptr(self);   
-    cl_int res = clEnqueueCopyBuffer(cq, sbuf, dbuf, sos, dos, cb, num_evt, pevts, NULL);
+    cl_event e;
+    cl_command_queue cq = CommandQueue_Ptr(self);
+    cl_int res = clEnqueueCopyBuffer(cq, sbuf, dbuf, sos, dos, cb, num_evt, pevts, &e);
     Check_And_Raise(res);
     
-    return self;
+    return REvent(e);
 }
 
 static VALUE
