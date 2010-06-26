@@ -782,6 +782,44 @@ rcl_mapped_pointer_init_copy(VALUE copy, VALUE orig)
 }
 
 /*
+ * call-seq:
+ *      MappedPointer#cast_to(:cl_uint4)    -> receiver
+ */
+static VALUE
+rcl_mapped_pointer_coerce(VALUE self, VALUE type)
+{
+    if (!SYMBOL_P(type)) {
+        rb_raise(rb_eArgError, "Expected argument 2 is a Symbol.");
+    }
+    
+    ID tid = SYM2ID(type);
+    if (!Is_Type_Valid(tid)) {
+        rb_raise(rb_eArgError, "Unrecognized type name.");
+    }
+    
+    rcl_pointer_t *p = Pointer_Ptr(self);
+    if (p->type == tid) return self;
+    if (p->size == 0) {
+        rb_warn("Receiver is a null pointer.");
+        return self;
+    }
+    
+    size_t tsz = Type_Size(tid);
+    size_t sz = BytesOf(p);    
+    
+    if (sz % tsz != 0) {
+        rb_raise(rb_eRuntimeError, "Casting to incompatible pointer type.");
+    }
+    size_t csz = sz / tsz;
+
+    p->type = tid;
+    p->size = csz;
+    p->type_size = tsz;
+    
+    return self;
+}
+
+/*
  * Exports.
  */
 
@@ -815,4 +853,5 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cMappedPointer, "size", rcl_pointer_size, 0);
     rb_define_method(rcl_cMappedPointer, "byte_size", rcl_pointer_byte_size, 0);
     rb_define_method(rcl_cMappedPointer, "clear", rcl_pointer_clear, 0);
+    rb_define_method(rcl_cMappedPointer, "cast_to", rcl_mapped_pointer_coerce, 1);
 }
