@@ -2731,7 +2731,7 @@ rcl_kernel_info(VALUE self, VALUE param_name)
     
     switch (ki) {
     case CL_KERNEL_FUNCTION_NAME:
-        return rb_str_new(param_value, sz_ret);
+        return rb_str_new2(param_value);
     case CL_KERNEL_NUM_ARGS:
     case CL_KERNEL_REFERENCE_COUNT:
         return UINT2NUM((*(cl_uint *)param_value));        
