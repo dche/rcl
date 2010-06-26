@@ -57,6 +57,9 @@ extern void define_rcl_class_pointer(void);
         } \
     } while (0)
 
+/*
+ * Data structures and helpers.
+ */
 
 #define RPlatform(ptr)      (Data_Wrap_Struct(rcl_cPlatform, 0, 0, (ptr)))
 
@@ -418,7 +421,7 @@ define_opencl_constants(void)
     // cl_context_properties
     RCL_DEF_CONSTANT(CL_CONTEXT_PLATFORM);
     
-    // cl_device_exec_capabilities	
+    // cl_device_exec_capabilities
     RCL_DEF_CONSTANT(CL_EXEC_KERNEL); 
     RCL_DEF_CONSTANT(CL_EXEC_NATIVE_KERNEL);
 
@@ -712,7 +715,7 @@ define_class_clerror(void)
 static VALUE
 rcl_platform_alloc(VALUE self)
 {
-    rb_raise(rb_eRuntimeError, "Retrieve platform by Capi#platforms instead.");
+    rb_raise(rb_eRuntimeError, "Retrieve platforms by Capi#platforms instead.");
     return Qnil;
 }
 
@@ -806,7 +809,7 @@ rcl_devices(VALUE self, VALUE device_type, VALUE platform)
     cl_uint num_id;
     cl_int res;
     
-    res = clGetDeviceIDs(pid, dt, 256, d_ids, &num_id); // CHECK: ditto.
+    res = clGetDeviceIDs(pid, dt, 256, d_ids, &num_id);
     
     VALUE devs = rb_ary_new();
     if (res != CL_SUCCESS) {
@@ -895,7 +898,7 @@ rcl_device_info(VALUE self, VALUE device_info)
         case CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT:
         case CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE:
         case CL_DEVICE_VENDOR_ID:
-            return UINT2FIX(*(cl_uint *)param_value);
+            return UINT2NUM(*(cl_uint *)param_value);
         // cl_ulong
         case CL_DEVICE_GLOBAL_MEM_CACHE_SIZE:
         case CL_DEVICE_GLOBAL_MEM_SIZE:
@@ -2105,7 +2108,7 @@ rcl_mem_create_buffer(VALUE mod, VALUE context, VALUE flags, VALUE host_ptr)
     cl_int res;
     cl_mem mem = clCreateBuffer(cxt, mf, sz, hp, &res);
     Check_And_Raise(res);
-    
+
     return RMemory(mem);
 }
 
@@ -2217,7 +2220,7 @@ rcl_mem_image_info(VALUE self, VALUE param_name)
     case CL_IMAGE_WIDTH:
     case CL_IMAGE_HEIGHT:
     case CL_IMAGE_DEPTH:
-        return UINT2FIX((size_t)(size_t *)&imgfmt);
+        return ULONG2NUM((size_t)(size_t *)&imgfmt);
     }
     return Qnil;
 }
@@ -2307,7 +2310,7 @@ rcl_program_create_from_source(cl_context context, VALUE sources)
     for (int i = 0; i < num_src; i++) {
         VALUE srcstr = rb_ary_entry(sources, i);
         if (TYPE(srcstr) != T_STRING) {
-            rb_raise(rb_eTypeError, "Invalid source found. Not a String.");
+            rb_raise(rb_eTypeError, "Expected source is a String.");
         }
         srcp[i] = RSTRING_PTR(srcstr);
         lenp[i] = RSTRING_LEN(srcstr);
@@ -2547,7 +2550,7 @@ rcl_program_info(VALUE self, VALUE param_name)
 static VALUE
 rcl_program_create_kernels(VALUE self)
 {
-    cl_kernel kernels[128];
+    cl_kernel kernels[128]; // TOOD: literal constant?
     cl_program prog = Program_Ptr(self);
     
     cl_uint num_ret;
