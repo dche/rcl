@@ -229,8 +229,8 @@ static inline void Ruby2Native(ID type, void *address, VALUE value)
     assert(!(NIL_P(value) || NULL == address));
     
     if (type == id_type_cl_bool) {
-        Expect_Boolean(value);
-        *(cl_bool *)address = value ? 1 : 0;
+        Expect_Boolean(value, bv);
+        *(cl_bool *)address = bv;
         return;
     }
     IF_TYPE_TO_NATIVE(cl_char,   Expect_Fixnum,  FIX2INT);
