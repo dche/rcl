@@ -2681,9 +2681,15 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
     void *arg_ptr = NULL;
     
     VALUE klass = CLASS_OF(arg_value);
-    if (klass == rcl_cPointer) {
-        arg_ptr = Pointer_Address(arg_value);
-        arg_size = Pointer_Size(arg_value);
+    if (klass == rcl_cMemory) {
+        rcl_mem_t *mem;
+        Data_Get_Struct(arg_value, rcl_mem_t, mem);
+
+        arg_ptr = (void *)(&(mem->mem));
+        arg_size = sizeof(cl_mem);
+    } else if (klass == rb_cString) {
+        arg_ptr = RSTRING_PTR(arg_value);
+        arg_size = RSTRING_LEN(arg_value);
     } else if (klass == rcl_cSampler) {
         rcl_sampler_t *sampler;
         Data_Get_Struct(arg_value, rcl_sampler_t, sampler);
@@ -2693,18 +2699,11 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
     } else if (NIL_P(arg_value)) {
         arg_ptr = NULL;
         arg_size = 0;        
-    } else if (klass == rcl_cMemory) {
-        rcl_mem_t *mem;
-        Data_Get_Struct(arg_value, rcl_mem_t, mem);
-        
-        arg_ptr = (void *)(&(mem->mem));
-        arg_size = sizeof(cl_mem);
     } else {
         rb_raise(rb_eArgError, "Invalid kernel argument type.");
     }
     
-    cl_kernel k = Kernel_Ptr(self);
-    cl_int res = clSetKernelArg(k, idx, arg_size, arg_ptr);
+    cl_int res = clSetKernelArg(Kernel_Ptr(self), idx, arg_size, arg_ptr);
     Check_And_Raise(res);
     
     return self;
