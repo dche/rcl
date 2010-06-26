@@ -935,17 +935,6 @@ rcl_device_info(VALUE self, VALUE device_info)
     return ret;
 }
 
-/*
- * call-seq:
- *      Device#available?  -> true | false
- */
-static VALUE
-rcl_device_is_available(VALUE self)
-{
-    rb_notimplement();
-    return Qtrue;
-}
-
 static void
 define_class_device(void)
 {
@@ -953,8 +942,6 @@ define_class_device(void)
     rb_define_module_function(rcl_mCapi, "devices", rcl_devices, 2);
     rb_define_alloc_func(rcl_cDevice, rcl_device_alloc);
     rb_define_method(rcl_cDevice, "info", rcl_device_info, 1);
-    rb_define_method(rcl_cDevice, "available?", rcl_device_is_available, 0);
-    rb_define_attr(rcl_cDevice, "type", 1, 0);    
 }
 
 /*
