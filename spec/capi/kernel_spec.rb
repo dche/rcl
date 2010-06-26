@@ -1,6 +1,6 @@
 require File.join(File.dirname(__FILE__), '../spec_helper')
 
-include OpenCL
+include OpenCL::Capi
 
 src = <<-EOF
   __kernel void
@@ -17,21 +17,21 @@ EOF
 
 describe Kernel do
   before do
-    @cxt = Capi::Context.new(nil, Capi::CL_DEVICE_TYPE_ALL)
-    @devs = @cxt.info(Capi::CL_CONTEXT_DEVICES)
-    @prog = Capi::Program.new(@cxt, [src])
+    @cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_ALL)
+    @devs = @cxt.info(CL_CONTEXT_DEVICES)
+    @prog = Program.new(@cxt, [src])
     @prog.build(@devs, "", nil)
   end
   
   the 'constructor' do
-    should.not.raise(Exception) { Capi::Kernel.new(@prog, "dot_product") }
+    should.not.raise(Exception) { OpenCL::Capi::Kernel.new(@prog, "dot_product") }
   end
   
   the 'info() method' do
     kernels = @prog.create_kernels
     kernels.length.should.equal 1
     k = kernels.first
-    k.info(Capi::CL_KERNEL_FUNCTION_NAME).should.equal 'dot_product'
-    k.info(Capi::CL_KERNEL_NUM_ARGS).should.equal 3
+    k.info(CL_KERNEL_FUNCTION_NAME).should.equal 'dot_product'
+    k.info(CL_KERNEL_NUM_ARGS).should.equal 3
   end
 end

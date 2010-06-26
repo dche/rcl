@@ -8,7 +8,7 @@ describe CommandQueue do
   
   before do
     @devs = devices(CL_DEVICE_TYPE_ALL, platforms.first)
-    @context = Context.new(nil, @devs)
+    @context = OpenCL::Capi::Context.new(nil, @devs)
   end
   
   the "constructor" do
