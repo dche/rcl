@@ -290,7 +290,6 @@ RKernel(cl_kernel k)
     VALUE ret = Data_Make_Struct(rcl_cKernel, rcl_kernel_t, 0, rcl_kernel_free, p);
     
     p->k = k;
-    p->argc = 0;
     return ret;
 }
 
