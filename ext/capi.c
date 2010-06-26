@@ -673,31 +673,13 @@ define_opencl_errors(void)
     rb_obj_freeze(rcl_errors);
 }
 
-static VALUE
-rcl_error_init(VALUE self, VALUE errcode)
-{
-    if (FIXNUM_P(errcode) && !NIL_P(rb_hash_aref(rcl_errors, errcode))) {
-        rb_iv_set(self, "@cl_errcode", errcode);
-    } else {
-        rb_raise(rb_eArgError, "Invalid CL error code.");
-    }
-    return self;
-}
 
 static void
 check_cl_error(cl_int errcode, int warn)
 {   
     if (errcode == CL_SUCCESS) return;
     
-    VALUE code = INT2FIX(errcode);
-    VALUE str = rb_hash_aref(rcl_errors, code);
-    // VALUE errobj = Qnil;
-    // 
-    // if (!warn) {
-    //     VALUE args[] = { code };
-    //     errobj = rb_class_new_instance(1, args, rb_eOpenCL);
-    // }
-    // TODO: find a way to raise an Exception object.
+    VALUE str = rb_hash_aref(rcl_errors, INT2FIX(errcode));    
     if (NIL_P(str)) {
         char *fmt = "Unexpected error occured: [%d].";
         if (warn) {
@@ -708,9 +690,9 @@ check_cl_error(cl_int errcode, int warn)
     } else {
         char *msg = RSTRING_PTR(str);
         if (warn) {
-            rb_warn(msg);
+            rb_warn("%s", msg);
         } else {
-            rb_raise(rb_eOpenCL, msg);            
+            rb_raise(rb_eOpenCL, "CL Error (%d): %s", errcode, msg);           
         }
     }
 }
@@ -722,8 +704,6 @@ static void
 define_class_clerror(void)
 {
     rb_eOpenCL = rb_define_class_under(rcl_mCapi, "CLError", rb_eRuntimeError);
-    rb_define_method(rb_eOpenCL, "initialize", rcl_error_init, 1);
-    rb_define_attr(rb_eOpenCL, "cl_errcode", 1, 0);    
 }
 
 /*
