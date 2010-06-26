@@ -18,11 +18,13 @@
         } \
     } while (0)
 
-#define Expect_Boolean(ro) \
+#define Expect_Boolean(ro, var) \
+    cl_bool var; \
     do { \
         if (ro != Qtrue && ro != Qfalse) \
             rb_raise(rb_eTypeError, \
                     "Expected %s is true or false.", #ro); \
+            var = ro == Qtrue ? CL_TRUE : CL_FALSE; \
     } while (0)
 
 #define Expect_Fixnum(ro) \

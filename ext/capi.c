@@ -1293,12 +1293,12 @@ rcl_command_queue_info(VALUE self, VALUE command_queue_info)
 static VALUE
 rcl_command_queue_set_property(VALUE self, VALUE props, VALUE yesno)
 {
-    Expect_Boolean(yesno);
+    Expect_Boolean(yesno, yn);
     
     cl_command_queue q = CommandQueue_Ptr(self);
     cl_command_queue_properties pval = NUM2UINT(props);
     
-    cl_int res = clSetCommandQueueProperty(q, pval, yesno, NULL);
+    cl_int res = clSetCommandQueueProperty(q, pval, yn, NULL);
     Check_And_Raise(res);
     
     return self;
@@ -1382,7 +1382,7 @@ rcl_cq_enqueue_read_buffer(VALUE self, VALUE buffer, VALUE blocking_read,
                            VALUE offset, VALUE size, VALUE host_ptr, VALUE events)
 {
     Extract_Mem_Object(buffer, buf);    
-    Expect_Boolean(blocking_read);
+    Expect_Boolean(blocking_read, br);
     Extract_Size(offset, os);
     Extract_Size(size, cb);
     Extract_Pointer(host_ptr, ptr);
@@ -1392,9 +1392,9 @@ rcl_cq_enqueue_read_buffer(VALUE self, VALUE buffer, VALUE blocking_read,
     cl_event e;
     cl_event *ep = blocking_read ? NULL : &e;
     
-    cl_int res = clEnqueueReadBuffer(cq, buf, blocking_read, os, cb, ptr, num_evt, pevts, ep);
+    cl_int res = clEnqueueReadBuffer(cq, buf, br, os, cb, ptr, num_evt, pevts, ep);
     Check_And_Raise(res);
-    
+
     return blocking_read ? self : REvent(e);
 }
 
@@ -1403,7 +1403,7 @@ rcl_cq_enqueue_write_buffer(VALUE self, VALUE buffer, VALUE blocking_write,
                             VALUE offset, VALUE size, VALUE host_ptr, VALUE events)
 {
     Extract_Mem_Object(buffer, buf);    
-    Expect_Boolean(blocking_write);
+    Expect_Boolean(blocking_write, bw);
     Extract_Size(offset, os);
     Extract_Size(size, cb);
     Extract_Pointer(host_ptr, ptr);
@@ -1412,10 +1412,9 @@ rcl_cq_enqueue_write_buffer(VALUE self, VALUE buffer, VALUE blocking_write,
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_event e;
     cl_event *ep = blocking_write ? NULL : &e;
-    
-    cl_int res = clEnqueueWriteBuffer(cq, buf, blocking_write, os, cb, ptr, num_evt, pevts, ep);
+    cl_int res = clEnqueueWriteBuffer(cq, buf, bw, os, cb, ptr, num_evt, pevts, ep);
     Check_And_Raise(res);
-    
+
     return blocking_write ? self : REvent(e);
 }
 
@@ -1445,7 +1444,7 @@ rcl_cq_enqueue_read_image(VALUE self, VALUE image, VALUE blocking_read,
                           VALUE host_ptr, VALUE events)
 {
     Extract_Mem_Object(image, img);
-    Expect_Boolean(blocking_read);
+    Expect_Boolean(blocking_read, br);
     Extract_Vector(origin, ovec);
     Extract_Vector(region, rvec);
     Extract_Size(row_pitch, rp);
@@ -1457,7 +1456,7 @@ rcl_cq_enqueue_read_image(VALUE self, VALUE image, VALUE blocking_read,
     cl_event *ep = blocking_read ? NULL : &e;
     
     cl_command_queue cq = CommandQueue_Ptr(self);
-    cl_int res = clEnqueueReadImage(cq, img, blocking_read, ovec, rvec, rp, sp, hp, num_evt, pevts, ep);
+    cl_int res = clEnqueueReadImage(cq, img, br, ovec, rvec, rp, sp, hp, num_evt, pevts, ep);
     Check_And_Raise(res);
 
     return blocking_read ? self : REvent(e);
@@ -1470,7 +1469,7 @@ rcl_cq_enqueue_write_image(VALUE self, VALUE image, VALUE blocking_write,
                            VALUE host_ptr, VALUE events)
 {
     Extract_Mem_Object(image, img);
-    Expect_Boolean(blocking_write);
+    Expect_Boolean(blocking_write, bw);
     Extract_Vector(origin, ovec);
     Extract_Vector(region, rvec);
     Extract_Size(row_pitch, rp);
@@ -1482,7 +1481,7 @@ rcl_cq_enqueue_write_image(VALUE self, VALUE image, VALUE blocking_write,
     cl_event *ep = blocking_write ? NULL : &e;
     
     cl_command_queue cq = CommandQueue_Ptr(self);
-    cl_int res = clEnqueueWriteImage(cq, img, blocking_write, ovec, rvec, rp, sp, hp, num_evt, pevts, ep);
+    cl_int res = clEnqueueWriteImage(cq, img, bw, ovec, rvec, rp, sp, hp, num_evt, pevts, ep);
     Check_And_Raise(res);
 
     return blocking_write ? self : REvent(e);
@@ -1551,7 +1550,7 @@ rcl_cq_enqueue_map_buffer(VALUE self, VALUE mem_obj, VALUE blocking_map,
                           VALUE events)
 {
     Extract_Mem_Object(mem_obj, mo);
-    Expect_Boolean(blocking_map);
+    Expect_Boolean(blocking_map, bm);
     Expect_Fixnum(flags);
     cl_mem_flags mf = FIX2INT(flags);
     Extract_Size(offset, os);
@@ -1563,7 +1562,7 @@ rcl_cq_enqueue_map_buffer(VALUE self, VALUE mem_obj, VALUE blocking_map,
     
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res;
-    void *ptr = clEnqueueMapBuffer(cq, mo, blocking_map, mf, os, sz, num_evt, pevts, pe, &res);
+    void *ptr = clEnqueueMapBuffer(cq, mo, bm, mf, os, sz, num_evt, pevts, pe, &res);
     Check_And_Raise(res);
     
     VALUE ret = rcl_create_mapped_pointer(ptr, sz);
@@ -1588,7 +1587,7 @@ rcl_cq_enqueue_map_image(VALUE self, VALUE image, VALUE blocking_map,
                          VALUE events)
 {
     Extract_Mem_Object(image, img);
-    Expect_Boolean(blocking_map);
+    Expect_Boolean(blocking_map, bm);
     Expect_Fixnum(flags);
     cl_mem_flags mf = FIX2INT(flags);
     
@@ -1606,7 +1605,7 @@ rcl_cq_enqueue_map_image(VALUE self, VALUE image, VALUE blocking_map,
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res;
     
-    void *ptr = clEnqueueMapImage(cq, img, blocking_map, mf, ovec, rvec, &row_pitch, &slice_pitch, num_evt, pevts, ep, &res);
+    void *ptr = clEnqueueMapImage(cq, img, bm, mf, ovec, rvec, &row_pitch, &slice_pitch, num_evt, pevts, ep, &res);
     Check_And_Raise(res);
     
     // MUST: compute the size of mapped memory.
@@ -1852,7 +1851,7 @@ rcl_sampler_init(VALUE self, VALUE context, VALUE normalized_coords,
 {
     cl_context cxt = Context_Ptr(context);
     
-    Expect_Boolean(normalized_coords);    
+    Expect_Boolean(normalized_coords, nc);    
     
     Expect_RCL_Const(addressing_mode);
     Expect_RCL_Const(filter_mode);    
@@ -1860,7 +1859,7 @@ rcl_sampler_init(VALUE self, VALUE context, VALUE normalized_coords,
     cl_filter_mode fm = FIX2UINT(filter_mode);
     
     cl_int res;
-    cl_sampler s = clCreateSampler(cxt, normalized_coords, am, fm, &res);
+    cl_sampler s = clCreateSampler(cxt, nc, am, fm, &res);
     Check_And_Raise(res);
     
     return Data_Wrap_Struct(rcl_cSampler, 0, rcl_sampler_free, s);
