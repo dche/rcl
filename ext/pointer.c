@@ -388,7 +388,7 @@ static inline VALUE Native2Ruby(ID type, void *address)
 typedef struct {
     
     int8_t  *alloc_address;
-    void    *address;           // FIXME: can't hold double in 32-bit machine.
+    void    *address;
     size_t   size;              // in number of elements, not in byte.
     size_t   type_size;
     ID       type;
@@ -396,6 +396,7 @@ typedef struct {
 } rcl_pointer_t;
 
 #define BytesOf(p)    (p->size * p->type_size)
+#define Need_Alloc(p) (BytesOf(p) > sizeof(intptr_t))
 
 static inline void
 Alloc_Memory(rcl_pointer_t *p)
@@ -437,11 +438,10 @@ Pointer_Address(VALUE ptr)
 static inline void *
 Element_Address(rcl_pointer_t *ptr, size_t index)
 {
+    assert(index < ptr->size);
     if (ptr->alloc_address == NULL) {
-        assert(index == 0);
         return &(ptr->address);
     } else {
-        assert(index < ptr->size);
         return (void *)((int8_t *)(ptr->address) + index * ptr->type_size);
     }
 }
@@ -526,7 +526,7 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
     p->size = FIX2UINT(size);
     p->type_size = Type_Size(p->type);
 
-    if (Is_Type_Vector(p->type) || p->size > 1) {    
+    if (Need_Alloc(p)) {    
         Alloc_Memory(p);
     }
     return rcl_pointer_clear(self);
@@ -551,7 +551,7 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
     copy_p->type_size = orig_p->type_size;
 
     if (orig_p->alloc_address == NULL) {
-        assert(copy_p->size == 1);
+        assert(!Need_Alloc(copy_p));
         copy_p->address = orig_p->address;
     } else {
         Alloc_Memory(copy_p);        
@@ -730,8 +730,8 @@ rcl_pointer_slice(VALUE self, VALUE start, VALUE size)
     hp->size = sz;
     hp->type_size = p->type_size;
     
-    if (p->size == 1) {
-        assert(p->alloc_address == NULL);
+    if (p->alloc_address == NULL) {
+        assert(!Need_Alloc(hp));
         hp->address = p->address;
     } else {
         Alloc_Memory(hp);
