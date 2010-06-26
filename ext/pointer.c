@@ -759,6 +759,7 @@ rcl_create_mapped_pointer(void *address, size_t size)
     return mp;
 }
 
+// references by rcl_cq_enqueu_unmap_mem_object
 void
 rcl_invalidate_mapped_pointer(VALUE ptr)
 {
