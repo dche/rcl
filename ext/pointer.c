@@ -639,6 +639,18 @@ rcl_pointer_size(VALUE self)
 
 /*
  * call-seq:
+ *      HostPointer#byte_size   -> aInteger
+ *
+ * Returns the size of the receiver in byte.
+ */
+static VALUE
+rcl_pointer_byte_size(VALUE self)
+{
+    return ULONG2NUM(Pointer_Size(self));
+}
+
+/*
+ * call-seq:
  *      HostPointer#free
  *
  * Free the memory the receiver manages.
@@ -787,6 +799,7 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cPointer, "address", rcl_pointer_address, 0);
     rb_define_method(rcl_cPointer, "type", rcl_pointer_type, 0);
     rb_define_method(rcl_cPointer, "size", rcl_pointer_size, 0);
+    rb_define_method(rcl_cPointer, "byte_size", rcl_pointer_byte_size, 0);
     rb_define_method(rcl_cPointer, "free", rcl_pointer_free, 0);
     rb_define_method(rcl_cPointer, "clear", rcl_pointer_clear, 0);
     rb_define_method(rcl_cPointer, "copy_from", rcl_pointer_copy_from, 1);
@@ -800,5 +813,6 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cMappedPointer, "address", rcl_pointer_address, 0);
     rb_define_method(rcl_cMappedPointer, "type", rcl_pointer_type, 0);
     rb_define_method(rcl_cMappedPointer, "size", rcl_pointer_size, 0);
+    rb_define_method(rcl_cMappedPointer, "byte_size", rcl_pointer_byte_size, 0);
     rb_define_method(rcl_cMappedPointer, "clear", rcl_pointer_clear, 0);
 }
