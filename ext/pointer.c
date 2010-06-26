@@ -609,7 +609,7 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
 static VALUE
 rcl_pointer_address(VALUE self)
 {    
-    cl_ulong addr = (cl_ulong)Pointer_Address(self);
+    intptr_t addr = (intptr_t)Pointer_Address(self);
     return addr == 0 ? Qnil : LONG2FIX(addr);
 }
 
