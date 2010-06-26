@@ -592,7 +592,7 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
     rcl_pointer_t *p = Pointer_Ptr(self);
     Extract_Size(index, i);
     
-    if (p->size == 0 || i >= p->size) {
+    if (i >= p->size) {
         rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
     }
     Ruby2Native(p->type, Element_Address(p, i), value);
@@ -627,7 +627,7 @@ rcl_pointer_type(VALUE self)
 
 /*
  * call-seq:
- *      HostPointer#size    -> 1
+ *      HostPointer#size    -> aInteger
  * 
  * Returns the size of the receiver.
  */
