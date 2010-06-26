@@ -1367,7 +1367,7 @@ rcl_finish(VALUE self)
                 var[0] = var[1] = var[2] = 0; \
             } else { \
                 if (RARRAY_LEN(vec) < 3) { \
-                    rb_raise(rb_eArgError, "Expected array lenth is 3, but got %d.", RARRAY_LEN(vec)); \
+                    rb_raise(rb_eArgError, "Expected array lenth is 3, but got %ld.", RARRAY_LEN(vec)); \
                 } \
                 for (int i = 0; i < 3; i++) { \
                     VALUE n = rb_ary_entry(vec, i); \
@@ -1556,6 +1556,14 @@ rcl_cq_enqueue_copy_buffer_to_image(VALUE self, VALUE src_buffer, VALUE dst_imag
     return self;
 }
 
+/*
+ * call-seq:
+ *      CommandQueue#enqueue_map_buffer(aMemObj, yesno, map_flags, offset, size, events) -> [aMappedPointer{, event}]
+ *
+ * Returns an Array in which the first element is a MappedPointer.
+ * If blocking_map is false, the second element is the event for the map
+ * command.
+ */
 static VALUE
 rcl_cq_enqueue_map_buffer(VALUE self, VALUE mem_obj, VALUE blocking_map,
                           VALUE flags, VALUE offset, VALUE cb,
@@ -1577,10 +1585,11 @@ rcl_cq_enqueue_map_buffer(VALUE self, VALUE mem_obj, VALUE blocking_map,
     void *ptr = clEnqueueMapBuffer(cq, mo, bm, mf, os, sz, num_evt, pevts, pe, &res);
     Check_And_Raise(res);
     
-    VALUE ret = rcl_create_mapped_pointer(ptr, sz);
+    VALUE mp = rcl_create_mapped_pointer(ptr, sz);
+    VALUE ret = rb_ary_new();
+    rb_ary_push(ret, mp);
     if (!blocking_map) {
-        VALUE ary = rb_ary_new3(2, ret, REvent(e));
-        ret = ary;
+        rb_ary_push(ret, REvent(e));
     }
     return ret;
 }
@@ -1635,14 +1644,16 @@ rcl_cq_enqueue_unmap_mem_obj(VALUE self, VALUE mem_obj, VALUE mapped_ptr,
     if (CLASS_OF(mapped_ptr) != rcl_cMappedPointer) {
         rb_raise(rb_eArgError, "Expected argument 2 is a MappedPointer.");
     }
-    void *mp = Pointer_Address(mapped_ptr);
+    void *mp = Pointer_Address(mapped_ptr);    
     Extract_Wait_For_Events(events, num_evt, pevts);
     
+    cl_event e;
     cl_command_queue cq = CommandQueue_Ptr(self);
-    cl_int res = clEnqueueUnmapMemObject(cq, mo, mp, num_evt, pevts, NULL);
+    cl_int res = clEnqueueUnmapMemObject(cq, mo, mp, num_evt, pevts, &e);
     Check_And_Raise(res);
     
-    return self;
+    rcl_invalidate_mapped_pointer(mapped_ptr);
+    return REvent(e);
 }
 
 /*
@@ -2056,32 +2067,40 @@ define_class_event(void)
 static VALUE
 rcl_mem_alloc(VALUE klass)
 {
-    return RMemory(NULL);
-}
-
-/*
- * call-seq:
- *      Memory.new(context, CL_MEM_FLAG_READ_ONLY, :buffer, aPointer)
- *      Memory.new(context, CL_MEM_FLAG_READ_WRITE, :image_2d, format, 200, 300, 16, nil)
- */
-static VALUE
-rcl_mem_init(int argc, VALUE *argv, VALUE self)
-{   
-    return self;
+    rb_raise(rb_eRuntimeError, "Can't instantiate memory object without context.");
+    return Qnil;
 }
 
 static VALUE
 rcl_mem_init_copy(VALUE copy, VALUE orig)
 {
-    return Qnil;
+    if (copy == orig) return copy;
+    Expect_RCL_Type(orig, Memory);
+    
+    rcl_mem_t *copy_p, *orig_p;
+    Data_Get_Struct(copy, rcl_mem_t, copy_p);
+    Data_Get_Struct(orig, rcl_mem_t, orig_p);
+    
+    if (copy_p->mem == orig_p->mem) return copy;
+    
+    cl_int res;
+    if (copy_p->mem != NULL) {
+        res = clReleaseMemObject(copy_p->mem);
+        Check_And_Raise(res);
+    }
+    res = clRetainMemObject(orig_p->mem);
+    Check_And_Raise(res);
+    
+    copy_p->mem = orig_p->mem;
+    return copy;
 }
 
 /*
  * call-seq:
- *      Memory.create_buffer(aContext, CL_MEM_FLAG_READ_WRITE, aPointer)
+ *      Memory.create_buffer(aContext, CL_MEM_FLAG_READ_WRITE, 0, aPointer)
  */
 static VALUE
-rcl_mem_create_buffer(VALUE mod, VALUE context, VALUE flags, VALUE host_ptr)
+rcl_mem_create_buffer(VALUE mod, VALUE context, VALUE flags, VALUE size, VALUE host_ptr)
 {
     Expect_RCL_Type(context, Context);
     Expect_Fixnum(flags);
@@ -2090,10 +2109,9 @@ rcl_mem_create_buffer(VALUE mod, VALUE context, VALUE flags, VALUE host_ptr)
     cl_context cxt = Context_Ptr(context);
     cl_mem_flags mf = FIX2INT(flags);
     
-    size_t sz = 0;
+    Extract_Size(size, sz);
     void *hp = NULL;
     if (!NIL_P(host_ptr)) {
-        Expect_RCL_Type(host_ptr, Pointer);
         sz = Pointer_Size(host_ptr);
         hp = Pointer_Address(host_ptr);
     }
@@ -2170,7 +2188,7 @@ rcl_mem_info(VALUE self, VALUE param_name)
     
     cl_mem_info mi = FIX2UINT(param_name);
     cl_mem m = Memory_Ptr(self);
-    cl_ulong param_value;
+    intptr_t param_value;
     
     cl_int res = clGetMemObjectInfo(m, mi, sizeof(intptr_t), &param_value, NULL);
     Check_And_Raise(res);
@@ -2179,9 +2197,9 @@ rcl_mem_info(VALUE self, VALUE param_name)
     case CL_MEM_TYPE:
     case CL_MEM_FLAGS:
     case CL_MEM_SIZE:
-    case CL_MEM_HOST_PTR:
     case CL_MEM_MAP_COUNT:
     case CL_MEM_REFERENCE_COUNT:
+    case CL_MEM_HOST_PTR:   // CHECK: Should be wrapped to a HostPoiner? MappedPointer? No.
         return LONG2FIX(param_value);
     case CL_MEM_CONTEXT:
         return RContext((cl_context)param_value);
@@ -2265,11 +2283,10 @@ define_class_memory(void)
 {
     rcl_cMemory = rb_define_class_under(rcl_mCapi, "Memory", rb_cObject);
     rb_define_alloc_func(rcl_cMemory, rcl_mem_alloc);
-    rb_define_method(rcl_cMemory, "initialize", rcl_mem_init, -1);
     rb_define_method(rcl_cMemory, "initialize_copy", rcl_mem_init_copy, 1);
-    rb_define_singleton_method(rcl_cMemory, "create_buffer", rcl_mem_create_buffer, 3);
-    rb_define_singleton_method(rcl_cMemory, "create_image2d", rcl_mem_create_image_2d, 7);
-    rb_define_singleton_method(rcl_cMemory, "create_image3d", rcl_mem_create_image_3d, 9);
+    rb_define_singleton_method(rcl_cMemory, "create_buffer", rcl_mem_create_buffer, 4);
+    rb_define_singleton_method(rcl_cMemory, "create_image_2d", rcl_mem_create_image_2d, 7);
+    rb_define_singleton_method(rcl_cMemory, "create_image_3d", rcl_mem_create_image_3d, 9);
     rb_define_method(rcl_cMemory, "info", rcl_mem_info, 1);
     rb_define_method(rcl_cMemory, "image_info", rcl_mem_image_info, 1);
 
