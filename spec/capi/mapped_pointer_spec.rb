@@ -56,6 +56,8 @@ describe MappedPointer do
     cq.finish
     mp2.should.be.null
     mp2.size.should.equal 0
+    should.not.raise(Exception) { mp2.cast_to :cl_uchar }
+    mp2.size.should.equal 0
   end
   
   it "should be invalidate after unmap." do
