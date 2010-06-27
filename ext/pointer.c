@@ -395,15 +395,16 @@ typedef struct {
     
 } rcl_pointer_t;
 
-#define BytesOf(p)    (p->size * p->type_size)
-#define Need_Alloc(p) (BytesOf(p) > sizeof(intptr_t))
+#define BytesOf(p)      (p->size * p->type_size)
+#define Need_Alloc(p)   (BytesOf(p) > sizeof(intptr_t))
+#define AllocSizeOf(p)  (BytesOf(p) + 0x80)
 
 static inline void
 Alloc_Memory(rcl_pointer_t *p)
 {
     assert(p->size > 0 && p->type_size > 0);
 
-    size_t alloc_sz = BytesOf(p) + 0x80;     // align in 128bytes.
+    size_t alloc_sz = AllocSizeOf(p);     // align in 128bytes.
     p->alloc_address = (int8_t *)ALLOC_N(int8_t, alloc_sz);
     bzero(p->alloc_address, alloc_sz);
     
@@ -493,7 +494,7 @@ rcl_pointer_clear(VALUE self)
         if (p->alloc_address == NULL) {
             p->address = 0;
         } else {
-            bzero(p->address, BytesOf(p));
+            bzero(p->alloc_address, AllocSizeOf(p));
         }
     }
     return self;
