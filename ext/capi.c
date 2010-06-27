@@ -1511,11 +1511,12 @@ rcl_cq_enqueue_copy_image(VALUE self, VALUE src_image, VALUE dst_image,
     Extract_Vector(region, rvec);
     Extract_Wait_For_Events(events, num_evt, pevts);
     
+    cl_event e;
     cl_command_queue cq = CommandQueue_Ptr(self);
-    cl_int res = clEnqueueCopyImage(cq, simg, dimg, sovec, dovec, rvec, num_evt, pevts, NULL);
+    cl_int res = clEnqueueCopyImage(cq, simg, dimg, sovec, dovec, rvec, num_evt, pevts, &e);
     Check_And_Raise(res);
     
-    return self;
+    return REvent(e);
 }
 
 static VALUE
@@ -1530,11 +1531,12 @@ rcl_cq_enqueue_copy_image_to_buffer(VALUE self, VALUE src_image, VALUE dst_buffe
     Extract_Size(dst_offset, cb);
     Extract_Wait_For_Events(events, num_evt, pevts);
     
+    cl_event e;
     cl_command_queue cq = CommandQueue_Ptr(self);
-    cl_int res = clEnqueueCopyImageToBuffer(cq, img, buf, sovec, rvec, cb, num_evt, pevts, NULL);
+    cl_int res = clEnqueueCopyImageToBuffer(cq, img, buf, sovec, rvec, cb, num_evt, pevts, &e);
     Check_And_Raise(res);
     
-    return self;
+    return REvent(e);
 }
 
 static VALUE
@@ -1549,11 +1551,12 @@ rcl_cq_enqueue_copy_buffer_to_image(VALUE self, VALUE src_buffer, VALUE dst_imag
     Extract_Vector(region, rvec);
     Extract_Wait_For_Events(events, num_evt, pevts);
     
+    cl_event e;
     cl_command_queue cq = CommandQueue_Ptr(self);
-    cl_int res = clEnqueueCopyBufferToImage(cq, buf, img, cb, sovec, rvec, num_evt, pevts, NULL);
+    cl_int res = clEnqueueCopyBufferToImage(cq, buf, img, cb, sovec, rvec, num_evt, pevts, &e);
     Check_And_Raise(res);
     
-    return self;
+    return REvent(e);
 }
 
 /*
@@ -1673,17 +1676,19 @@ rcl_cq_enqueue_ndrange_kernel(VALUE self, VALUE kernel, VALUE work_dim,
     cl_uint wd = FIX2UINT(work_dim);
     Extract_Wait_For_Events(events, num_evt, pevts);
     
-    // MUST: finish this.
-    size_t gws[3];
-    size_t lws[3];
+    Extract_Vector(global_work_size, gws);
+    Extract_Vector(local_work_size, lws);
     
+    cl_event e;
     cl_kernel k = Kernel_Ptr(kernel);
     cl_command_queue cq = CommandQueue_Ptr(self);
     
-    cl_int res = clEnqueueNDRangeKernel(cq, k, wd, NULL, gws, lws, num_evt, pevts, NULL);
+    cl_int res = clEnqueueNDRangeKernel(cq, k, wd, NULL, /* global work offset, must be NULL */
+                                        gws, lws,
+                                        num_evt, pevts, &e);
     Check_And_Raise(res);
     
-    return self;
+    return REvent(e);
 }
 
 static VALUE
@@ -1692,12 +1697,13 @@ rcl_cq_enqueue_task(VALUE self, VALUE kernel, VALUE events)
     Expect_RCL_Type(kernel, Kernel);
     Extract_Wait_For_Events(events, num_evt, pevts);
     
+    cl_event e;
     cl_kernel k = Kernel_Ptr(kernel);
     cl_command_queue cq = CommandQueue_Ptr(self);
-    cl_int res = clEnqueueTask(cq, k, num_evt, pevts, NULL);
+    cl_int res = clEnqueueTask(cq, k, num_evt, pevts, &e);
     Check_And_Raise(res);
     
-    return self;
+    return REvent(e);
 }
 
 static VALUE
