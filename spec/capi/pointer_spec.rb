@@ -215,6 +215,14 @@ describe HostPointer do
     ps.free
     pd.size.should.equal 1
     pd[0].should.equal 0x80008000
+    
+    ps = HostPointer.new :cl_uchar, 2
+    pd = HostPointer.new :cl_uchar, 2
+    ps[0] = 1
+    ps[1] = 2
+    pd.copy_from ps
+    pd[0].should.equal 1
+    pd[1].should.equal 2
   end
   
   the 'slice() method' do
@@ -229,6 +237,14 @@ describe HostPointer do
     pd[3].should.equal [0, 0]
     pd[1].should.equal [3, 4]
     pd[2].should.equal [0xFFE, 0xEEF]
+    
+    ps = HostPointer.new :cl_uchar, 3
+    ps[0] = 11
+    ps[1] = 12
+    ps[2] = 13
+    pd = ps.slice(1, 1)
+    pd.size.should.equal 1
+    pd[0].should.equal 12
   end
   
   it 'should be albe to slice with size 1' do
