@@ -52,8 +52,12 @@
 #define Extract_Size(sizet, var) \
     size_t var; \
     do { \
-        Expect_Fixnum(sizet); \
-        var = FIX2UINT(sizet); \
+        if (NIL_P(sizet)) { \
+            var = 0; \
+        } else { \
+            Expect_Fixnum(sizet); \
+            var = FIX2UINT(sizet); \
+        } \
     } while (0)
 
 #endif  // RCL_CAPI_H__
