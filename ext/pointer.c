@@ -441,7 +441,7 @@ Element_Address(rcl_pointer_t *ptr, size_t index)
 {
     assert(index < ptr->size);
     if (ptr->alloc_address == NULL) {
-        return &(ptr->address);
+        return (void *)((int8_t *)&(ptr->address) + index * ptr->type_size);
     } else {
         return (void *)((int8_t *)(ptr->address) + index * ptr->type_size);
     }
@@ -694,7 +694,7 @@ rcl_pointer_copy_from(VALUE self, VALUE src)
     if (p->type != sp->type || p->size != sp->size) {
         rb_raise(rb_eRuntimeError, "Size or type of source and target mismatch.");
     }
-    if (p->size == 1) {
+    if (p->alloc_address == NULL) {
         p->address = sp->address;
     } else {
         memcpy(p->address, sp->address, BytesOf(p));
@@ -731,13 +731,10 @@ rcl_pointer_slice(VALUE self, VALUE start, VALUE size)
     hp->size = sz;
     hp->type_size = p->type_size;
     
-    if (p->alloc_address == NULL) {
-        assert(!Need_Alloc(hp));
-        hp->address = p->address;
-    } else {
+    if (p->alloc_address != NULL) {
         Alloc_Memory(hp);
-        memcpy(hp->address, (const void *)((int8_t *)p->address + st * p->type_size), BytesOf(hp));
     }
+    memcpy(Element_Address(hp, 0), Element_Address(p, st), BytesOf(hp));
     
     return ro;
 }
