@@ -28,7 +28,7 @@ EOF
 
 describe Program do
   before do
-    @cxt = Context.new(nil, CL_DEVICE_TYPE_CPU)
+    @cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_CPU)
   end
   
   the 'initializer' do
