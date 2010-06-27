@@ -292,6 +292,7 @@ static inline void Ruby2Native(ID type, void *address, VALUE value)
         return convertor(*(c_type *)address); \
     }
 
+// TODO: add support for BigEndien.
 #define IF_VECTOR_TYPE_TO_RUBY(base_c_type, n, convertor) \
     if (type == id_type_##base_c_type##n) { \
         VALUE ret = rb_ary_new2(n); \
@@ -576,7 +577,7 @@ rcl_pointer_aref(VALUE self, VALUE index)
     
     if (p->size == 0 || i > p->size - 1) {
         rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
-    }    
+    }
     return Native2Ruby(p->type, Element_Address(p, i));
 }
 
