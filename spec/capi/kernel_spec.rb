@@ -34,4 +34,11 @@ describe Kernel do
     k.info(CL_KERNEL_FUNCTION_NAME).should.equal 'dot_product'
     k.info(CL_KERNEL_NUM_ARGS).should.equal 3
   end
+  
+  the 'workgroup_info()' do
+    k = @prog.create_kernels.first
+    lws = k.workgroup_info(@cxt.devices.first, CL_KERNEL_WORK_GROUP_SIZE)
+    lws.should.not.equal 0
+    puts lws
+  end
 end
