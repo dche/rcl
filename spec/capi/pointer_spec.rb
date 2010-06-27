@@ -44,6 +44,9 @@ describe HostPointer do
   
   the 'size()' do
     @p.size.should.equal 1024
+    
+    p = HostPointer.new :cl_uint, 1
+    p.size.should.equal 1
   end
   
   the 'free()' do
@@ -107,10 +110,7 @@ describe HostPointer do
       p[0] = 1
       p[0].should.equal 1
       p = HostPointer.new t, 6
-      p[1] = 23
-      p[2] = 34
-      p[3] = 45
-      p[4] = 56
+      p.assign [23, 34, 45, 56], 1
       p[1].should.equal 23
       p[2].should.equal 34
       p[3].should.equal 45
@@ -239,9 +239,7 @@ describe HostPointer do
     pd[2].should.equal [0xFFE, 0xEEF]
     
     ps = HostPointer.new :cl_uchar, 3
-    ps[0] = 11
-    ps[1] = 12
-    ps[2] = 13
+    ps.assign [11, 12, 13]
     pd = ps.slice(1, 1)
     pd.size.should.equal 1
     pd[0].should.equal 12
@@ -275,5 +273,33 @@ describe HostPointer do
     p[0] = 97
     p.clear
     p[0].should.equal 0
+    
+    p = HostPointer.new(:cl_uint2, 3)
+    p[2] = [1, 2]
+    p.clear
+    p[2].should.equal [0, 0]
+  end
+  
+  the 'assign() method' do
+    p = HostPointer.new :cl_uint, 2
+    p.assign [1, 2]
+    p[0].should.equal 1
+    p[1].should.equal 2
+    p.assign [3, 4], 2
+    p[0].should.equal 1
+    p[1].should.equal 2
+    p.assign [3], 0
+    p[0].should.equal 3
+    p[1].should.equal 2
+    p.assign [0, 0], 1
+    p[0].should.equal 3
+    p[1].should.equal 0
+    
+    p = HostPointer.new :cl_uchar, 7
+    p.assign [1, 2]
+    p[0].should.equal 1
+    p[1].should.equal 2
+    p.assign [0xef, 0xef, 0xef], 6
+    p[6].should.equal 0xef 
   end
 end
