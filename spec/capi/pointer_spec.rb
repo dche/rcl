@@ -280,8 +280,22 @@ describe HostPointer do
     p[2].should.equal [0, 0]
   end
   
+  the 'assing_byte_string() method' do
+    p = HostPointer.new :cl_uchar4, 1
+    bytes = [1, 2, 3, 4].pack('C4')
+    p.assign_byte_string bytes, 0
+    p[0].should.equal [4, 3, 2, 1]
+    
+    should.raise(ArgumentError) { p.assign_byte_string "abc", 0 }
+    should.not.raise(ArgumentError) { p.assign_byte_string "abcd", 0 }
+    p[0].should.equal [100, 99, 98, 97]
+    should.raise(ArgumentError) { p.assign_byte_string [1, 2, 3, 4], 0}
+    should.raise(ArgumentError) { p.assign_byte_string bytes, 1}
+    p.size.should.equal 1
+  end
+  
   the 'assign() method' do
-    p = HostPointer.new :cl_uint, 2
+    p = HostPointer.new :cl_uint, 8
     p.assign [1, 2]
     p[0].should.equal 1
     p[1].should.equal 2

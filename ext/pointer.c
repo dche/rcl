@@ -606,6 +606,35 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
 
 /*
  * call-seq:
+ *      HostPointer#assign_byte_string(aString, offset) -> the receiver.
+ */
+static VALUE
+rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
+{
+    if (TYPE(value) != T_STRING) {
+        rb_raise(rb_eArgError, "Expected argument 1 is a String.");
+    }
+    
+    rcl_pointer_t *p = Pointer_Ptr(self);
+    Extract_Size(offset, os);
+    if (os >= p->size) {
+        rb_raise(rb_eArgError, "Offset exceeds the boundary.");
+    }
+    
+    void *ptr = RSTRING_PTR(value);
+    size_t sz = RSTRING_LEN(value);
+    if (sz % p->type_size != 0) {
+        rb_raise(rb_eArgError, "Size of byte string does not match the data type of receiver.");
+    }
+    
+    size_t bos = os * p->type_size;
+    size_t cpysz = (BytesOf(p) - bos) > sz ? sz : (BytesOf(p) - bos);
+    memcpy(Element_Address(p, os), ptr, cpysz);
+    return self;
+}
+
+/*
+ * call-seq:
  *      HostPointer#address
  * 
  * Returns an Integer that is the memory address the recever points to.
@@ -837,6 +866,7 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cPointer, "initialize_copy", rcl_pointer_init_copy, 1);
     rb_define_method(rcl_cPointer, "[]", rcl_pointer_aref, 1);
     rb_define_method(rcl_cPointer, "[]=", rcl_pointer_aset, 2);
+    rb_define_method(rcl_cPointer, "assign_byte_string", rcl_pointer_assign_byte_string, 2);
     rb_define_method(rcl_cPointer, "address", rcl_pointer_address, 0);
     rb_define_method(rcl_cPointer, "type", rcl_pointer_type, 0);
     rb_define_method(rcl_cPointer, "size", rcl_pointer_size, 0);
@@ -851,6 +881,7 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cMappedPointer, "initialize_copy", rcl_mapped_pointer_init_copy, 1);
     rb_define_method(rcl_cMappedPointer, "[]", rcl_pointer_aref, 1);
     rb_define_method(rcl_cMappedPointer, "[]=", rcl_pointer_aset, 2);
+    rb_define_method(rcl_cMappedPointer, "assign_byte_string", rcl_pointer_assign_byte_string, 2);
     rb_define_method(rcl_cMappedPointer, "address", rcl_pointer_address, 0);
     rb_define_method(rcl_cMappedPointer, "type", rcl_pointer_type, 0);
     rb_define_method(rcl_cMappedPointer, "size", rcl_pointer_size, 0);
