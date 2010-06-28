@@ -202,7 +202,7 @@ Type_Size(ID id)
         for (int i = 0; i < n; i++) { \
             VALUE v = rb_ary_entry(value, i); \
             expector(v); \
-            ptr[n - i + 1] = (base_c_type)convertor(v); \
+            ptr[n - i - 1] = (base_c_type)convertor(v); \
         } \
     }
     
@@ -298,7 +298,7 @@ static inline void Ruby2Native(ID type, void *address, VALUE value)
         VALUE ret = rb_ary_new2(n); \
         base_c_type *ptr = (base_c_type *)address; \
         for (int i = 0; i < n; i++) { \
-            rb_ary_push(ret, convertor(ptr[n - i + 1])); \
+            rb_ary_push(ret, convertor(ptr[n - i - 1])); \
         } \
         return ret; \
     }
@@ -526,7 +526,7 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
         rb_raise(rb_eArgError, "Invalid size.");
     }
     p->size = FIX2UINT(size);
-    p->type_size = Type_Size(p->type);
+    p->type_size = Type_Size(p->type);    
 
     if (Need_Alloc(p)) {    
         Alloc_Memory(p);
