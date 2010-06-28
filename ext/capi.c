@@ -1848,7 +1848,7 @@ define_class_command_queue(void)
     rb_define_method(rcl_cCommandQueue, "enqueue_unmap_mem_object", rcl_cq_enqueue_unmap_mem_obj, 3);
     
     // execution
-    rb_define_method(rcl_cCommandQueue, "enqueue_NDRange_kernel", rcl_cq_enqueue_ndrange_kernel, 6);
+    rb_define_method(rcl_cCommandQueue, "enqueue_NDRange_kernel", rcl_cq_enqueue_ndrange_kernel, 5);
     rb_define_method(rcl_cCommandQueue, "enqueue_task", rcl_cq_enqueue_task, 2);
     rb_define_method(rcl_cCommandQueue, "enqueue_native_kernel", rcl_cq_enqueue_native_kernel, 0);
     
