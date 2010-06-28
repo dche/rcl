@@ -1779,9 +1779,7 @@ rcl_cq_enqueue_acquire_gl_objects(VALUE self, VALUE mem_objects, VALUE events)
     cl_uint num_mo = RARRAY_LEN(mem_objects);
     if (num_mo == 0) return self;
 
-    cl_uint num_evt = 0;
-    cl_event *pevts = NULL;
-    CL_Pointers(events, Event, cl_event, pevts);
+    Extract_Wait_For_Events(events, num_evt, pevts);
     
     cl_mem *pmos;
     CL_Pointers(mem_objects, Memory, cl_mem, pmos);
@@ -1807,9 +1805,7 @@ rcl_cq_enqueue_release_gl_objects(VALUE self, VALUE mem_objects, VALUE events)
     cl_uint num_mo = RARRAY_LEN(mem_objects);
     if (num_mo == 0) return self;
 
-    cl_uint num_evt = 0;
-    cl_event *pevts = NULL;
-    CL_Pointers(events, Event, cl_event, pevts);
+    Extract_Wait_For_Events(events, num_evt, pevts);
     
     cl_mem *pmos;
     CL_Pointers(mem_objects, Memory, cl_mem, pmos);
