@@ -2207,8 +2207,9 @@ rcl_mem_info(VALUE self, VALUE param_name)
     case CL_MEM_SIZE:
     case CL_MEM_MAP_COUNT:
     case CL_MEM_REFERENCE_COUNT:
+        return UINT2NUM(param_value);
     case CL_MEM_HOST_PTR:   // CHECK: Should be wrapped to a HostPoiner? MappedPointer? No.
-        return LONG2FIX(param_value);
+        return ULONG2NUM(param_value);
     case CL_MEM_CONTEXT:
         return RContext((cl_context)param_value);
     default:
