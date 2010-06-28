@@ -594,7 +594,7 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
     rcl_pointer_t *p = Pointer_Ptr(self);
     Extract_Size(index, i);
     if (NIL_P(value)) {
-        rb_raise(rb_eArgError, "Can't be set to nil.");
+        rb_raise(rb_eArgError, "Value can't be nil.");
     }
     
     if (i >= p->size) {

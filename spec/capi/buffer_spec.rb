@@ -43,7 +43,7 @@ describe Memory do
     
     event = cq.enqueue_read_buffer(mem, false, 0, hp.byte_size, hp, nil)
     cq.enqueue_wait_for_events [event]
-    
+
     hp[0].should.equal [1, 2, 3, 4]
     hp[7].should.equal [4, 3, 2, 1]
   end

@@ -690,7 +690,7 @@ check_cl_error(cl_int errcode, int warn)
     
     VALUE str = rb_hash_aref(rcl_errors, INT2FIX(errcode));    
     if (NIL_P(str)) {
-        char *fmt = "Unexpected error occured: [%d].";
+        char *fmt = "Unexpected error: [%d].";
         if (warn) {
             rb_warn(fmt, errcode);
         } else {
@@ -699,9 +699,9 @@ check_cl_error(cl_int errcode, int warn)
     } else {
         char *msg = RSTRING_PTR(str);
         if (warn) {
-            rb_warn("%s", msg);
+            rb_warn("(%d) %s", errcode, msg);
         } else {
-            rb_raise(rb_eOpenCL, "(%d): %s", errcode, msg);           
+            rb_raise(rb_eOpenCL, "(%d) %s", errcode, msg);           
         }
     }
 }
@@ -2118,12 +2118,13 @@ rcl_mem_create_buffer(VALUE mod, VALUE context, VALUE flags, VALUE size, VALUE h
     cl_mem_flags mf = FIX2INT(flags);
     
     Extract_Size(size, sz);
+
     void *hp = NULL;
     if (!NIL_P(host_ptr)) {
         sz = Pointer_Size(host_ptr);
         hp = Pointer_Address(host_ptr);
     }
-    
+
     cl_int res;
     cl_mem mem = clCreateBuffer(cxt, mf, sz, hp, &res);
     Check_And_Raise(res);

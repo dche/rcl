@@ -39,6 +39,6 @@ describe Kernel do
     k = @prog.create_kernels.first
     lws = k.workgroup_info(@cxt.devices.first, CL_KERNEL_WORK_GROUP_SIZE)
     lws.should.not.equal 0
-    puts lws
+    puts "CL_KERNEL_WORK_GROUP_SIZE: #{lws}"
   end
 end
