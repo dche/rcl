@@ -47,6 +47,12 @@ describe HostPointer do
     
     p = HostPointer.new :cl_uint, 1
     p.size.should.equal 1
+    
+    p = HostPointer.new :cl_float2, 1
+    p.size.should.equal 1
+    p.byte_size.should.equal 8
+    p[0] = [1, 2]
+    p.size.should.equal 1
   end
   
   the 'free()' do
@@ -314,6 +320,6 @@ describe HostPointer do
     p[0].should.equal 1
     p[1].should.equal 2
     p.assign [0xef, 0xef, 0xef], 6
-    p[6].should.equal 0xef 
+    p[6].should.equal 0xef
   end
 end
