@@ -76,4 +76,27 @@ describe MappedPointer do
     mp.should.be.null
     mp.size.should.equal 0
   end
+  
+  the "get/set and assign for allocated pointer." do
+    mem = @cxt.create_buffer(CL_MEM_READ_WRITE, 16, nil)
+    
+    cq = @cxt.create_command_queue
+    mp = cq.enqueue_map_buffer(mem, true, CL_MAP_READ, 0, 16, nil).first
+    
+    mp.assign [1, 2, 3], 3
+    mp[3].should.equal 1
+    mp[4].should.equal 2
+    mp[5].should.equal 3
+    
+    mp.assign [0xfe], 15
+    mp[15].should.equal 0xfe
+    
+    mp.cast_to :cl_ulong
+    mp.clear
+    mp.assign [0xffeeff]
+    mp[0].should.equal 0xffeeff
+    
+    cq.enqueue_unmap_mem_object(mem, mp, nil)
+    cq.finish
+  end
 end
