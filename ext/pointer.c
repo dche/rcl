@@ -1,30 +1,10 @@
 // Copyright (c) 2010, Diego che
 
-#include <math.h>
-#include "capi.h"
+#include "ieee_half_float.h"
 
 extern VALUE rcl_mCapi;
 VALUE rcl_cPointer;
 VALUE rcl_cMappedPointer;
-
-// Macros for float composition
-#define RCL_HALF_BIAS       15
-#define RCL_HALF_MANT_DIG   11
-#define RCL_DOUBLE_BIAS     (CL_DBL_MAX_EXP - 1)
-
-#define Expect_Integer(ro) \
-    do { \
-        if (!FIXNUM_P(ro) && TYPE(ro) != T_BIGNUM) { \
-            rb_raise(rb_eTypeError, "Expected %s is an Integer.", #ro); \
-        } \
-    } while (0)
-
-#define Expect_Float(ro) \
-    do { \
-        if (TYPE(ro) != T_FLOAT && !FIXNUM_P(ro) && TYPE(ro) != T_BIGNUM) { \
-            rb_raise(rb_eTypeError, "Expected %s is of type Float.", #ro); \
-        } \
-    } while (0)
 
 /*
  * CL types.
@@ -206,24 +186,6 @@ Type_Size(ID id)
         } \
     }
     
-static inline cl_half Extract_Half(VALUE ro)
-{
-    Expect_Float(ro);
-
-    uint64_t v = 0;
-    *(double *)&v = NUM2DBL(ro);
-    
-    cl_half h = (v >> 48);
-    uint16_t expo = ((v >> (CL_DBL_MANT_DIG - 1)) & 0x7FF);
-    uint16_t frac = v >> (CL_DBL_MANT_DIG - RCL_HALF_MANT_DIG);
-
-    assert(expo < 0x1F);
-    h += (expo << (RCL_HALF_MANT_DIG - 1)) + frac;
-    
-    TRACE("The binary form of %f is 0x%x\n", *(double *)&v, h);
-    return h;
-}
-
 static inline void Ruby2Native(ID type, void *address, VALUE value)
 {
     assert(!(NIL_P(value) || NULL == address));
@@ -303,22 +265,6 @@ static inline void Ruby2Native(ID type, void *address, VALUE value)
         return ret; \
     }
     
-static inline VALUE rcl_half_float_new(cl_half hf)
-{
-    uint64_t expo = (hf >> 10) & 0x1F;    
-    if (expo == 0x1F) return rb_float_new(nanf(NULL));
-    
-    uint64_t sign = hf & 0x8000 >> 15;
-    uint64_t frac = hf & 0x3FF;
-    
-    // real exponent number.
-    expo = (expo == 0) ? (1 - RCL_HALF_BIAS) : (expo - RCL_HALF_BIAS);
-    expo -= RCL_DOUBLE_BIAS;
-    
-    uint64_t f = (sign << 63) + (expo << (CL_DBL_MANT_DIG - 1)) + (frac << (CL_DBL_MANT_DIG - RCL_HALF_MANT_DIG));
-    return rb_float_new(*(double *)&f);
-}
-
 static inline VALUE Native2Ruby(ID type, void *address)
 {
     assert(NULL != address);

@@ -8,7 +8,7 @@ describe HostPointer do
   before do
     @p = HostPointer.new(:cl_int, 1024);
     @scalar = [:cl_char, :cl_uchar, :cl_short, :cl_ushort, :cl_int, :cl_uint,
-               :cl_long, :cl_ulong, :cl_half, :cl_float]
+               :cl_long, :cl_ulong, :cl_float]
   end
   
   it "should reject invalid type." do
@@ -87,16 +87,6 @@ describe HostPointer do
     @p[1].should.equal 0
     @p[1] = 0x71115811
     @p[1].should.equal 0x71115811
-  end
-  
-  the "half float type" do
-    p = HostPointer.new :cl_half, 1
-    p[0] = 0
-    p[0].should.equal 0
-    p[0] = 1
-    p[0].should.equal 1
-    p[0] = 1.234567
-    ((p[0] - 1.234567).abs < 0.001).should.be.true
   end
   
   the "float type" do
