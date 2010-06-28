@@ -695,7 +695,7 @@ check_cl_error(cl_int errcode, int warn)
         if (warn) {
             rb_warn("%s", msg);
         } else {
-            rb_raise(rb_eOpenCL, "CL Error (%d): %s", errcode, msg);           
+            rb_raise(rb_eOpenCL, "(%d): %s", errcode, msg);           
         }
     }
 }
@@ -1181,7 +1181,7 @@ define_class_image_format(void)
     rb_define_attr(rcl_cImageFormat, "channel_data_type", 1, 0);
     rb_define_method(rcl_cImageFormat, "initialize", rcl_image_format_init, 2);
     rb_define_method(rcl_cContext, "supported_image_formats", 
-                                  rcl_context_supported_image_formats, 2);
+                     rcl_context_supported_image_formats, 2);
                                   
 }
 
@@ -1604,6 +1604,7 @@ rcl_cq_enqueue_map_buffer(VALUE self, VALUE mem_obj, VALUE blocking_map,
  * * A MappedPointer object
  * * The row pitch
  * * The slice pitch
+ * * An Event object if blocking_map is false
  */
 static VALUE
 rcl_cq_enqueue_map_image(VALUE self, VALUE image, VALUE blocking_map,
@@ -1661,13 +1662,12 @@ rcl_cq_enqueue_unmap_mem_obj(VALUE self, VALUE mem_obj, VALUE mapped_ptr,
 
 /*
  * call-seq:
- *      ComamndQueue#enqueue_NDRange_kernel()
+ *      ComamndQueue#enqueue_NDRange_kernel()   -> an Event object
  *
  * Wrapps the +clEnqueueNDRangeKernel()+.
  */
 static VALUE
 rcl_cq_enqueue_ndrange_kernel(VALUE self, VALUE kernel, VALUE work_dim,
-                              VALUE global_work_offset, 
                               VALUE global_work_size, VALUE local_work_size,
                               VALUE events)
 {
@@ -1715,7 +1715,7 @@ rcl_cq_enqueue_native_kernel(VALUE self)
 
 /*
  * call-seq:
- *      CommandQueue#enqueue_marker     -> Event
+ *      CommandQueue#enqueue_marker     -> an Event object
  *
  * Wrapps +clEnqueueMarker()+.
  */
@@ -1733,7 +1733,7 @@ rcl_cq_enqueue_marker(VALUE self)
 
 /*
  * call-seq:
- *      CommandQueue#enqueue_waitfor_events     -> Receiver
+ *      CommandQueue#enqueue_waitfor_events     -> the receiver
  *
  * Wrapps +clEnqueueWaitForEvents()+.
  */
@@ -2221,7 +2221,7 @@ rcl_mem_image_info(VALUE self, VALUE param_name)
     
     cl_image_format imgfmt;
     
-    cl_int res = clGetImageInfo(m, ii, sizeof(cl_image_format), &imgfmt, NULL);
+    cl_int res = clGetImageInfo(m, ii, sizeof(cl_image_format), (void *)&imgfmt, NULL);
     Check_And_Raise(res);
     
     switch (ii) {
@@ -2704,7 +2704,6 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
     } else {
         rb_raise(rb_eArgError, "Invalid kernel argument type.");
     }
-    
     cl_int res = clSetKernelArg(Kernel_Ptr(self), idx, arg_size, arg_ptr);
     Check_And_Raise(res);
     
