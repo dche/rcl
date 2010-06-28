@@ -2239,7 +2239,7 @@ rcl_mem_image_info(VALUE self, VALUE param_name)
     case CL_IMAGE_WIDTH:
     case CL_IMAGE_HEIGHT:
     case CL_IMAGE_DEPTH:
-        return ULONG2NUM((size_t)(size_t *)&imgfmt);
+        return ULONG2NUM(*(size_t *)&imgfmt);
     }
     return Qnil;
 }
