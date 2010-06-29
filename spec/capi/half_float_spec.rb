@@ -37,11 +37,10 @@ describe 'Half precision float conversion' do
     
     minimum_positive_normal = 6.10352e-5
     @p[0] = minimum_positive_normal
-    ((@p[0] - minimum_positive_normal).abs < 1e-4).should.be.true
+    @p[0].should.close(minimum_positive_normal, 1e-4)
     
     minimum_strictly_positive_subnormal = 5.96046e-8
     @p[0] = minimum_strictly_positive_subnormal
-    ((@p[0] - minimum_strictly_positive_subnormal).abs < 1e-4).should.be.true
-    
+    @p[0].should.close(minimum_strictly_positive_subnormal, 1e-4)
   end
 end
