@@ -65,10 +65,9 @@ inline cl_half Extract_Half(VALUE ro)
     Expect_Float(ro);
 
     double v = NUM2DBL(ro);
-    uint32_t *xp = (uint32_t *)&v; xp++;    // Skip low mantissa bits.
+    uint32_t *xp = (uint32_t *)&v; 
+    xp++;    // Skip low mantissa bits.
     uint32_t x = *xp;
-    
-    TRACE("To convert %F to half, and effective bits is %x.\n", v, x);
     
     cl_half h;
     if ((x & 0x7FFFFFFFu) == 0) {   // signed zero.
@@ -123,7 +122,8 @@ inline cl_half Extract_Half(VALUE ro)
 inline VALUE rcl_half_float_new(cl_half h)
 {
     double v = 0;
-    uint32_t *f = ((uint32_t *)&v); f++; // Leave low mantissa bits as 0.
+    uint32_t *f = ((uint32_t *)&v); 
+    f++; // Leave low mantissa bits as 0.
 
     if( (h & 0x7FFFu) == 0 ) {  // Signed zero
         *f = ((uint32_t) h) << 16;  // Return the signed zero
