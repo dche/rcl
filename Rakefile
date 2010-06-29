@@ -7,7 +7,7 @@ include FileUtils
 
 spec = Gem::Specification.new do |s|
   s.name = 'rcl'
-  s.version = '0.1'
+  s.version = '0.2'
   s.summary = 'Exploiting the power of GPUs.'
   s.description = s.summary
   
@@ -16,10 +16,10 @@ spec = Gem::Specification.new do |s|
   
   s.files = %w(README.md LICENSE Rakefile) + 
             FileList['{lib,spec,bm}/**/*.rb'] +
-            FileList['ext/*.{rb,c}']
+            FileList['ext/*.{rb,c,h}']
   s.extensions << 'ext/extconf.rb'
   
-  s.required_ruby_version = '>= 1.8'
+  s.required_ruby_version = '>= 1.9'
   s.platform = Gem::Platform::RUBY
   
   s.add_development_dependency 'bacon', '>= 1.1.0'
@@ -37,7 +37,7 @@ end
 
 dir = File.dirname(__FILE__)
 extdir = File.join(dir, 'ext')
-libdir = File.join(dir, 'lib/capi')
+libdir = File.join(dir, 'lib/opencl')
 
 task :default => :spec
 
