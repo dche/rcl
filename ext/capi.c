@@ -90,7 +90,7 @@ rcl_context_free(void *ptr)
     rcl_context_t *p = (rcl_context_t *)ptr;
     if (p->c != NULL) clReleaseContext(p->c);
 
-    free(p);
+    xfree(p);
 }
 
 static inline cl_context
@@ -137,7 +137,7 @@ rcl_command_queue_free(void *ptr)
     if (p->cq != NULL) {
         clReleaseCommandQueue(p->cq);
     }
-    free(p);
+    xfree(p);
 }
 
 static inline VALUE
@@ -183,7 +183,7 @@ rcl_sampler_free(void *ptr)
     if (p->s != NULL) {
         clReleaseSampler(p->s);
     }
-    free(p);
+    xfree(p);
 }
 
 typedef struct {
@@ -197,7 +197,7 @@ rcl_event_free(void *ptr)
     if (p->e != NULL) {
         clReleaseEvent(p->e);
     }
-    free(p);
+    xfree(p);
 }
 
 static inline VALUE
@@ -231,7 +231,7 @@ rcl_mem_free(void *ptr)
     if (p->mem != NULL) {
         clReleaseMemObject(p->mem);
     }
-    free(p);
+    xfree(p);
 }
 
 static inline cl_mem
@@ -266,7 +266,7 @@ rcl_program_free(void *ptr)
     if (p->p != NULL) {
         clReleaseProgram(p->p);
     }
-    free(ptr);
+    xfree(ptr);
 }
 
 static inline VALUE
@@ -302,7 +302,7 @@ rcl_kernel_free(void *ptr)
     if (p->k != NULL) {
         clReleaseKernel(p->k);
     }
-    free(ptr);
+    xfree(ptr);
 }
 
 static inline VALUE

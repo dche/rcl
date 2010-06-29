@@ -142,8 +142,8 @@ static void define_cl_types(void)
     DEF_CL_VECTOR_TYPE(cl_double16);
     
     // Prevent from change.
-    rb_obj_freeze(rcl_types);
-    rb_obj_freeze(rcl_vector_types);
+    OBJ_FREEZE(rcl_types);
+    OBJ_FREEZE(rcl_vector_types);
     // Prevent from being GC.
     rb_gc_register_address(&rcl_types);
     rb_gc_register_address(&rcl_vector_types);
@@ -404,8 +404,8 @@ Pointer_Size(VALUE ptr)
 static void
 rcl_pointer_free_func(void *ptr)
 {
-    free(((rcl_pointer_t *)ptr)->alloc_address);
-    free(ptr);
+    xfree(((rcl_pointer_t *)ptr)->alloc_address);
+    xfree(ptr);
 }
 
 /*
@@ -645,7 +645,7 @@ rcl_pointer_free(VALUE self)
         return self;
     }   
 
-    free(ptr->alloc_address); 
+    xfree(ptr->alloc_address); 
     ptr->alloc_address = NULL;
     ptr->address = NULL;
     ptr->size = 0;
