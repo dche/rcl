@@ -679,7 +679,8 @@ define_opencl_errors(void)
     RCL_DEF_CL_ERROR(CL_OUT_OF_RESOURCES, "Failed to queue the execution instance of given kernel on the command-queue because of insufficient resources needed to execute the kernel.");
     RCL_DEF_CL_ERROR(CL_PROFILING_INFO_NOT_AVAILABLE, "CL_QUEUE_PROFILING_ENABLE flag is not set for the command-queue and the profiling information is currently not available.");
     
-    rb_obj_freeze(rcl_errors);
+    OBJ_FREEZE(rcl_errors);
+    rb_gc_register_address(&rcl_errors);
 }
 
 
