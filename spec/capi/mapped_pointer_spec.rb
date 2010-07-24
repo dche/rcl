@@ -1,6 +1,7 @@
 
 require File.join(File.dirname(__FILE__), '../spec_helper')
 
+include OpenCL
 include OpenCL::Capi
 
 describe MappedPointer do
@@ -98,5 +99,19 @@ describe MappedPointer do
     
     cq.enqueue_unmap_mem_object(mem, mp, nil)
     cq.finish
+  end
+  
+  the '#clear' do
+    mem = @cxt.create_buffer(CL_MEM_READ_WRITE, 16, nil)
+    
+    cq = @cxt.create_command_queue
+    mp = cq.enqueue_map_buffer(mem, true, CL_MAP_READ, 0, 16, nil).first
+    
+    mp.assign [1, 2, 3], 3
+    mp.clear
+    
+    mp[3].should.equal 0
+    mp[4].should.equal 0
+    mp[5].should.equal 0
   end
 end
