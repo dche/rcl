@@ -2,13 +2,13 @@
 //
 // More rubyish syntax is defined in ruby file. See ../opencl.rb
 // 
-// Copyright (c) 2010, Diego Che
+// Copyright (c) 2010, Che Kenan
 
 #include "capi.h"
 
 // Modules
-static VALUE rcl_mOpenCL;
-VALUE rcl_mCapi;    // referenced in pointer.c
+VALUE rcl_mOpenCL;          // referenced in pointer.c
+static VALUE rcl_mCapi;
 
 // CL objects
 static VALUE rcl_cPlatform;

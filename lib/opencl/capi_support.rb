@@ -80,69 +80,70 @@ module OpenCL
           raise ArgumentError, "Invalid memory object type."
         end
       end
-    end
-    
-    # :nodoc:
-    module PointerHelper
-      # Assign the values of an Array to the receiver.
-      #
-      # Example::
-      #  
-      #  ptr = HostPointer.new :cl_uint, 3
-      #  ptr.assign [1, 2, 3]
-      #  ptr.assign [1], 2      # ptr[2] = 1
-      def assign(ary, offset = 0)
-        case ary
-        when Array
-          offset.upto(self.size - 1) do |i|
-            ai = i - offset
-            break if ai >= ary.size
-
-            self[i] = ary[ai]
-          end
-        when String
-          self.assign_byte_string ary, offset
-        else
-          raise ArgumentError, "Expected Array or String, but got #{ary.class}."
-        end
-        return self
-      end
-      
-      # Returns +true+ if the Pointer is null.
-      def null?
-        self.address.nil?
-      end
-
-      # Always +false+.
-      def eql?(p)
-        false
-      end
-
-      def inspect
-        "#<#{self.class} address=#{self.address} type=#{self.type} size=#{self.size}>"
-      end
-      
-      def to_i
-        self.address
-      end
-    end
-    
-    # A piece of managed memeory region.
+    end   
+  end
+  
+  # :nodoc:
+  module PointerHelper
+    # Assign the values of an Array to the receiver.
     #
-    # +HostPointer+ represents the host memory region. 
-    # To transfor data to/from devices, you must use +HostPointer+ 
-    # to manage (allocate, free and access) the host memory.
-    class HostPointer
-      include PointerHelper
-      
-      def copy_to(p)
-        p.copy_from(self)
-        self
+    # Example::
+    #  
+    #  ptr = HostPointer.new :cl_uint, 3
+    #  ptr.assign [1, 2, 3]
+    #  ptr.assign [1], 2      # ptr[2] = 1
+    def assign(ary, offset = 0)
+      case ary
+      when Array
+        offset.upto(self.size - 1) do |i|
+          ai = i - offset
+          break if ai >= ary.size
+
+          self[i] = ary[ai]
+        end
+      when String
+        self.assign_byte_string ary, offset
+      else
+        raise ArgumentError, "Expected Array or String, but got #{ary.class}."
       end
+      return self
     end
     
-    class MappedPointer
-      include PointerHelper
+    # Returns +true+ if the Pointer is null.
+    def null?
+      self.address.nil?
     end
-  end  
+
+    # Always +false+.
+    def eql?(p)
+      false
+    end
+
+    def inspect
+      "#<#{self.class} address=#{self.address} type=#{self.type} size=#{self.size}>"
+    end
+    
+    def to_i
+      self.address
+    end
+  end
+  
+  # A piece of managed memeory region.
+  #
+  # +HostPointer+ represents the host memory region. 
+  # To transfor data to/from devices, you must use +HostPointer+ 
+  # to manage (allocate, free and access) the host memory.
+  class HostPointer
+    include PointerHelper
+    
+    def copy_to(p)
+      p.copy_from(self)
+      self
+    end
+  end
+  
+  class MappedPointer
+    include PointerHelper
+  end
+  
 end

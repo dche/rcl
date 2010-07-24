@@ -1,8 +1,8 @@
-// Copyright (c) 2010, Diego che
+// Copyright (c) 2010, Che Kenan
 
 #include "ieee_half_float.h"
 
-extern VALUE rcl_mCapi;
+extern VALUE rcl_mOpenCL;
 VALUE rcl_cPointer;
 VALUE rcl_cMappedPointer;
 

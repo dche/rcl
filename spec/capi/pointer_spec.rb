@@ -1,7 +1,7 @@
 
 require File.join(File.dirname(__FILE__), '../spec_helper')
 
-include OpenCL::Capi
+include OpenCL
 
 describe HostPointer do
   
