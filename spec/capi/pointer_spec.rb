@@ -28,7 +28,7 @@ describe HostPointer do
     (@p.address & 0x7F).should.equal 0
   end
   
-  the 'type()' do
+  the '#type' do
     @p.type.should.equal :cl_int
     
     @scalar.each do |t|
@@ -42,7 +42,7 @@ describe HostPointer do
      end
   end
   
-  the 'size()' do
+  the '#size' do
     @p.size.should.equal 1024
     
     p = HostPointer.new :cl_uint, 1
@@ -55,7 +55,7 @@ describe HostPointer do
     p.size.should.equal 1
   end
   
-  the 'free()' do
+  the '#free' do
     p = HostPointer.new :cl_char8, 256
     p.address.should.not.equal 0
     should.not.raise(RuntimeError) { p[0] }
@@ -153,7 +153,7 @@ describe HostPointer do
     p[2].should.equal [1.0, 2.0]
   end
     
-  the 'dup() and clone()' do    
+  the '#dup and #clone' do    
     @p[0] = 4345
     @p[331] = 111
     @p[1023] = 4543
@@ -184,7 +184,7 @@ describe HostPointer do
     q[0].should.equal 1.234
   end
   
-  the 'copy_from() method' do
+  the '#copy_from' do
     ps = HostPointer.new :cl_double, 200
     pd1 = HostPointer.new :cl_double, 200
     pd2 = HostPointer.new :cl_float, 200
@@ -221,7 +221,7 @@ describe HostPointer do
     pd[1].should.equal 2
   end
   
-  the 'slice() method' do
+  the '#slice' do
     ps = HostPointer.new :cl_uint2, 200
     ps[101] = [3, 4]
     ps[102] = [0xFFE, 0xEEF]
@@ -256,7 +256,7 @@ describe HostPointer do
     q[0].should.equal 127
   end
   
-  the 'clear() method' do
+  the '#clear' do
     0.upto(1023) do |i|
       @p[i] = 1025 - i
     end
@@ -276,7 +276,21 @@ describe HostPointer do
     p[2].should.equal [0, 0]
   end
   
-  the 'assing_byte_string() method' do
+  the '#assign_pointer' do
+    src = HostPointer.new :cl_char, 1
+    dst = HostPointer.new :cl_char, 100
+    dst[22].should.equal 0
+    src[0] = 0xef;
+    dst.assign_pointer src.address, 1, 22
+    dst[22].should.equal -17
+    
+    dst1 = HostPointer.new :cl_uchar, 3
+    dst1.assign_pointer src.address, 1, 0
+    dst1[0].should.equal 0xef
+    dst1[1].should.equal 0
+  end
+  
+  the '#assign_byte_string' do
     p = HostPointer.new :cl_uchar4, 1
     bytes = [1, 2, 3, 4].pack('C4')
     p.assign_byte_string bytes, 0
@@ -285,12 +299,12 @@ describe HostPointer do
     should.raise(ArgumentError) { p.assign_byte_string "abc", 0 }
     should.not.raise(ArgumentError) { p.assign_byte_string "abcd", 0 }
     p[0].should.equal [100, 99, 98, 97]
-    should.raise(ArgumentError) { p.assign_byte_string [1, 2, 3, 4], 0}
+    should.raise(TypeError) { p.assign_byte_string [1, 2, 3, 4], 0}
     should.raise(ArgumentError) { p.assign_byte_string bytes, 1}
     p.size.should.equal 1
   end
   
-  the 'assign() method' do
+  the '#assign' do
     p = HostPointer.new :cl_uint, 8
     p.assign [1, 2]
     p[0].should.equal 1
@@ -311,5 +325,24 @@ describe HostPointer do
     p[1].should.equal 2
     p.assign [0xef, 0xef, 0xef], 6
     p[6].should.equal 0xef
+  end
+  
+  the '::wrap_pointer' do
+    p = HostPointer.new :cl_float, 20
+    wp = HostPointer.wrap_pointer p.address, :cl_float, 10
+    wp.should.is_a HostPointer
+    p[0] = 1.1
+    wp[0].should.equal p[0]
+    wp.free
+    wp.size.should.equal 0
+    
+    p = HostPointer.new :cl_short, 1
+    wp = HostPointer.wrap_pointer p.address, :cl_short, 1
+    wp[0].should.equal p[0]
+    p[0] = -32757
+    wp[0].should.equal p[0]
+    wp.free
+    wp.should.be.null
+    p[0].should.equal -32757
   end
 end

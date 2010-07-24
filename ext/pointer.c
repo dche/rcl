@@ -339,11 +339,12 @@ typedef struct {
     size_t   size;              // in number of elements, not in byte.
     size_t   type_size;
     ID       type;
-    
+    int      is_wrapper;
 } rcl_pointer_t;
 
 #define BytesOf(p)      (p->size * p->type_size)
-#define Need_Alloc(p)   (BytesOf(p) > sizeof(intptr_t))
+#define Need_Alloc(p)   (BytesOf(p) > sizeof(intptr_t) && !(p->is_wrapper))
+#define Is_Pointer(p)   (p->alloc_address != NULL || p->is_wrapper)
 #define AllocSizeOf(p)  (BytesOf(p) + 0x80)
 
 static inline void
@@ -376,7 +377,7 @@ Pointer_Address(VALUE ptr)
 {
     rcl_pointer_t *p = Pointer_Ptr(ptr);
     
-    if (p->alloc_address == NULL) {
+    if (!Is_Pointer(p)) {
         return p->size == 0 ? NULL : &(p->address);
     } else {
         return p->address;        
@@ -387,7 +388,7 @@ static inline void *
 Element_Address(rcl_pointer_t *ptr, size_t index)
 {
     assert(index < ptr->size);
-    if (ptr->alloc_address == NULL) {
+    if (!Is_Pointer(ptr)) {
         return (void *)((int8_t *)&(ptr->address) + index * ptr->type_size);
     } else {
         return (void *)((int8_t *)(ptr->address) + index * ptr->type_size);
@@ -404,6 +405,8 @@ Pointer_Size(VALUE ptr)
 static void
 rcl_pointer_free_func(void *ptr)
 {
+    // NOTE: It's safe to free a NULL pointer. So no special case for wrapped
+    // pointer and short values.
     xfree(((rcl_pointer_t *)ptr)->alloc_address);
     xfree(ptr);
 }
@@ -424,6 +427,54 @@ rcl_pointer_alloc(VALUE klass)
     p->size = 0;
     p->type = id_type_cl_uint;
     p->type_size = sizeof(cl_uint);
+    p->is_wrapper = 0;
+
+    return ro;
+}
+
+/*
+ * call-seq:
+ *      HostPointer.wrap(aBuffer.pointer, :cl_float, 2048)
+ *
+ * Wraps a C pointer instead of allocating new memory.
+ *
+ * +wrap()+ is a simple but dangerous optimization for 
+ * reducing memory copying.
+ *
+ * The wrapper is not on charge of releasing memory pointed by the wrapped
+ * C pointer, and accessing the memory through the wrapper after the C pointer
+ * is freed definitely causes a segment fault.
+ *
+ * Sending the wrapper a +free()+ message stops the wrapping.
+ *
+ * See also: +HostPointer#free()+
+ */
+static VALUE
+rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
+{
+    Check_Type(address, T_FIXNUM);
+    void *addr = (void *)NUM2ULONG(address); 
+    
+    Check_Type(type, T_SYMBOL);
+    ID clt = SYM2ID(type);
+    if (!Is_Type_Valid(clt)) {
+        rb_raise(rb_eArgError, "Invalid type tag.");
+    }
+    
+    Extract_Size(size, sz);
+    
+    rcl_pointer_t *p;
+    VALUE ro = Data_Make_Struct(klass, rcl_pointer_t, 0, rcl_pointer_free_func, p);
+
+    p->alloc_address = NULL;
+    p->address = addr;
+    p->size = sz;
+    p->type = clt;
+    p->type_size = sizeof(clt);
+    p->is_wrapper = 1;
+    
+    assert(Is_Pointer(p));
+
     return ro;
 }
 
@@ -438,7 +489,7 @@ rcl_pointer_clear(VALUE self)
 {
     rcl_pointer_t *p = Pointer_Ptr(self);
     if (p->size > 0) {
-        if (p->alloc_address == NULL) {
+        if (!Is_Pointer(p)) {
             p->address = 0;
         } else {
             bzero(p->alloc_address, AllocSizeOf(p));
@@ -451,8 +502,7 @@ rcl_pointer_clear(VALUE self)
  * call-seq:
  *      HostPointer::new(type, size)    -> a HostPointer
  * 
- * Returns the n-th element stored in the memory region managed by 
- * the receiver.
+ * Allocate a managed host memory.
  */
 static VALUE
 rcl_pointer_init(VALUE self, VALUE type, VALUE size)
@@ -498,7 +548,7 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
     copy_p->size = orig_p->size;
     copy_p->type_size = orig_p->type_size;
 
-    if (orig_p->alloc_address == NULL) {
+    if (!Is_Pointer(orig_p)) {
         assert(!Need_Alloc(copy_p));
         copy_p->address = orig_p->address;
     } else {
@@ -552,14 +602,40 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
 
 /*
  * call-seq:
+ *      HostPointer#assign_pointer, 0x123456, 1024, 4096
+ *
+ * Copy contents from a C pointer to the receiver.
+ *
+ * Returns the receiver.
+ */
+static VALUE
+rcl_pointer_assign(VALUE self, VALUE address, VALUE size, VALUE offset)
+{
+    Check_Type(address, T_FIXNUM);
+    void *addr = (void *)NUM2ULONG(address);
+    
+    rcl_pointer_t *p = Pointer_Ptr(self);
+    
+    Extract_Size(size, sz);
+    Extract_Size(offset, os);
+    if (sz + os > p->size) {
+        rb_raise(rb_eArgError, "size or offset is too large.");
+    }
+    
+    size_t cpysz = sz * p->type_size;
+    memcpy(Element_Address(p, os), addr, cpysz);
+    
+    return self;
+}
+
+/*
+ * call-seq:
  *      HostPointer#assign_byte_string(aString, offset) -> the receiver.
  */
 static VALUE
 rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
 {
-    if (TYPE(value) != T_STRING) {
-        rb_raise(rb_eArgError, "Expected argument 1 is a String.");
-    }
+    Check_Type(value, T_STRING);
     
     rcl_pointer_t *p = Pointer_Ptr(self);
     Extract_Size(offset, os);
@@ -633,15 +709,21 @@ rcl_pointer_byte_size(VALUE self)
  * call-seq:
  *      HostPointer#free
  *
- * Free the memory the receiver manages.
+ * Frees the memory the receiver manages, or stops wrapping a C pointer
+ * if the receiver is a wrapper.
+ *
+ * +free()+ is used to release memory resources explicitly.
+ *
  * After +free()+, the receiver's address is set to +nil+, and size is set
- * to 0.
+ * to 0. So you can do nothing with the receiver any longer.
  */
 static VALUE
 rcl_pointer_free(VALUE self)
 {
     rcl_pointer_t *ptr = Pointer_Ptr(self);
-    if (ptr->alloc_address == NULL && ptr->size == 0) {
+    if (!Is_Pointer(ptr)) {
+        ptr->address = NULL;
+        ptr->size = 0;
         return self;
     }   
 
@@ -649,6 +731,7 @@ rcl_pointer_free(VALUE self)
     ptr->alloc_address = NULL;
     ptr->address = NULL;
     ptr->size = 0;
+    ptr->is_wrapper = 0;
     
     return self;
 }
@@ -657,8 +740,10 @@ rcl_pointer_free(VALUE self)
  * call-seq:
  *      HostPointer#copy_from(ptr)   -> receiver
  * 
- * Returns the n-th element stored in the memory region managed by 
- * the receiver.
+ * Copy the contents of a HostPointer to the receiver. The source and receiver
+ * must have identical type and size.
+ *
+ * Returns the receiver.
  *
  * Raises +RuntimeError+ if type or size mismatch.
  */
@@ -673,7 +758,7 @@ rcl_pointer_copy_from(VALUE self, VALUE src)
     if (p->type != sp->type || p->size != sp->size) {
         rb_raise(rb_eRuntimeError, "Size or type of source and target mismatch.");
     }
-    if (p->alloc_address == NULL) {
+    if (!Is_Pointer(p)) {
         p->address = sp->address;
     } else {
         memcpy(p->address, sp->address, BytesOf(p));
@@ -710,7 +795,7 @@ rcl_pointer_slice(VALUE self, VALUE start, VALUE size)
     hp->size = sz;
     hp->type_size = p->type_size;
     
-    if (p->alloc_address != NULL) {
+    if (Need_Alloc(hp)) {
         Alloc_Memory(hp);
     }
     memcpy(Element_Address(hp, 0), Element_Address(p, st), BytesOf(hp));
@@ -732,6 +817,7 @@ rcl_create_mapped_pointer(void *address, size_t size)
     p->type_size = sizeof(cl_uchar);
     p->alloc_address = p->address = address;
     p->size = size;
+    p->is_wrapper = 1;
     
     return mp;
 }
@@ -806,12 +892,14 @@ define_rcl_class_pointer(void)
 {
     define_cl_types();
     
-    rcl_cPointer = rb_define_class_under(rcl_mCapi, "HostPointer", rb_cObject);
+    rcl_cPointer = rb_define_class_under(rcl_mOpenCL, "HostPointer", rb_cObject);
+    rb_define_singleton_method(rcl_cPointer, "wrap_pointer", rcl_pointer_wrap, 3);
     rb_define_alloc_func(rcl_cPointer, rcl_pointer_alloc);
     rb_define_method(rcl_cPointer, "initialize", rcl_pointer_init, 2);
     rb_define_method(rcl_cPointer, "initialize_copy", rcl_pointer_init_copy, 1);
     rb_define_method(rcl_cPointer, "[]", rcl_pointer_aref, 1);
     rb_define_method(rcl_cPointer, "[]=", rcl_pointer_aset, 2);
+    rb_define_method(rcl_cPointer, "assign_pointer", rcl_pointer_assign, 3);
     rb_define_method(rcl_cPointer, "assign_byte_string", rcl_pointer_assign_byte_string, 2);
     rb_define_method(rcl_cPointer, "address", rcl_pointer_address, 0);
     rb_define_method(rcl_cPointer, "type", rcl_pointer_type, 0);
@@ -822,11 +910,12 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cPointer, "copy_from", rcl_pointer_copy_from, 1);
     rb_define_method(rcl_cPointer, "slice", rcl_pointer_slice, 2);
     
-    rcl_cMappedPointer = rb_define_class_under(rcl_mCapi, "MappedPointer", rb_cObject);
+    rcl_cMappedPointer = rb_define_class_under(rcl_mOpenCL, "MappedPointer", rb_cObject);
     rb_define_alloc_func(rcl_cMappedPointer, rcl_mapped_pointer_alloc);
     rb_define_method(rcl_cMappedPointer, "initialize_copy", rcl_mapped_pointer_init_copy, 1);
     rb_define_method(rcl_cMappedPointer, "[]", rcl_pointer_aref, 1);
     rb_define_method(rcl_cMappedPointer, "[]=", rcl_pointer_aset, 2);
+    rb_define_method(rcl_cMappedPointer, "assign_pointer", rcl_pointer_assign, 3);
     rb_define_method(rcl_cMappedPointer, "assign_byte_string", rcl_pointer_assign_byte_string, 2);
     rb_define_method(rcl_cMappedPointer, "address", rcl_pointer_address, 0);
     rb_define_method(rcl_cMappedPointer, "type", rcl_pointer_type, 0);
