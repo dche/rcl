@@ -3,6 +3,7 @@
 #include "ieee_half_float.h"
 
 extern VALUE rcl_mOpenCL;
+extern VALUE rcl_mCapi;
 VALUE rcl_cPointer;
 VALUE rcl_cMappedPointer;
 
@@ -144,9 +145,9 @@ static void define_cl_types(void)
     // Prevent from change.
     OBJ_FREEZE(rcl_types);
     OBJ_FREEZE(rcl_vector_types);
-    // Prevent from being GC.
-    rb_gc_register_address(&rcl_types);
-    rb_gc_register_address(&rcl_vector_types);
+    
+    rb_define_const(rcl_mCapi, "SCALAR_TYPES", rcl_types);
+    rb_define_const(rcl_mCapi, "VECTOR_TYPES", rcl_vector_types);
 }
 
 #define Is_Type_Valid(id)  (!NIL_P(rb_hash_lookup(rcl_types, ID2SYM(id))) || !NIL_P(rb_hash_lookup(rcl_vector_types, ID2SYM(id))))

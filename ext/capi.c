@@ -1,14 +1,22 @@
-// A sheer wrapper of the OpenCL API.
-//
-// More rubyish syntax is defined in ruby file. See ../opencl.rb
-// 
-// Copyright (c) 2010, Che Kenan
+/* A sheer wrapper of the OpenCL API.
+ *
+ * More rubyish syntax is defined in ruby file. See ../opencl.rb
+ *
+ * TODO: add equality check for all CL objects that have GC semantics.
+ * TODO: check all Array that might get an empty value.
+ * TODO: check all arguments that could be +nil+.
+ * TODO: check all value conversions.
+ * TODO: Big endien support.
+ * TODO: check all class_of checking.
+ * 
+ * Copyright (c) 2010, Che Kenan
+ */
 
 #include "capi.h"
 
 // Modules
 VALUE rcl_mOpenCL;          // referenced in pointer.c
-static VALUE rcl_mCapi;
+VALUE rcl_mCapi;
 
 // CL objects
 static VALUE rcl_cPlatform;
