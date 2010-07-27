@@ -1364,24 +1364,17 @@ rcl_finish(VALUE self)
         var = NIL_P(ptr) ? NULL : Pointer_Address(ptr); \
     } while (0)
     
+// Extracts vec the Array of 3 size_t to var. If vec == nil, var is NULL.
 #define Extract_Vector(vec, var) \
-    size_t var[3]; \
+    size_t *var = NULL; \
     do { \
-        if (NIL_P(vec)) { \
-            var[0] = var[1] = var[2] = 0; \
-        } else { \
+        if (!NIL_P(vec)) { \
             Expect_Array(vec); \
-            if (RARRAY_LEN(vec) == 0) { \
-                var[0] = var[1] = var[2] = 0; \
-            } else { \
-                if (RARRAY_LEN(vec) < 3) { \
-                    rb_raise(rb_eArgError, "Expected array lenth is 3, but got %ld.", RARRAY_LEN(vec)); \
-                } \
-                for (int i = 0; i < 3; i++) { \
-                    VALUE n = rb_ary_entry(vec, i); \
-                    Extract_Size(n, v); \
-                    var[i] = v; \
-                } \
+            var = ALLOCA_N(size_t, 3); \
+            for (int i = 0; i < 3; i++) { \
+                VALUE n = rb_ary_entry(vec, i); \
+                Extract_Size(n, v); \
+                var[i] = v; \
             } \
         } \
     } while (0)
