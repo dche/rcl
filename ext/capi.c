@@ -1629,16 +1629,19 @@ rcl_cq_enqueue_map_image(VALUE self, VALUE image, VALUE blocking_map,
     cl_event *ep = blocking_map ? NULL : &e;
     
     cl_command_queue cq = CommandQueue_Ptr(self);
-    cl_int res;
-    
+    cl_int res;    
     void *ptr = clEnqueueMapImage(cq, img, bm, mf, ovec, rvec, &row_pitch, &slice_pitch, num_evt, pevts, ep, &res);
     Check_And_Raise(res);
     
-    // MUST: compute the size of mapped memory.
-    VALUE mp = rcl_create_mapped_pointer(ptr, 0);
-    VALUE ret = rb_ary_new2(4);
-    
-    return self;
+    // compute the size of mapped memory.
+    size_t byte_size = (slice_pitch == 0) ? (rvec[1] * row_pitch) : (rvec[2] * slice_pitch);
+    VALUE mp = rcl_create_mapped_pointer(ptr, byte_size);
+    VALUE ret = rb_ary_new();
+    rb_ary_push(ret, mp);
+    rb_ary_push(ret, ULONG2NUM(row_pitch));
+    rb_ary_push(ret, ULONG2NUM(slice_pitch));
+    if (!blocking_map) rb_ary_push(ret, REvent(e));
+    return ret;
 }
 
 static VALUE
