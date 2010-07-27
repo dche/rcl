@@ -617,11 +617,6 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_SAMPLER_FILTER_MODE);    
 }
 
-// CHECK: add equality check for all classes?
-// TODO: check all Array that might get an empty value.
-// TODO: check all arguments that can be +nil+.
-// TODO: check all value conversions.
-
 /*
  * Capi::CLError
  *
@@ -1055,12 +1050,10 @@ rcl_context_init(VALUE self, VALUE parg, VALUE darg)
         context = clCreateContext(props, num_dev, dev_ids, rcl_pfn_notify, NULL, &res);
     } else {
         context = clCreateContextFromType(props, dev_type, rcl_pfn_notify, NULL, &res);
-    }
-    
+    }    
     Check_And_Raise(res);
     
-    rcl_context_t *pc;
-    
+    rcl_context_t *pc;    
     Data_Get_Struct(self, rcl_context_t, pc);
     pc->c = context;
     
