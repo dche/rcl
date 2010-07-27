@@ -30,7 +30,7 @@ describe Memory do
     hp[0] = [1, 2, 3, 4]
     hp[7] = [4, 3, 2, 1]
     
-    mem = @cxt.create_buffer(CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, 0, hp)
+    mem = @cxt.create_buffer(CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, hp.byte_size, hp)
     mem.should.is_a Memory
     
     cq = @cxt.create_command_queue
@@ -44,7 +44,7 @@ describe Memory do
     
     event = cq.enqueue_read_buffer(mem, false, 0, hp.byte_size, hp, nil)
     cq.enqueue_wait_for_events [event]
-  
+
     hp[0].should.equal [1, 2, 3, 4]
     hp[7].should.equal [4, 3, 2, 1]
   end
