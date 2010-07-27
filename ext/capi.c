@@ -2700,7 +2700,7 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
 
         arg_ptr = (void *)(&(mem->mem));
         arg_size = sizeof(cl_mem);
-    } else if (klass == rb_cString) {
+    } else if (TYPE(arg_value) == T_STRING) {
         arg_ptr = RSTRING_PTR(arg_value);
         arg_size = RSTRING_LEN(arg_value);
     } else if (klass == rcl_cSampler) {
