@@ -211,10 +211,11 @@ rcl_event_free(void *ptr)
 static inline VALUE
 REvent(cl_event ptr)
 {
-    rcl_event_t *p = ALLOC_N(rcl_event_t, 1);
+    rcl_event_t *p;
+    VALUE ro = Data_Make_Struct(rcl_cEvent, rcl_event_t, 0, rcl_event_free, p);
     p->e = ptr;
     
-    return Data_Wrap_Struct(rcl_cEvent, 0, rcl_event_free, p);
+    return ro;
 }
 
 static inline cl_event
@@ -1891,7 +1892,11 @@ rcl_sampler_init(VALUE self, VALUE context, VALUE normalized_coords,
     cl_sampler s = clCreateSampler(cxt, nc, am, fm, &res);
     Check_And_Raise(res);
     
-    return Data_Wrap_Struct(rcl_cSampler, 0, rcl_sampler_free, s);
+    rcl_sampler_t *p;
+    Data_Get_Struct(self, rcl_sampler_t, p);
+    p->s = s;
+    
+    return self;
 }
 
 static VALUE
