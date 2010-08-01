@@ -838,20 +838,6 @@ rcl_invalidate_mapped_pointer(VALUE ptr)
     p->size = 0;
 }
 
-static VALUE
-rcl_mapped_pointer_alloc(VALUE klass)
-{
-    rb_raise(rb_eRuntimeError, "Can't instantiate a mapped pointer.");
-    return Qnil;
-}
-
-static VALUE
-rcl_mapped_pointer_init_copy(VALUE copy, VALUE orig)
-{
-    rb_raise(rb_eRuntimeError, "Can't clone mapped pointer.");
-    return Qnil;
-}
-
 /*
  * call-seq:
  *      MappedPointer#cast_to(:cl_uint4)    -> receiver
@@ -918,8 +904,7 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cPointer, "slice", rcl_pointer_slice, 2);
     
     rcl_cMappedPointer = rb_define_class_under(rcl_mOpenCL, "MappedPointer", rb_cObject);
-    rb_define_alloc_func(rcl_cMappedPointer, rcl_mapped_pointer_alloc);
-    rb_define_method(rcl_cMappedPointer, "initialize_copy", rcl_mapped_pointer_init_copy, 1);
+    rb_undef_alloc_func(rcl_cMappedPointer);
     rb_define_method(rcl_cMappedPointer, "[]", rcl_pointer_aref, 1);
     rb_define_method(rcl_cMappedPointer, "[]=", rcl_pointer_aset, 2);
     rb_define_method(rcl_cMappedPointer, "assign_pointer", rcl_pointer_assign, 3);
