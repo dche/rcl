@@ -153,8 +153,8 @@ static void define_cl_types(void)
 #define Is_Type_Valid(id)  (!NIL_P(rb_hash_lookup(rcl_types, ID2SYM(id))) || !NIL_P(rb_hash_lookup(rcl_vector_types, ID2SYM(id))))
 #define Is_Type_Vector(id) (!NIL_P(rb_hash_lookup(rcl_vector_types, ID2SYM(id))))
 
-static inline size_t
-Type_Size(ID id)
+size_t
+rcl_type_size(ID id)
 {
     VALUE sym = ID2SYM(id);
     VALUE sz = rb_hash_lookup(rcl_types, sym);
@@ -185,9 +185,12 @@ Type_Size(ID id)
             expector(v); \
             ptr[n - i - 1] = (base_c_type)convertor(v); \
         } \
+        return; \
     }
-    
-static inline void Ruby2Native(ID type, void *address, VALUE value)
+
+// Referenced by kernel_set_arg_with_type() in capi.c
+void 
+rcl_ruby2native(ID type, void *address, VALUE value)
 {
     assert(!(NIL_P(value) || NULL == address));
     
@@ -248,6 +251,8 @@ static inline void Ruby2Native(ID type, void *address, VALUE value)
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 4,  Expect_Float,   NUM2DBL);
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 8,  Expect_Float,   NUM2DBL);
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 16, Expect_Float,   NUM2DBL);
+    
+    rb_raise(rb_eArgError, "Invalid type tag.");
 }
 
 #define IF_TYPE_TO_RUBY(c_type, convertor) \
@@ -266,7 +271,8 @@ static inline void Ruby2Native(ID type, void *address, VALUE value)
         return ret; \
     }
     
-static inline VALUE Native2Ruby(ID type, void *address)
+static inline VALUE 
+Native2Ruby(ID type, void *address)
 {
     assert(NULL != address);
     
@@ -523,7 +529,7 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
         rb_raise(rb_eArgError, "Invalid size.");
     }
     p->size = FIX2UINT(size);
-    p->type_size = Type_Size(p->type);    
+    p->type_size = rcl_type_size(p->type);    
 
     if (Need_Alloc(p)) {    
         Alloc_Memory(p);
@@ -597,7 +603,7 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
     if (i >= p->size) {
         rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
     }
-    Ruby2Native(p->type, Element_Address(p, i), value);
+    rcl_ruby2native(p->type, Element_Address(p, i), value);
     return self;
 }
 
@@ -869,7 +875,7 @@ rcl_mapped_pointer_coerce(VALUE self, VALUE type)
         return self;
     }
     
-    size_t tsz = Type_Size(tid);
+    size_t tsz = rcl_type_size(tid);
     size_t sz = BytesOf(p);    
     
     if (sz % tsz != 0) {

@@ -52,12 +52,12 @@ extern void define_rcl_class_pointer(void);
 #define CL_Pointers(ra, klass, c_type, svar) \
     do { \
         Expect_Array(ra); \
-        cl_uint num = RARRAY_LEN(ra); \
+        size_t num = RARRAY_LEN(ra); \
         if (num == 0) { \
             svar = NULL; \
         } else { \
             svar = ALLOCA_N(c_type, num); \
-            for (int i = 0; i < num; i++) { \
+            for (uint i = 0; i < num; i++) { \
                 VALUE ro = rb_ary_entry(ra, i); \
                 Expect_RCL_Type(ro, klass); \
                 svar[i] = klass##_Ptr(ro); \
@@ -695,7 +695,7 @@ check_cl_error(cl_int errcode, int warn)
     
     VALUE str = rb_hash_aref(rcl_errors, INT2FIX(errcode));    
     if (NIL_P(str)) {
-        char *fmt = "Unexpected error: [%d].";
+        const char *fmt = "Unexpected error: [%d].";
         if (warn) {
             rb_warn(fmt, errcode);
         } else {
@@ -723,12 +723,6 @@ define_class_clerror(void)
 /*
  * class Platform
  */
-static VALUE
-rcl_platform_alloc(VALUE self)
-{
-    rb_raise(rb_eRuntimeError, "Retrieve platforms by Capi#platforms instead.");
-    return Qnil;
-}
 
 /*
  * call-seq:
@@ -745,7 +739,7 @@ rcl_platforms(VALUE self)
     VALUE list = rb_ary_new();
     cl_int res = clGetPlatformIDs(16, p_ids, &num_p);   // CHECK: ditto.
     if (CL_SUCCESS == res) {
-        for(int i = 0; i < num_p; i++) {
+        for(uint i = 0; i < num_p; i++) {
             VALUE o = RPlatform(p_ids[i]);
             rb_ary_push(list, o);
         }
@@ -788,19 +782,13 @@ define_class_platform(void)
 {
     rcl_cPlatform = rb_define_class_under(rcl_mCapi, "Platform", rb_cObject);
     rb_define_module_function(rcl_mCapi, "platforms", rcl_platforms, 0);
-    rb_define_alloc_func(rcl_cPlatform, rcl_platform_alloc);
+    rb_undef_alloc_func(rcl_cPlatform);
     rb_define_method(rcl_cPlatform, "info", rcl_platform_info, 1);    
 }
 
 /*
  * class Device
  */
-static VALUE
-rcl_device_alloc(VALUE self)
-{
-    rb_raise(rb_eRuntimeError, "Can't instantiate Device.");
-    return Qnil;
-}
 
 /*
  * call-seq:
@@ -826,7 +814,7 @@ rcl_devices(VALUE self, VALUE device_type, VALUE platform)
     if (res != CL_SUCCESS) {
         Check_And_Warn(res);
     } else {
-        for (int i = 0; i < num_id; i++) {
+        for (uint i = 0; i < num_id; i++) {
             VALUE o = RDevice(d_ids[i]);
             rb_ary_push(devs, o);
         }
@@ -928,11 +916,11 @@ rcl_device_info(VALUE self, VALUE device_info)
             return ULONG2NUM(*(cl_ulong *)param_value);
         // size_t[]
         case CL_DEVICE_MAX_WORK_ITEM_SIZES: {
-            int n = param_value_size / sizeof(size_t);
+            size_t n = param_value_size / sizeof(size_t);
             if (n == 0) return Qnil;
             VALUE ary = rb_ary_new2(n);
             size_t *szp = (size_t *)param_value;
-            for (int i = 0; i < n; i++) {
+            for (uint i = 0; i < n; i++) {
                 rb_ary_push(ary, ULONG2NUM(szp[i]));
             }
             return ary;
@@ -951,7 +939,7 @@ define_class_device(void)
 {
     rcl_cDevice = rb_define_class_under(rcl_mCapi, "Device", rb_cObject);
     rb_define_module_function(rcl_mCapi, "devices", rcl_devices, 2);
-    rb_define_alloc_func(rcl_cDevice, rcl_device_alloc);
+    rb_undef_alloc_func(rcl_cDevice);
     rb_define_method(rcl_cDevice, "info", rcl_device_info, 1);
 }
 
@@ -971,9 +959,9 @@ rcl_pfn_notify(const char *errinfo, const void *private_info, size_t cb, void *u
 }
 
 static void
-set_context_properties(cl_context_properties *props, VALUE arr, uint len)
+set_context_properties(cl_context_properties *props, VALUE arr, size_t len)
 {
-    for (int i = 0; i < len; i += 2) {
+    for (uint i = 0; i < len; i += 2) {
         VALUE pn = rb_ary_entry(arr, i);
         VALUE ptr = rb_ary_entry(arr, i + 1);
         
@@ -994,9 +982,9 @@ static VALUE
 build_device_array(cl_device_id *devs, size_t cb)
 {
     VALUE ret = rb_ary_new();
-    uint num_dev = cb / sizeof(cl_device_id);
+    size_t num_dev = cb / sizeof(cl_device_id);
     
-    for (int i = 0; i < num_dev; i++) {
+    for (uint i = 0; i < num_dev; i++) {
         VALUE dev = RDevice(devs[i]);
         rb_ary_push(ret, dev);
     }
@@ -1044,7 +1032,7 @@ rcl_context_init(VALUE self, VALUE parg, VALUE darg)
     cl_context context;
     
     if (!NIL_P(devs)) {
-        cl_uint num_dev = RARRAY_LEN(devs);
+        cl_uint num_dev = (cl_uint)RARRAY_LEN(devs);
         cl_device_id *dev_ids;
         CL_Pointers(devs, Device, cl_device_id, dev_ids);
         
@@ -1176,7 +1164,7 @@ rcl_context_supported_image_formats(VALUE self, VALUE mem_flag, VALUE mem_obj_ty
     Check_And_Raise(res);
     
     VALUE ret = rb_ary_new2(num_ret);
-    for (int i = 0; i < num_ret; i++) {
+    for (uint i = 0; i < num_ret; i++) {
         rb_ary_push(ret, RImageFormat(ifs + i));
     }
     return ret;
@@ -1353,7 +1341,7 @@ rcl_finish(VALUE self)
             pevts = NULL; \
         } else { \
             Expect_Array(events); \
-            num_evt = RARRAY_LEN(events); \
+            num_evt = (cl_uint)RARRAY_LEN(events); \
             CL_Pointers(events, Event, cl_event, pevts); \
         } \
     } while (0)
@@ -1781,7 +1769,7 @@ static VALUE
 rcl_cq_enqueue_acquire_gl_objects(VALUE self, VALUE mem_objects, VALUE events)
 {
     Expect_Array(mem_objects);    
-    cl_uint num_mo = RARRAY_LEN(mem_objects);
+    cl_uint num_mo = (cl_uint)RARRAY_LEN(mem_objects);
     if (num_mo == 0) return self;
 
     Extract_Wait_For_Events(events, num_evt, pevts);
@@ -1807,7 +1795,7 @@ static VALUE
 rcl_cq_enqueue_release_gl_objects(VALUE self, VALUE mem_objects, VALUE events)
 {
     Expect_Array(mem_objects);    
-    cl_uint num_mo = RARRAY_LEN(mem_objects);
+    cl_uint num_mo = (cl_uint)RARRAY_LEN(mem_objects);
     if (num_mo == 0) return self;
 
     Extract_Wait_For_Events(events, num_evt, pevts);
@@ -1970,37 +1958,6 @@ define_class_sampler(void)
 /*
  * class Event
  */
-static VALUE
-rcl_event_alloc(VALUE klass)
-{
-    rb_raise(rb_eRuntimeError, "Can't instantiate Event.");
-    return Qnil;
-}
-
-static VALUE
-rcl_event_init_copy(VALUE copy, VALUE orig)
-{
-    if (copy == orig) return copy;
-    
-    Expect_RCL_Type(copy, Event);
-    Expect_RCL_Type(orig, Event);
-    
-    rcl_event_t *copy_p, *orig_p;
-    Data_Get_Struct(copy, rcl_event_t, copy_p);
-    Data_Get_Struct(orig, rcl_event_t, orig_p);
-    
-    if (copy_p->e == orig_p->e) return copy;
-    
-    cl_int res;
-    if (copy_p->e != NULL) {
-        res = clReleaseEvent(copy_p->e);
-        Check_And_Raise(res);
-    }
-    res = clRetainEvent(orig_p->e);
-    copy_p->e = orig_p->e;
-    
-    return copy;
-}
 
 static VALUE
 rcl_event_info(VALUE self, VALUE event_info)
@@ -2033,7 +1990,7 @@ static VALUE
 rcl_wait_for_events(VALUE self, VALUE events)
 {
     Expect_Array(events);
-    cl_uint num = RARRAY_LEN(events);
+    cl_uint num = (cl_uint)RARRAY_LEN(events);
     if (num == 0) return Qfalse;
     
     cl_event *pe;
@@ -2064,8 +2021,7 @@ static void
 define_class_event(void)
 {
     rcl_cEvent = rb_define_class_under(rcl_mCapi, "Event", rb_cObject);
-    rb_define_alloc_func(rcl_cEvent, rcl_event_alloc);
-    rb_define_method(rcl_cEvent, "initialize_copy", rcl_event_init_copy, 1);
+    rb_undef_alloc_func(rcl_cEvent);
     rb_define_method(rcl_cEvent, "info", rcl_event_info, 1);
     rb_define_module_function(rcl_mCapi, "wait_for_events", rcl_wait_for_events, 1);
     rb_define_method(rcl_cEvent, "profiling_info", rcl_event_profiling_info, 1);
@@ -2074,37 +2030,6 @@ define_class_event(void)
 /*
  * class Memory
  */
-
-static VALUE
-rcl_mem_alloc(VALUE klass)
-{
-    rb_raise(rb_eRuntimeError, "Can't instantiate memory object without context.");
-    return Qnil;
-}
-
-static VALUE
-rcl_mem_init_copy(VALUE copy, VALUE orig)
-{
-    if (copy == orig) return copy;
-    Expect_RCL_Type(orig, Memory);
-    
-    rcl_mem_t *copy_p, *orig_p;
-    Data_Get_Struct(copy, rcl_mem_t, copy_p);
-    Data_Get_Struct(orig, rcl_mem_t, orig_p);
-    
-    if (copy_p->mem == orig_p->mem) return copy;
-    
-    cl_int res;
-    if (copy_p->mem != NULL) {
-        res = clReleaseMemObject(copy_p->mem);
-        Check_And_Raise(res);
-    }
-    res = clRetainMemObject(orig_p->mem);
-    Check_And_Raise(res);
-    
-    copy_p->mem = orig_p->mem;
-    return copy;
-}
 
 /*
  * call-seq:
@@ -2295,8 +2220,7 @@ static void
 define_class_memory(void)
 {
     rcl_cMemory = rb_define_class_under(rcl_mCapi, "Memory", rb_cObject);
-    rb_define_alloc_func(rcl_cMemory, rcl_mem_alloc);
-    rb_define_method(rcl_cMemory, "initialize_copy", rcl_mem_init_copy, 1);
+    rb_undef_alloc_func(rcl_cMemory);
     rb_define_singleton_method(rcl_cMemory, "create_buffer", rcl_mem_create_buffer, 4);
     rb_define_singleton_method(rcl_cMemory, "create_image_2d", rcl_mem_create_image_2d, 7);
     rb_define_singleton_method(rcl_cMemory, "create_image_3d", rcl_mem_create_image_3d, 9);
@@ -2325,12 +2249,12 @@ static cl_program
 rcl_program_create_from_source(cl_context context, VALUE sources)
 {
     Expect_Array(sources);
-    uint num_src = RARRAY_LEN(sources);
+    uint num_src = (uint)RARRAY_LEN(sources);
     
     const char **srcp = (const char **)ALLOCA_N(intptr_t, num_src);
     size_t *lenp = ALLOCA_N(size_t, num_src);
     
-    for (int i = 0; i < num_src; i++) {
+    for (uint i = 0; i < num_src; i++) {
         VALUE srcstr = rb_ary_entry(sources, i);
         if (TYPE(srcstr) != T_STRING) {
             rb_raise(rb_eTypeError, "Expected source is a String.");
@@ -2352,7 +2276,7 @@ rcl_program_create_from_binary(cl_context context, VALUE devices, VALUE binaries
     Expect_Array(devices);
     Expect_Array(binaries);
     
-    uint num_dev = RARRAY_LEN(devices);
+    uint num_dev = (uint)RARRAY_LEN(devices);
     if (RARRAY_LEN(binaries) != num_dev) {
         rb_raise(rb_eArgError, "Number of binaries shall equal to number of devices.");
     }
@@ -2361,7 +2285,7 @@ rcl_program_create_from_binary(cl_context context, VALUE devices, VALUE binaries
     size_t *len_ar = ALLOCA_N(size_t, num_dev);
     const unsigned char **bin_ar = (const unsigned char **)ALLOCA_N(intptr_t, num_dev);
     
-    for (int i = 0; i < num_dev; i++) {
+    for (uint i = 0; i < num_dev; i++) {
         VALUE dev = rb_ary_entry(devices, i);
         Expect_RCL_Type(dev, Device);
         
@@ -2465,7 +2389,7 @@ rcl_program_build(VALUE self, VALUE devices, VALUE options, VALUE memo)
     }
     Expect_Array(devices);
     
-    uint num_dev = RARRAY_LEN(devices);
+    uint num_dev = (uint)RARRAY_LEN(devices);
     cl_device_id *devs;
     CL_Pointers(devices, Device, cl_device_id, devs);
         
@@ -2545,9 +2469,9 @@ rcl_program_info(VALUE self, VALUE param_name)
     case CL_PROGRAM_DEVICES:
         return build_device_array((cl_device_id *)param_value, sz_ret);
     case CL_PROGRAM_BINARY_SIZES: {
-        uint num_szs = sz_ret / sizeof(size_t);
+        size_t num_szs = sz_ret / sizeof(size_t);
         VALUE szs = rb_ary_new2(num_szs);
-        for (int i = 0; i < num_szs; i++) {
+        for (uint i = 0; i < num_szs; i++) {
             rb_ary_push(szs, UINT2NUM(((size_t *)(param_value))[i]));
         }
         return szs;
@@ -2581,7 +2505,7 @@ rcl_program_create_kernels(VALUE self)
     Check_And_Raise(res);
     
     VALUE ary = rb_ary_new2(num_ret);
-    for (int i = 0; i < num_ret; i++) {
+    for (uint i = 0; i < num_ret; i++) {
         rb_ary_push(ary, RKernel(kernels[i]));
     }
     return ary;
@@ -2715,7 +2639,29 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
     } else {
         rb_raise(rb_eArgError, "Invalid kernel argument type.");
     }
-    cl_int res = clSetKernelArg(Kernel_Ptr(self), idx, arg_size, arg_ptr);
+    cl_int res = clSetKernelArg(Kernel_Ptr(self), (cl_uint)idx, arg_size, arg_ptr);
+    Check_And_Raise(res);
+    
+    return self;
+}
+
+extern size_t rcl_type_size(ID);
+extern void rcl_ruby2native(ID, void *, VALUE);
+
+static VALUE
+rcl_kernel_set_arg_with_type(VALUE self, VALUE index, VALUE type, VALUE value)
+{
+    Extract_Size(index, idx);
+    Check_Type(type, T_SYMBOL);
+    
+    ID clt = SYM2ID(type);
+    size_t arg_size = rcl_type_size(clt);
+    assert(arg_size <= 128);
+    
+    int8_t arg_ptr[128];
+    rcl_ruby2native(clt, (void *)arg_ptr, value);
+    
+    cl_int res = clSetKernelArg(Kernel_Ptr(self), (cl_uint)idx, arg_size, arg_ptr);
     Check_And_Raise(res);
     
     return self;
@@ -2802,6 +2748,7 @@ define_class_kernel(void)
     rb_define_method(rcl_cKernel, "initialize", rcl_kernel_init, 2);
     rb_define_method(rcl_cKernel, "initialize_copy", rcl_kernel_init_copy, 1);
     rb_define_method(rcl_cKernel, "set_arg", rcl_kernel_set_arg, 2);
+    rb_define_method(rcl_cKernel, "set_arg_with_type", rcl_kernel_set_arg_with_type, 3);
     rb_define_method(rcl_cKernel, "info", rcl_kernel_info, 1);
     rb_define_method(rcl_cKernel, "workgroup_info", rcl_kernel_workgroup_info, 2);
 }
