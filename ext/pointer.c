@@ -477,7 +477,7 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
     p->address = addr;
     p->size = sz;
     p->type = clt;
-    p->type_size = sizeof(clt);
+    p->type_size = rcl_type_size(clt);
     p->is_wrapper = 1;
     
     assert(Is_Pointer(p));
