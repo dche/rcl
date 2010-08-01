@@ -5,7 +5,7 @@ include OpenCL::Capi
 
 describe Platform do    
   it "should not initialized by new." do
-    should.raise(RuntimeError) { Platform.new }
+    should.raise(Exception) { Platform.new }
   end
   
   the 'platforms() should returns an Array of Platform' do

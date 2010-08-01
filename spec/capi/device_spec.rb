@@ -5,7 +5,7 @@ include OpenCL::Capi
 
 describe Device do
   it "should not be instantiated." do
-    should.raise(RuntimeError) { Device.new }
+    should.raise(Exception) { Device.new }
   end
   
   the "devices() method." do

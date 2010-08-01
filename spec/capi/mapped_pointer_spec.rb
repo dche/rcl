@@ -10,8 +10,8 @@ describe MappedPointer do
   end
 
   it "should not be instantiated." do
-    should.raise(RuntimeError) { MappedPointer.new }
-    should.raise(RuntimeError) { MappedPointer.allocate }
+    should.raise(Exception) { MappedPointer.new }
+    should.raise(Exception) { MappedPointer.allocate }
   end
   
   the "cast_to() method" do
