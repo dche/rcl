@@ -55,6 +55,16 @@ describe HostPointer do
     p.size.should.equal 1
   end
   
+  the '#byte_size' do
+    @p.byte_size.should.equal 1024 * Capi::SCALAR_TYPES[:cl_int]
+    
+    p = HostPointer.new :cl_float, 1
+    p.byte_size.should.equal Capi::SCALAR_TYPES[:cl_float]
+    p = HostPointer.new :cl_float, 100
+    p.byte_size.should.equal Capi::SCALAR_TYPES[:cl_float] * 100
+    
+  end
+  
   the '#free' do
     p = HostPointer.new :cl_char8, 256
     p.address.should.not.equal 0
@@ -331,6 +341,7 @@ describe HostPointer do
     p = HostPointer.new :cl_float, 20
     wp = HostPointer.wrap_pointer p.address, :cl_float, 10
     wp.should.is_a HostPointer
+    wp.byte_size.should.equal Capi::SCALAR_TYPES[:cl_float] * 10
     p[0] = 1.1
     wp[0].should.equal p[0]
     wp.free
@@ -339,6 +350,7 @@ describe HostPointer do
     p = HostPointer.new :cl_short, 1
     wp = HostPointer.wrap_pointer p.address, :cl_short, 1
     wp[0].should.equal p[0]
+    wp.byte_size.should.equal 2
     p[0] = -32757
     wp[0].should.equal p[0]
     wp.free
