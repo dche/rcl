@@ -63,5 +63,5 @@ data for benchmarking and test. You need not install it either.
 
 The MIT license.
 
-Copyright (c) 2010, Diego Che
+Copyright (c) 2010, Che Kenan
 

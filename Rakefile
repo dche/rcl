@@ -7,11 +7,11 @@ include FileUtils
 
 spec = Gem::Specification.new do |s|
   s.name = 'rcl'
-  s.version = '0.2'
+  s.version = '0.3.3'
   s.summary = 'Exploiting the power of GPUs.'
   s.description = s.summary
   
-  s.author = 'Diego Che'
+  s.author = 'Che Kenan'
   s.email = 'chekenan@gmail.com'
   
   s.files = %w(README.md LICENSE Rakefile) + 
@@ -73,10 +73,8 @@ task :build => File.join(libdir, 'capi.bundle')
 
 desc 'Clean the project directory.'
 task :clean => :clobber_package do
-  cd dir do
-    FileList['**/*.{rbc,rbo,o,bundle,so,dll}'].sort.each do |f|
-      rm f
-    end
+  FileList['**/*.{rbc,rbo,o,bundle,so,dll}'].sort.each do |f|
+    rm f
   end
 end
 

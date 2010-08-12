@@ -4,6 +4,7 @@
 
 extern VALUE rcl_mOpenCL;
 extern VALUE rcl_mCapi;
+
 VALUE rcl_cPointer;
 VALUE rcl_cMappedPointer;
 

@@ -1,7 +1,7 @@
 /*
  * ieee_half_float.h - Conversion between double from/to half-precision float.
  *
- * Copyright (c) 2010, Diego Che
+ * Copyright (c) 2010, Che Kenan
  *
  * Adapted from the implementation of James Tursa.
  *
@@ -94,7 +94,7 @@ inline cl_half Extract_Half(VALUE ro)
             hes = ((int)(xe >> 20)) - 1023 + 15; // Exponent unbias the double, then bias the halfp
             if ( hes >= 0x1F ) {  // Overflow
                 h = (uint16_t)((xs >> 16) | 0x7C00u); // Signed Inf
-            } else if ( hes <= 0 ) {  // Underflow
+            } else if (hes <= 0) {  // Underflow
                 if ((10 - hes) > 21) {  // Mantissa shifted all the way off & no rounding possibility
                     hm = (uint16_t)0u;  // Set mantissa to zero
                 } else {
@@ -125,7 +125,7 @@ inline VALUE rcl_half_float_new(cl_half h)
     uint32_t *f = ((uint32_t *)&v); 
     f++; // Leave low mantissa bits as 0.
 
-    if( (h & 0x7FFFu) == 0 ) {  // Signed zero
+    if((h & 0x7FFFu) == 0) {  // Signed zero
         *f = ((uint32_t) h) << 16;  // Return the signed zero
     } else { // Not zero
         uint16_t hs, he, hm;
@@ -159,8 +159,7 @@ inline VALUE rcl_half_float_new(cl_half h)
             xm = ((uint32_t)hm) << 10; // Mantissa
             *f = (xs | xe | xm); // Combine sign bit, exponent bits, and mantissa bits
         }
-    }
-    
+    }   
     return rb_float_new(v);
 }
 

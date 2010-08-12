@@ -43,7 +43,9 @@ module OpenCL
         @program = @context.create_program src
         @program.build [@device], opts, nil
       rescue Capi::CLError => e
-        if e.message =~ /\(#{Capi::CL_BUILD_PROGRAM_FAILURE}\)/ # FIXME: ugly coupling.
+        if e.message =~ /\(#{Capi::CL_BUILD_PROGRAM_FAILURE}\)/
+          # FIXME: ugly coupling above.
+          #        try to raise a Exception object (not class) in capi.c
           raise ProgramBuildError, @program.build_info(@device, Capi::CL_PROGRAM_BUILD_LOG)
         else
           raise CLError, e.message

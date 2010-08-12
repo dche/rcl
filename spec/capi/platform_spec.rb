@@ -33,6 +33,5 @@ describe Platform do
   
   the 'invalid query should raise an error.' do
     should.raise(TypeError) { platforms.first.info('profile')}
-  end
-  
+  end  
 end
