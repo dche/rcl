@@ -15,7 +15,7 @@ describe Context do
   end
   
   the "info() method" do
-    cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_CPU);
+    cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_DEFAULT);
     cxt.info(CL_CONTEXT_REFERENCE_COUNT).should.is_a Integer
     devs = cxt.info(CL_CONTEXT_DEVICES)
     devs.should.is_a Array
@@ -25,7 +25,7 @@ describe Context do
   end
   
   the "retainContext should performed." do
-    cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_CPU)
+    cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_DEFAULT)
     rc = cxt.info(CL_CONTEXT_REFERENCE_COUNT)
     
     cxt2 = cxt.dup

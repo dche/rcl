@@ -6,7 +6,7 @@ include OpenCL::Capi
 
 describe Event do
   before do
-    @cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_ALL)
+    @cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_DEFAULT)  
   end
 
   the "info() method." do

@@ -24,14 +24,13 @@ describe Device do
   end
   
   the "info() method should return value according to the param type." do
-    d = devices(CL_DEVICE_TYPE_ALL, nil).first
+    d = devices(CL_DEVICE_TYPE_DEFAULT, nil).first
     d.info(CL_DEVICE_NAME).should.is_a String
     d.info(CL_DEVICE_AVAILABLE).should.be.true
     d.info(CL_DEVICE_ADDRESS_BITS).should.is_a Fixnum
     d.info(CL_DEVICE_IMAGE2D_MAX_WIDTH).should.is_a Fixnum
     d.info(CL_DEVICE_MAX_WORK_ITEM_SIZES).should.is_a Array
     d.info(CL_DEVICE_PLATFORM).should.is_a Platform
-    puts d.info(CL_DEVICE_PLATFORM).info(CL_PLATFORM_NAME)
   end
 
 end
