@@ -54,7 +54,7 @@ describe Memory do
     hp2 = HostPointer.new :cl_double, 2
     
     hp1[0] = 1.0
-    hp1[1] = 1.1
+    hp1[1] = 1.25
     hp2[0].should.equal 0
     
     mem1 = @cxt.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 0, hp1)
@@ -65,7 +65,7 @@ describe Memory do
     cq.enqueue_read_buffer(mem2, true, 0, hp2.byte_size, hp2, [e])
     
     hp2[0].should.equal 1.0
-    hp2[1].should.equal 1.1
+    hp2[1].should.equal 1.25
   end
   
   the "non blocking write." do

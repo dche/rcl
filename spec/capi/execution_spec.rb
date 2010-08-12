@@ -73,13 +73,13 @@ describe "Enqueue kernel" do
     
     k.set_arg(0, mem_in)
     k.set_arg(1, mem_out)
-    k.set_arg(2, [10.05].pack('f'))
+    k.set_arg(2, [10.0625].pack('f'))
     evt = cq.enqueue_NDRange_kernel(k, 1, [in_f.size], nil, nil)
     cq.finish
     cq.enqueue_read_buffer(mem_out, true, 0, in_f.byte_size, out_f, nil)
-    out_f[0].should.close(10.05, 1e-5)
-    out_f[1].should.close(20.10, 1e-5)
-    out_f[2].should.close(30.15, 1e-5)
-    out_f[3].should.close(40.20, 1e-5)
+    out_f[0].should.equal 10.0625
+    out_f[1].should.equal 20.125
+    out_f[2].should.equal 30.1875
+    out_f[3].should.equal 40.25
   end
 end
