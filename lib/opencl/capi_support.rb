@@ -5,36 +5,123 @@
 # by the library user. You should use more rubyish API that defiend in
 # opencl.rb.
 #                    
-# copyright (c) 2010, Diego Che
+# copyright (c) 2010, Che Kenan
 
 require File.join(File.dirname(__FILE__), 'capi')
 
 module OpenCL
   module Capi
-    
-    # Common methods for all classes that represents an OpenCL objects.
-    module CL_Object
-      
-    end
+    # The C API version.
+    VERSION = '1.0'
     
     class Platform
+      def name
+        self.info(CL_PLATFORM_NAME)
+      end
+      
+      def vendor
+        self.info(CL_PLATFORM_VENDOR)
+      end
+      
+      def version
+        self.info(CL_PLATFORM_VERSION)
+      end
+      
+      def to_s
+        "#{self.vendor} #{self.name} #{self.version}"
+      end
     end
     
     class Device
+      # Returns +true+ if device is available.
+      def available?
+        self.info(CL_DEVICE_AVAILABLE)
+      end
+      
+      # Retruns +true+ if device type is a GPU.
+      def gpu?
+        (self.info(CL_DEVICE_TYPE) & CL_DEVICE_TYPE_GPU) == CL_DEVICE_TYPE_GPU
+      end
+      
+      def support_image?
+        self.info(CL_DEVICE_IMAGE_SUPPORT)
+      end
+      
+      def address_bits
+        self.info(CL_DEVICE_ADDRESS_BITS)
+      end
+      
+      def little_endian?
+        self.info(CL_DEVICE_ENDIAN_LITTLE)
+      end
+      
+      def big_endian?
+        not self.little_endian?
+      end
+      
+      def max_compute_units
+        self.info(CL_DEVICE_MAX_COMPUTE_UNITS)
+      end
+      
+      def max_image2d_size
+        return nil unless self.support_image?
+        
+        [self.info(CL_DEVICE_IMAGE2D_MAX_WIDTH),
+          self.info(CL_DEVICE_IMAGE2D_MAX_HEIGHT)]
+      end
+      
+      def max_image3d_size
+        return nil unless self.support_image?
+
+        [self.info(CL_DEVICE_IMAGE3D_MAX_WIDTH),
+          self.info(CL_DEVICE_IMAGE3D_MAX_HEIGHT),
+          self.info(CL_DEVICE_IMAGE3D_MAX_DEPTH)]
+      end
+      
+      def max_work_item_size
+        self.info(CL_DEVICE_MAX_WORK_ITEM_SIZES)
+      end
+      
+      def base_address_align
+        self.info(CL_DEVICE_MEM_BASE_ADDR_ALIGN)
+      end
+      
+      def vendor
+        self.info(CL_DEVICE_VENDOR)
+      end
+      
+      def name
+        self.info(CL_DEVICE_NAME)
+      end
+      
+      def cl_version
+        self.info(CL_DEVICE_VERSION)
+      end
+      
+      def profile
+        self.info(CL_DEVICE_PROFILE)
+      end
+      
+      def driver_version
+        self.info(CL_DRIVER_VERSION)
+      end
+      
+      def to_s
+        "#{self.vendor} #{self.name} #{self.cl_version} #{self.driver_version}"
+      end
     end
     
-    class Context
-      include CL_Object
-      
+    class Context      
       # Returns an Array of devices attached in the receiver.
       #
       # Same effect as +Context#info(CL_CONTEXT_DEVICES)+.
       def devices
-        @devices ||= self.info(CL_CONTEXT_DEVICES)
+        # @devices ||= self.info(CL_CONTEXT_DEVICES)  # BUG: #764 macruby.
+        self.info(CL_CONTEXT_DEVICES)
       end
       
       def create_command_queue(dev = nil)
-        dev ||= devices.first
+        dev ||= self.devices.first
         CommandQueue.new(self, dev, 0)
       end
       
@@ -60,8 +147,6 @@ module OpenCL
     end
     
     class Program
-      include CL_Object
-      
       def create_kernel(name)
         Kernel.new(self, name)
       end
