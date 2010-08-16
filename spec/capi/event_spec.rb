@@ -20,6 +20,8 @@ describe Event do
     event.info(CL_EVENT_COMMAND_TYPE).should.equal CL_COMMAND_WRITE_BUFFER
     
     should.not.raise(Exception) { cq.enqueue_wait_for_events [event] }
+    # FIXME: bug in wait_for_events()? See also buffer_spec.rb
+    cq.finish
     event.info(CL_EVENT_COMMAND_EXECUTION_STATUS).should.equal CL_COMPLETE
   end
   
