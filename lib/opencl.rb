@@ -52,19 +52,25 @@ module OpenCL
         end
       end
       @kernels.clear
-      @source = src
+      @source = src.freeze
       self
     end
     
     # Executes a kernel.
     #
     # Kernel arguments is specified in a Hash in the form {value => type}
-    def call(kernel, dim, size, args)      
+    #
+    # @param [Symbol]
+    # @param [Integer]
+    # @param [Hash]
+    #
+    # @return the receiver
+    def call(kernel, size, args)      
       begin
         k = @kernels[kernel] || @kernels[kernel] = @program.create_kernel(kernel.to_s)
         
-        if args.size != k.info(Capi::CL_KERNEL_NUM_ARGS)
-          raise ArgumentError, "Wrong number of kernel arguments (#{args.size} for #{k.info(Capi::CL_KERNEL_NUM_ARGS)})."
+        if args.size != k.argument_number
+          raise ArgumentError, "Wrong number of kernel arguments (#{args.size} for #{k.argument_number})."
         end
 
         args.each_with_index do |kv, idx|
@@ -77,7 +83,7 @@ module OpenCL
             k.set_arg_with_type idx, type, value
           end
         end
-        self.queue.enqueue_NDRange_kernel(k, dim, size, nil, nil)
+        self.queue.enqueue_NDRange_kernel(k, size.length, size, nil, nil)
         self.queue.finish
       rescue Capi::CLError => e
         raise CLError, e.message
