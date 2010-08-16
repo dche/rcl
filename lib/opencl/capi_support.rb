@@ -194,6 +194,10 @@ module OpenCL
       return self
     end
     
+    def type_size
+      SCALAR_TYPES[self.type] || VECTOR_TYPES[self.type]
+    end
+    
     # Returns +true+ if the Pointer is null.
     def null?
       self.address.nil?

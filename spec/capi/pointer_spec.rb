@@ -42,6 +42,14 @@ describe HostPointer do
      end
   end
   
+  the '#type_size' do
+    p = HostPointer.new :cl_uchar, 1
+    p.type_size.should.equal SCALAR_TYPES[:cl_uchar]
+    
+    p = HostPointer.new :cl_float16, 4
+    p.type_size.should.equal VECTOR_TYPES[:cl_float16]
+  end
+  
   the '#size' do
     @p.size.should.equal 1024
     
