@@ -2707,6 +2707,10 @@ rcl_kernel_info(VALUE self, VALUE param_name)
  *      Kernel#workgroup_info(Device, CL_KERNEL_WORK_GROUP_SIZE)
  *
  * Wrapps +clGetKernelWorkGroupInfo()+.
+ *
+ * deivce - A Device object. Can be +nil+ if there is only single device
+ *          is used by the context to which the receiver belongs.
+ * param_name - The information to query.
  */
 static VALUE
 rcl_kernel_workgroup_info(VALUE self, VALUE device, VALUE param_name)
@@ -2715,7 +2719,7 @@ rcl_kernel_workgroup_info(VALUE self, VALUE device, VALUE param_name)
     Expect_RCL_Const(param_name);
     
     cl_kernel k = Kernel_Ptr(self);
-    cl_device_id dev = Device_Ptr(device);
+    cl_device_id dev = NIL_P(device) ? NULL : Device_Ptr(device);
     cl_kernel_work_group_info kwi = FIX2UINT(param_name);
     
     size_t param_value[3];
