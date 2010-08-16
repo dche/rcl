@@ -1,4 +1,4 @@
-# encoding: utf-8
+ 
 #
 # This file expands the CAPI classes and methods, to make CAPI more easy
 # to use. However, even this, CAPI still is *NOT* expected to be used
@@ -11,18 +11,25 @@ require File.join(File.dirname(__FILE__), 'capi')
 
 module OpenCL
   module Capi
-    # The C API version.
+    # OpenCL version the API conforms to.
     VERSION = '1.0'
     
     class Platform
+      # Returns the string name of the receiver.
       def name
         self.info(CL_PLATFORM_NAME)
       end
       
+      # Returns the string vendor name of the receiver.
       def vendor
         self.info(CL_PLATFORM_VENDOR)
       end
       
+      # Returns the string version of the receiver.
+      #
+      # Example:
+      #
+      #   aPlatform.version # => "Apple"
       def version
         self.info(CL_PLATFORM_VERSION)
       end
@@ -38,17 +45,13 @@ module OpenCL
         self.info(CL_DEVICE_AVAILABLE)
       end
       
-      # Retruns +true+ if device type is a GPU.
+      # Retruns +true+ if device type is GPU.
       def gpu?
         (self.info(CL_DEVICE_TYPE) & CL_DEVICE_TYPE_GPU) == CL_DEVICE_TYPE_GPU
       end
       
       def support_image?
         self.info(CL_DEVICE_IMAGE_SUPPORT)
-      end
-      
-      def address_bits
-        self.info(CL_DEVICE_ADDRESS_BITS)
       end
       
       def little_endian?
@@ -86,6 +89,14 @@ module OpenCL
         self.info(CL_DEVICE_MEM_BASE_ADDR_ALIGN)
       end
       
+      def address_bits
+        self.info(CL_DEVICE_ADDRESS_BITS)
+      end
+      
+      def max_local_memory_size
+        self.info(CL_DEVICE_LOCAL_MEM_SIZE)
+      end
+      
       def vendor
         self.info(CL_DEVICE_VENDOR)
       end
@@ -101,6 +112,7 @@ module OpenCL
       def profile
         self.info(CL_DEVICE_PROFILE)
       end
+      alias :version :cl_version
       
       def driver_version
         self.info(CL_DRIVER_VERSION)
@@ -149,6 +161,25 @@ module OpenCL
     class Program
       def create_kernel(name)
         Kernel.new(self, name)
+      end
+    end
+    
+    class Kernel
+      def function_name
+        @name ||= self.info(CL_KERNEL_FUNCTION_NAME)
+      end
+      
+      def argument_number
+        @num_args ||= self.info(CL_KERNEL_NUM_ARGS)
+      end
+      
+      def work_group_size_on_device(dev)
+        self.workgroup_info(dev, CL_KERNEL_WORK_GROUP_SIZE)
+      end
+      
+      def local_memory_size
+        devs = self.info(CL_KERNEL_CONTEXT).devices
+        self.workgroup_info(devs.length == 1 ? nil : devs.first, CL_KERNEL_LOCAL_MEM_SIZE)
       end
     end
     
