@@ -1353,20 +1353,27 @@ rcl_finish(VALUE self)
         var = NIL_P(ptr) ? NULL : Pointer_Address(ptr); \
     } while (0)
     
-// Extracts vec the Array of 3 size_t to var. If vec == nil, var is NULL.
-#define Extract_Vector(vec, var) \
+#define Extract_Size_Array(dim, ar, var) \
     size_t *var = NULL; \
     do { \
-        if (!NIL_P(vec)) { \
-            Expect_Array(vec); \
-            var = ALLOCA_N(size_t, 3); \
-            for (int i = 0; i < 3; i++) { \
-                VALUE n = rb_ary_entry(vec, i); \
-                Extract_Size(n, v); \
-                var[i] = v; \
+        if (!NIL_P(ar)) { \
+            var = ALLOCA_N(size_t, dim); \
+            if (TYPE(ar) == T_ARRAY && RARRAY_LEN(ar) == dim) { \
+                for (uint i = 0; i < dim; i++) { \
+                    VALUE sz = rb_ary_entry(ar, i); \
+                    if (TYPE(sz) != T_FIXNUM) { \
+                        rb_raise(rb_eTypeError, "Expected an Array of %u positive Integer.", dim); \
+                    } \
+                    var[i] = FIX2UINT(sz); \
+                } \
+            } else { \
+                rb_raise(rb_eTypeError, "Expected an Array of %u positive Integer.", dim); \
             } \
         } \
     } while (0)
+
+// Extracts vec the Array of 3 size_t to var. If vec == nil, var is NULL.
+#define Extract_Vector(vec, var)    Extract_Size_Array(3, vec, var)
 
 #define Extract_ImageFormat(imgfmt, var) \
     cl_image_format var; \
@@ -1669,8 +1676,8 @@ rcl_cq_enqueue_ndrange_kernel(VALUE self, VALUE kernel, VALUE work_dim,
     cl_uint wd = FIX2UINT(work_dim);
     Extract_Wait_For_Events(events, num_evt, pevts);
     
-    Extract_Vector(global_work_size, gws);
-    Extract_Vector(local_work_size, lws);
+    Extract_Size_Array(wd, global_work_size, gws);
+    Extract_Size_Array(wd, local_work_size, lws);
     
     cl_event e;
     cl_kernel k = Kernel_Ptr(kernel);
