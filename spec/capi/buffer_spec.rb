@@ -30,7 +30,7 @@ describe Memory do
     hp[0] = [1, 2, 3, 4]
     hp[7] = [4, 3, 2, 1]
     
-    mem = @cxt.create_buffer(CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, hp.byte_size, hp)
+    mem = @cxt.create_buffer(CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, 0, hp)
     mem.should.is_a Memory
     
     cq = @cxt.create_command_queue
