@@ -48,11 +48,6 @@ multi_kernel_src = <<-EOK
 EOK
 
 describe Program do
-  the 'Program::new' do
-    prog = OpenCL::Program.new valid_src
-    prog.context.should.is_a Capi::Context
-    prog.queue.should.is_a Capi::CommandQueue
-  end
   
   it 'should reject invalid source' do
     should.raise(ProgramBuildError) { OpenCL::Program.new invalid_src }
@@ -70,29 +65,22 @@ describe Program do
     prog.source.should.equal multi_kernel_src
   end
   
-  the 'Buffer::new' do
-    prog = OpenCL::Program.new valid_src
-    buff = Buffer.new prog, 1024
-    buff.should.be.in
-    buff.should.be.out
-  end
-  
   the '#call' do
     prog = OpenCL::Program.new valid_src
     ptr = HostPointer.new :cl_float4, 2
     ptr[0] = [1, 2, 3, 4]
     ptr[1] = [4, 3, 2, 1]
     
-    m1 = Buffer.new prog, ptr.byte_size, :in
+    m1 = Buffer.new ptr.byte_size, :in
     m1.write ptr
     
     ptr[0] = [5, 6, 7, 8]
     ptr[1] = [8, 7, 6, 5]
-    m2 = Buffer.new prog, ptr.byte_size, :in
+    m2 = Buffer.new ptr.byte_size, :in
     m2.write ptr
     
     pres = HostPointer.new :cl_float, 2
-    m3 = Buffer.new prog, pres.byte_size, :out
+    m3 = Buffer.new pres.byte_size, :out
     
     prog.call(:dot_product, [2], m1 => :mem, m2 => :mem, m3 => :mem)
     m3.read pres
@@ -108,9 +96,9 @@ describe Program do
     p1.assign [1, 2, 3, 4].pack('f4')
     p1[2].should.equal 3
     
-    m1 = Buffer.new prog, p1.byte_size, :in
+    m1 = Buffer.new p1.byte_size, :in
     m1.write p1
-    m2 = Buffer.new prog, p1.byte_size, :out
+    m2 = Buffer.new p1.byte_size, :out
     prog.call(:mult, [4], m1 => :mem, m2 => :mem, 10 => :cl_float)
     m2.read p1
     p1[0].should.equal 10
@@ -133,9 +121,9 @@ describe Program do
     p1.assign [1, 2, 3, 4]
     p1[2].should.equal 3
     
-    m1 = Buffer.new prog, p1.byte_size, :in
+    m1 = Buffer.new p1.byte_size, :in
     m1.write p1
-    m2 = Buffer.new prog, p1.byte_size, :out
+    m2 = Buffer.new p1.byte_size, :out
     should.raise(NoMethodError) { prog.add }
     should.not.raise(NoMethodError) { 
       prog.mult([4], m1 => :mem, m2 => :mem, 10 => :cl_float)
