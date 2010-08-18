@@ -934,6 +934,21 @@ rcl_device_info(VALUE self, VALUE device_info)
     return ret;
 }
 
+static VALUE
+rcl_device_eql(VALUE self, VALUE dev)
+{
+    cl_device_id myid = Device_Ptr(self);
+    cl_device_id youid = Device_Ptr(dev);
+    
+    return myid == youid ? Qtrue : Qfalse;
+}
+
+static VALUE
+rcl_device_hash(VALUE self)
+{
+    return LONG2FIX((intptr_t)Device_Ptr(self));
+}
+
 static void
 define_class_device(void)
 {
@@ -941,6 +956,8 @@ define_class_device(void)
     rb_define_module_function(rcl_mCapi, "devices", rcl_devices, 2);
     rb_undef_alloc_func(rcl_cDevice);
     rb_define_method(rcl_cDevice, "info", rcl_device_info, 1);
+    rb_define_method(rcl_cDevice, "eql?", rcl_device_eql, 1);
+    rb_define_method(rcl_cDevice, "hash", rcl_device_hash, 0);
 }
 
 /*

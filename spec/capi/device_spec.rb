@@ -17,6 +17,15 @@ describe Device do
     alldevs.should.is_a Array
     alldevs.first.should.is_a Device
   end
+  
+  the '#eql?' do
+    # CHECK: weak condition. depends on the order of devices.
+    d1 = devices(CL_DEVICE_TYPE_DEFAULT, nil).first
+    d2 = devices(CL_DEVICE_TYPE_DEFAULT, nil).first
+    
+    d1.object_id.should.not.equal d2.object_id
+    d1.should.eql d2
+  end
 
   the "info() method should reject invalid param" do
     d = devices(CL_DEVICE_TYPE_ALL, nil).first
