@@ -24,9 +24,9 @@ module OpenCL
       def context_of(device_type)
         @contexts ||= {}
         
-        dt = Capi::CL_DEVICE_TYPE_GPU
-        case device_type
+        dt = case device_type
         when :gpu
+          Capi::CL_DEVICE_TYPE_GPU
         when :cpu
           dt = Capi::CL_DEVICE_TYPE_CPU
         else
@@ -185,21 +185,20 @@ module OpenCL
     # Creates a Buffer object.
     def initialize(size, io_flag = :in_out)
       @context = OpenCL::Context.default_context
-      @io = io_flag
-
-      cl_io = Capi::CL_MEM_READ_WRITE
-      case @io
+      
+      @io = case io_flag
       when :in_out
+        Capi::CL_MEM_READ_WRITE
       when :in
-        cl_io = Capi::CL_MEM_READ_ONLY
+        @io = Capi::CL_MEM_READ_ONLY
       when :out
-        cl_io = Capi::CL_MEM_WRITE_ONLY
+        @io = Capi::CL_MEM_WRITE_ONLY
       else
         raise ArgumentError, "Invalid io flag. Expected :in, :out, :in_out, got #{io_flag}"
       end
 
       begin
-        @memory = @context.create_buffer(cl_io, size, nil)
+        @memory = @context.create_buffer(@io, size, nil)
         @size = size
       rescue Capi::CLError => e
         raise CLError, e.message
@@ -229,9 +228,9 @@ module OpenCL
     # (Integer) offset - 
     #
     # Returns the receiver.
-    def store_data_to(pointer, offset = 0)
+    def store_data_to(pointer, offset = 0, size = 0)
       return self unless self.out?
-      rw_mem :read, pointer, offset
+      rw_mem :read, pointer, offset, size
     end
     alias :read :store_data_to
     
@@ -241,31 +240,44 @@ module OpenCL
     # (Integer) offset - 
     #
     # Returns the receiver.
-    def get_data_from(pointer, offset = 0)
+    def get_data_from(pointer, offset = 0, size = 0)
       return self unless self.in?
-      rw_mem :write, pointer, offset
+      rw_mem :write, pointer, offset, size
     end
     alias :write :get_data_from
     
     # Returns +true+ if the receiver is readable by the device.
     def in?
-      @io != :out
+      @io != Capi::CL_MEM_WRITE_ONLY
     end
     
     # Returns +true+ ff the receiver is writable by the device.
     def out?
-      @io != :in
+      @io != Capi::CL_MEM_READ_ONLY
     end
     
     private
     
-    def rw_mem(rw, pointer, offset)
-      raise ArgumentError, 'Offset must be 0 or a positive Integer.' if offset < 0 || not(Integer === offset)
+    def rw_mem(rw, pointer, offset, size)
+      ts = pointer.type_size
       
-      os = pointer.type_size * offset
-      if self.size > pointer.byte_size - os
+      offset *= ts
+      if offset < 0 || not(Integer === offset)
+        raise ArgumentError, 'Offset must be 0 or a positive Integer.' 
+      end
+           
+      if size == 0
+        size = self.size
+      else
+        size *= ts
+      end
+      if size < 1 || size > self.size || not(Integer === size)
+        raise ArgumentError, "Size must be larger than 0 and less than #{self.size}." 
+      end
+      
+      if self.size < (offset + size) || pointer.byte_size < size
         raise ArgumentError, 
-              "Pointer size is too samll. (#{pointer.byte_size - os} for #{self.size})" 
+              "Size is too large." 
       end
       
       begin
@@ -274,9 +286,9 @@ module OpenCL
         #       and read through queue of another device.
         cq = @context.command_queue_of @context.default_device
         if rw == :read
-          cq.enqueue_read_buffer(self.memory, true, os, @size, pointer, nil);
+          cq.enqueue_read_buffer(self.memory, true, offset, size, pointer, nil);
         else
-          cq.enqueue_write_buffer(self.memory, true, os, @size, pointer, nil);
+          cq.enqueue_write_buffer(self.memory, true, offset, size, pointer, nil);
         end        
       rescue Capi::CLError => e
         raise CLError, e.message
