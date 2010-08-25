@@ -87,11 +87,14 @@ module OpenCL
     end
   end
     
-  # Compiled code that can be executated on OpenCL devices.
+  # Compiled code that can be executed on OpenCL devices.
   class Program
     # The source code
     attr_reader :source
 
+    #--
+    # FIXME: disallow empty kernel string.
+    #++
     def initialize(src = '', compile_options = '')
       @context = OpenCL::Context.default_context
       @kernels = {}
@@ -154,6 +157,17 @@ module OpenCL
       self
     end
     
+    # Used by complex program to ensure it can work on all devices.
+    def max_workgroup_size
+      kernels = @program.create_kernels
+      
+      @context.devices.map do |dev|
+        kernels.map do |k|
+          k.workgroup_size_on_device(dev)
+        end.min
+      end.min
+    end
+    
     def method_missing(meth, *args, &blk)
       if @kernels.has_key?(meth)
         self.call(meth, *args) 
@@ -169,7 +183,7 @@ module OpenCL
     end
     
     def to_s
-      self.source
+      "#<#{self.class} #{self.object_id}>"
     end
     
   end

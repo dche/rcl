@@ -81,7 +81,11 @@ module OpenCL
           self.info(CL_DEVICE_IMAGE3D_MAX_DEPTH)]
       end
       
-      def max_work_item_size
+      def max_workgroup_size
+        self.info(CL_DEVICE_MAX_WORK_GROUP_SIZE)
+      end
+      
+      def max_work_item_sizes
         self.info(CL_DEVICE_MAX_WORK_ITEM_SIZES)
       end
       

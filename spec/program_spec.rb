@@ -114,6 +114,11 @@ describe Program do
     p1[3].should.equal 400
   end
   
+  the '#max_workgroup_size' do
+    prog = OpenCL::Program.new multi_kernel_src
+    (prog.max_workgroup_size > 0).should.be.true
+  end
+  
   the 'method_missing' do
     prog = OpenCL::Program.new multi_kernel_src
     
