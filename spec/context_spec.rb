@@ -32,6 +32,12 @@ describe OpenCL::Context do
     cxt.default_device.should.is_a Capi::Device
   end
   
+  the '#max_mem_alloc_size' do
+    cxt = OpenCL::Context.default_context
+    (cxt.max_mem_alloc_size <= cxt.default_device.max_mem_alloc_size).should.be.true
+    (cxt.max_mem_alloc_size > 0).should.be.true
+  end
+  
   the '#command_queue_of' do
     cxt = OpenCL::Context.default_context
     cq = cxt.command_queue_of cxt.default_device

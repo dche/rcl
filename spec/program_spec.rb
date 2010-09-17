@@ -82,7 +82,7 @@ describe Program do
     pres = HostPointer.new :cl_float, 2
     m3 = Buffer.new pres.byte_size, :out
     
-    prog.call(:dot_product, [2], m1 => :mem, m2 => :mem, m3 => :mem)
+    prog.call(:dot_product, [2], :mem, m1, :mem, m2, :mem, m3)
     m3.read pres
     pres[0].should.equal 70
     pres[0].should.equal pres[1]
@@ -99,14 +99,14 @@ describe Program do
     m1 = Buffer.new p1.byte_size, :in
     m1.write p1
     m2 = Buffer.new p1.byte_size, :out
-    prog.call(:mult, [4], m1 => :mem, m2 => :mem, 10 => :cl_float)
+    prog.call(:mult, [4], :mem, m1, :mem, m2, :cl_float, 10)
     m2.read p1
     p1[0].should.equal 10
     p1[1].should.equal 20
     p1[2].should.equal 30
     p1[3].should.equal 40
     
-    prog.call(:mult, [4], m1 => :mem, m2 => :mem, 100 => :cl_float)
+    prog.call(:mult, [4], :mem, m1, :mem, m2, :cl_float, 100)
     m2.read p1
     p1[0].should.equal 100
     p1[1].should.equal 200
@@ -131,7 +131,7 @@ describe Program do
     m2 = Buffer.new p1.byte_size, :out
     should.raise(NoMethodError) { prog.add }
     should.not.raise(NoMethodError) { 
-      prog.mult([4], m1 => :mem, m2 => :mem, 10 => :cl_float)
+      prog.mult([4], :mem, m1, :mem, m2, :cl_float, 10)
     }
     m2.read p1
     p1[0].should.equal 10

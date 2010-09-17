@@ -62,6 +62,10 @@ module OpenCL
         not self.little_endian?
       end
       
+      def max_clock_frequency
+        self.info(CL_DEVICE_MAX_CLOCK_FREQUENCY)
+      end
+      
       def max_compute_units
         self.info(CL_DEVICE_MAX_COMPUTE_UNITS)
       end
@@ -97,7 +101,15 @@ module OpenCL
         self.info(CL_DEVICE_ADDRESS_BITS)
       end
       
-      def max_local_memory_size
+      def max_mem_alloc_size
+        self.info(CL_DEVICE_MAX_MEM_ALLOC_SIZE)
+      end
+      
+      def global_memory_size
+        self.info(CL_DEVICE_GLOBAL_MEM_SIZE)
+      end
+      
+      def local_memory_size
         self.info(CL_DEVICE_LOCAL_MEM_SIZE)
       end
       
@@ -132,8 +144,7 @@ module OpenCL
       #
       # Same effect as +Context#info(CL_CONTEXT_DEVICES)+.
       def devices
-        # @devices ||= self.info(CL_CONTEXT_DEVICES)  # BUG: #764 macruby.
-        self.info(CL_CONTEXT_DEVICES)
+        @devices ||= self.info(CL_CONTEXT_DEVICES).freeze
       end
       
       def create_command_queue(dev = nil)
@@ -170,14 +181,15 @@ module OpenCL
     
     class Kernel
       def function_name
-        @name ||= self.info(CL_KERNEL_FUNCTION_NAME)
+        @name ||= self.info(CL_KERNEL_FUNCTION_NAME).freeze
       end
+      alias :name :function_name
       
       def argument_number
         @num_args ||= self.info(CL_KERNEL_NUM_ARGS)
       end
       
-      def work_group_size_on_device(dev)
+      def workgroup_size_on_device(dev)
         self.workgroup_info(dev, CL_KERNEL_WORK_GROUP_SIZE)
       end
       
@@ -205,6 +217,7 @@ module OpenCL
   
   # :nodoc:
   module PointerHelper
+    
     # Assign the values of an Array to the receiver.
     #
     # Example::
@@ -230,7 +243,7 @@ module OpenCL
     end
     
     def type_size
-      SCALAR_TYPES[self.type] || VECTOR_TYPES[self.type]
+      OpenCL.type_size self.type
     end
     
     # Returns +true+ if the Pointer is null.
@@ -268,6 +281,9 @@ module OpenCL
   
   class MappedPointer
     include PointerHelper
+    
+    # TODO: method for create MappedPointer without explicitly mapping.
+    #       i.e., the pinned memory.
   end
   
 end

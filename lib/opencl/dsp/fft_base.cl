@@ -50,7 +50,7 @@
     fftKernel2S((a2), (a3), dir); \
     float2 c = (a1); \
     (a1) = (a2); \
-    (a2) = c; \ 
+    (a2) = c; \
 }
 
 #define bitreverse8(a) \
@@ -173,62 +173,3 @@
     fftKernel16((a) + 16, dir); \
     bitreverse32((a)); \
 }
-
-__kernel void 
-clFFT_1DTwistInterleaved(__global float2 *in, 
-                          unsigned int startRow, 
-                          unsigned int numCols, 
-                          unsigned int N, 
-                          unsigned int numRowsToProcess, 
-                          int dir) 
-{ 
-    float2 a, w; 
-    float ang; 
-    unsigned int j; 
-	unsigned int i = get_global_id(0); 
-	unsigned int startIndex = i; 
-	 
-	if(i < numCols) 
-	{ 
-	    for(j = 0; j < numRowsToProcess; j++) 
-	    { 
-	        a = in[startIndex]; 
-	        ang = 2.0f * M_PI * dir * i * (startRow + j) / N; 
-	        w = (float2)(native_cos(ang), native_sin(ang)); 
-	        a = complexMul(a, w); 
-	        in[startIndex] = a; 
-	        startIndex += numCols; 
-	    } 
-	}	 
-} 
-
-__kernel void 
-clFFT_1DTwistSplit(__global float *in_real, 
-                   __global float *in_imag, 
-                   unsigned int startRow, 
-                   unsigned int numCols, 
-                   unsigned int N, 
-                   unsigned int numRowsToProcess, 
-                   int dir) 
-{ 
-    float2 a, w; 
-    float ang; 
-    unsigned int j; 
-	unsigned int i = get_global_id(0); 
-	unsigned int startIndex = i; 
-	 
-	if(i < numCols) 
-	{ 
-	    for(j = 0; j < numRowsToProcess; j++) 
-	    { 
-	        a = (float2)(in_real[startIndex], in_imag[startIndex]); 
-	        ang = 2.0f * M_PI * dir * i * (startRow + j) / N; 
-	        w = (float2)(native_cos(ang), native_sin(ang)); 
-	        a = complexMul(a, w); 
-	        in_real[startIndex] = a.x; 
-	        in_imag[startIndex] = a.y; 
-	        startIndex += numCols; 
-	    } 
-	}	 
-} 
-

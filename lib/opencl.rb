@@ -5,8 +5,6 @@ require File.join(File.dirname(__FILE__), 'opencl/lib')
 # A rubyish interface to OpenCL.
 #
 #--
-# TODO: allow set local workgroup size
-# TODO: Image object, and GL-sharable buffer.
 # TODO: non-blocking
 # TODO: a interface for compiler options?
 #++
@@ -70,6 +68,13 @@ module OpenCL
       self.default_device
     end
     
+    # Max global memory the context can accept.
+    def max_mem_alloc_size
+      @mgm ||= @context.devices.map do |dev|
+        dev.max_mem_alloc_size
+      end.min
+    end
+    
     # Returns the Capi::CommandQueue object of given device.
     #
     # Returns +nil+ if the +device+ is invalid.
@@ -102,10 +107,10 @@ module OpenCL
       self.compile src, compile_options unless src.empty?
     end
     
-    # 
+    # Compile the program source.
     def compile(src, options = '')
       return self if src == @source
-      # TODO: protect this. Can't call #call when compile new source.
+      # TODO: protect this. Can't call #call when compiling new source.
       begin
         @program = @context.create_program src
         # Compilte the program on all available devices in the context.
@@ -126,30 +131,45 @@ module OpenCL
     
     # Executes a kernel.
     #
-    def call(kernel, size, args)      
+    # kernel -- the kernel name.
+    # sizes -- global work sizes and local work sizes.
+    #          work sizes is specified in a multi-demension array.
+    # args -- arguments of the kernel.
+    def call(kernel, sizes, *args)      
       begin
         k = @kernels[kernel] || @kernels[kernel] = @program.create_kernel(kernel.to_s)
         
-        if args.size != k.argument_number
-          raise ArgumentError, "Wrong number of kernel arguments (#{args.size} for #{k.argument_number})."
+        if args.size.odd? || args.size / 2 != k.argument_number
+          raise ArgumentError, "Wrong number of kernel arguments, (#{args.size / 2} for #{k.argument_number})."
         end
         
         # Ask the context for a device to execute the kernel.
         # The context object controls which device to use.
         device = @context.device
-
-        args.each_with_index do |kv, idx|
-          value, type = kv
+        
+        (args.size / 2).times do |i|
+          type = args[i * 2]
+          value = args[i * 2 + 1]
           
           case type
           when :mem
-            k.set_arg idx, value.memory
+            k.set_arg i, value.memory
           else
-            k.set_arg_with_type idx, type, value
+            raise ArgumentError, "Invalid type #{type}." unless OpenCL.valid_type?(type)
+            k.set_arg_with_type i, type, value
           end
         end
+        
+        # Get the work sizes. If anything goes wrong, the OpenCL runtime will
+        # report it finally.
+        gws, lws = sizes
+        unless gws.is_a? Array
+          gws = sizes
+          lws = nil
+        end
+        
         cq = @context.command_queue_of device
-        cq.enqueue_NDRange_kernel(k, size.length, size, nil, nil)
+        cq.enqueue_NDRange_kernel(k, gws.length, gws, lws, nil)
         cq.finish        
       rescue Capi::CLError => e
         raise CLError, e.message
@@ -270,6 +290,10 @@ module OpenCL
       @io != Capi::CL_MEM_READ_ONLY
     end
     
+    def inspect
+      "<#{self.class} #{self.object_id}>"
+    end
+    
     private
     
     def rw_mem(rw, pointer, offset, size)
@@ -310,6 +334,7 @@ module OpenCL
                  
       self
     end
+    
   end
   
   module_function
