@@ -312,11 +312,11 @@ describe HostPointer do
     p = HostPointer.new :cl_uchar4, 1
     bytes = [1, 2, 3, 4].pack('C4')
     p.assign_byte_string bytes, 0
-    p[0].should.equal [4, 3, 2, 1]
+    p[0].should.equal [1, 2, 3, 4]
     
     should.raise(ArgumentError) { p.assign_byte_string "abc", 0 }
     should.not.raise(ArgumentError) { p.assign_byte_string "abcd", 0 }
-    p[0].should.equal [100, 99, 98, 97]
+    p[0].should.equal [97, 98, 99, 100]
     should.raise(TypeError) { p.assign_byte_string [1, 2, 3, 4], 0}
     should.raise(ArgumentError) { p.assign_byte_string bytes, 1}
     p.size.should.equal 1

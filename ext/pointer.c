@@ -183,7 +183,7 @@ rcl_type_size(ID id)
         for (int i = 0; i < n; i++) { \
             VALUE v = rb_ary_entry(value, i); \
             expector(v); \
-            ptr[n - i - 1] = (base_c_type)convertor(v); \
+            ptr[i] = (base_c_type)convertor(v); \
         } \
         return; \
     }
@@ -260,13 +260,12 @@ rcl_ruby2native(ID type, void *address, VALUE value)
         return convertor(*(c_type *)address); \
     }
 
-// TODO: add support for BigEndien.
 #define IF_VECTOR_TYPE_TO_RUBY(base_c_type, n, convertor) \
     if (type == id_type_##base_c_type##n) { \
         VALUE ret = rb_ary_new2(n); \
         base_c_type *ptr = (base_c_type *)address; \
         for (int i = 0; i < n; i++) { \
-            rb_ary_push(ret, convertor(ptr[n - i - 1])); \
+            rb_ary_push(ret, convertor(ptr[i])); \
         } \
         return ret; \
     }
