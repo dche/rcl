@@ -6,10 +6,11 @@
 #++
 #
 
-require File.join(File.dirname(__FILE__), 'fft_kernel_templates')
+require_relative 'fft_kernel_templates'
 
 module OpenCL
   module DSP
+
     # An FFT object is an execution plan to compute certain type of FFT.
     #
     # To convert data between time domain and frequency domain, you first

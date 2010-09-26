@@ -1,4 +1,4 @@
-require File.join(File.dirname(__FILE__), 'fft_spec_helper')
+require_relative 'fft_spec_helper'
 
 describe FFT do
   the 'Inverse of forward FFT should be the waveform itself (after scale).' do
@@ -16,13 +16,13 @@ describe FFT do
       sz.times do |i|
         data_in[i] = [Kernel.rand, Kernel.rand]
       end
-
+  
       buff_in.get_data_from data_in
       fft.forward buff_in, buff_out
-
+  
       # clear buffer_in
       buff_in.get_data_from data_out
-
+  
       fft.inverse buff_out, buff_in
       buff_in.store_data_to data_out
       
