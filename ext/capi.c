@@ -693,7 +693,14 @@ check_cl_error(cl_int errcode, int warn)
 {   
     if (errcode == CL_SUCCESS) return;
     
-    VALUE str = rb_hash_aref(rcl_errors, INT2FIX(errcode));    
+    VALUE str = rb_hash_aref(rcl_errors, INT2FIX(errcode));
+    // NOTE:
+    // Because rb_raise can only new a Exception class with one parameter
+    // (message) for the constructor, we have to encode the CL error code
+    // to the error message. This is ugly. Should be change as soon as the
+    // rb_raise() API is improved.
+    //
+    // See also: opencl.rb
     if (NIL_P(str)) {
         const char *fmt = "Unexpected error: [%d].";
         if (warn) {
@@ -934,6 +941,10 @@ rcl_device_info(VALUE self, VALUE device_info)
     return ret;
 }
 
+/*
+ * call-seq:
+ *      Device#eql?
+ */
 static VALUE
 rcl_device_eql(VALUE self, VALUE dev)
 {
@@ -943,6 +954,10 @@ rcl_device_eql(VALUE self, VALUE dev)
     return myid == youid ? Qtrue : Qfalse;
 }
 
+/*
+ * call-seq:
+ *      Device#hash
+ */
 static VALUE
 rcl_device_hash(VALUE self)
 {
@@ -972,7 +987,7 @@ rcl_context_alloc(VALUE klass)
 static void
 rcl_pfn_notify(const char *errinfo, const void *private_info, size_t cb, void *user_data)
 {
-    // TODO: do something.
+    TRACE("%s\n", errinfo);
 }
 
 static void
@@ -1278,7 +1293,7 @@ rcl_command_queue_info(VALUE self, VALUE command_queue_info)
     Expect_RCL_Const(command_queue_info);
     cl_command_queue_info info = FIX2UINT(command_queue_info);
     
-    intptr_t param_value;   // CHECK: extensibility.
+    intptr_t param_value;   // CHECK: extensibility. should get param size first.
     size_t sz_ret;
     
     cl_command_queue cq = CommandQueue_Ptr(self);
@@ -2672,6 +2687,10 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
 extern size_t rcl_type_size(ID);
 extern void rcl_ruby2native(ID, void *, VALUE);
 
+//
+// call-seq:
+//      set_arg_with_type(index, type, value)
+//
 static VALUE
 rcl_kernel_set_arg_with_type(VALUE self, VALUE index, VALUE type, VALUE value)
 {
