@@ -8,7 +8,7 @@ describe Buffer do
     buff = Buffer.new 1024
     buff.should.be.in
     buff.should.be.out
-    buff.size.should.equal 1024
+    buff.byte_size.should.equal 1024
     
     buff = Buffer.new 2048, :in
     buff.should.be.in
@@ -48,7 +48,7 @@ describe Buffer do
     buff.write ptr
     
     clone = buff.dup
-    clone.size.should.equal buff.size
+    clone.byte_size.should.equal buff.byte_size
     
     p = HostPointer.new :cl_float, 4
     clone.read p
