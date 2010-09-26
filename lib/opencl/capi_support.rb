@@ -152,6 +152,11 @@ module OpenCL
         CommandQueue.new(self, dev, 0)
       end
       
+      def create_profiling_command_queue(dev = nil)
+        dev ||= self.devices.first
+        CommandQueue.new(self, dev, CL_QUEUE_PROFILING_ENABLE)
+      end
+      
       def create_program(src)
         Program.new(self, [src])
       end

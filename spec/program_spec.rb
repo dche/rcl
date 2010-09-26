@@ -139,4 +139,26 @@ describe Program do
     p1[2].should.equal 30
     p1[3].should.equal 40
   end
+  
+  the 'Profiling' do
+    prog = OpenCL::Program.new multi_kernel_src
+    prog.profiling?.should.be.false
+    prog.execution_time.should.equal 0
+    prog.profiling = true
+    prog.execution_time.should.equal 0
+    prog.profiling?.should.be.true
+    
+    byte_size = 4 * OpenCL.type_size(:cl_float)
+    m1 = Buffer.new byte_size, :in
+    m2 = Buffer.new byte_size, :out
+    prog.mult([4], :mem, m1, :mem, m2, :cl_float, 100)
+    et = prog.execution_time
+    (et > 0).should.be.true
+    prog.mult([4], :mem, m1, :mem, m2, :cl_float, 10)
+    (prog.execution_time > et).should.be.true
+    
+    prog.profiling = false
+    prog.profiling?.should.be.false
+    prog.execution_time.should.equal 0
+  end
 end
