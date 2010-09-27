@@ -266,7 +266,7 @@ module OpenCL
     end
     
     def to_i
-      self.address
+      "0x%016x" % self.address
     end
   end
   
