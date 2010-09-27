@@ -135,7 +135,7 @@ module OpenCL
       end
       
       def to_s
-        "#{self.vendor} #{self.name} #{self.cl_version} #{self.driver_version}"
+        "#{self.name} #{self.vendor} #{self.cl_version} #{self.driver_version}"
       end
     end
     
