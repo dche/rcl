@@ -488,7 +488,7 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
  * call-seq:
  *      HostPointer#clear   -> receiver
  * 
- * Set the memory the receiver manages to zero.
+ * Set the memory that the receiver manages to zero.
  */
 static VALUE
 rcl_pointer_clear(VALUE self)

@@ -214,7 +214,7 @@ REvent(cl_event ptr)
     rcl_event_t *p;
     VALUE ro = Data_Make_Struct(rcl_cEvent, rcl_event_t, 0, rcl_event_free, p);
     p->e = ptr;
-    
+
     return ro;
 }
 
@@ -1027,9 +1027,6 @@ build_device_array(cl_device_id *devs, size_t cb)
 /*
  * call-seq:
  *      Context.new(platform, CL_DEVICE_TYPE_GPU)
- *      Context.new(platform, devices) do |info|
- *        ...
- *      end
  *
  * Wrappes +clCreateContext()+ and +clCreateContextFromType()+
  *
@@ -1998,6 +1995,10 @@ define_class_sampler(void)
  * class Event
  */
 
+/*
+ * call-seq:
+ *      info(anEventInfoConstant)
+ */
 static VALUE
 rcl_event_info(VALUE self, VALUE event_info)
 {
@@ -2025,6 +2026,10 @@ rcl_event_info(VALUE self, VALUE event_info)
     
 }
 
+/*
+ * call-seq:
+ *      Capi.wait_for_events(anArrayOfEventObject)
+ */
 static VALUE
 rcl_wait_for_events(VALUE self, VALUE events)
 {
@@ -2410,13 +2415,13 @@ typedef void (*pfn_build_notify)(cl_program, void *user_data);
 static void
 build_notify(cl_program program, void *user_data)
 {
-    // TODO: do something.
+    // NOT IMPLEMENTED. Seems that the context notifier will report
+    // build erros too.
 }
 
 /*
  * call-seq:
  *      Program#build([Device, ..], "-D")   -> the receiver
- *      Program#build([Device, ..], "", memo) do |receiver, memo|
  * 
  * Wrapps +clProgramBuild()+.
  */

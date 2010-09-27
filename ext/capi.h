@@ -9,7 +9,7 @@
 #define TRACE(...)     fprintf(stderr, __VA_ARGS__)
 
 // NOTE: this macro needs local defined class variables 
-//       take special pattern of name, /rcl_c\w+/
+//       using a special pattern for name, /rcl_c\w+/
 #define Expect_RCL_Type(o, klass) \
     do { \
         Check_Type(o, T_DATA); \
