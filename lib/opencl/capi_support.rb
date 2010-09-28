@@ -287,8 +287,6 @@ module OpenCL
   class MappedPointer
     include PointerHelper
     
-    # TODO: method for create MappedPointer without explicitly mapping.
-    #       i.e., the pinned memory.
   end
   
 end
