@@ -27,12 +27,14 @@ module OpenCL
       begin
         @memory = @context.create_buffer(@io, size, nil)
         @byte_size = size
+        @mapped = false
       rescue Capi::CLError => e
         raise CLError.new(e.message)
       end
     end
     
     def initialize_copy(orig)
+      # BUG
       begin
         @memory = @context.create_buffer(@io, @byte_size, nil)
 
@@ -73,6 +75,46 @@ module OpenCL
     end
     alias :write :get_data_from
     
+    # Returns a MappedPointer object, or +nil+ if the receiver has been mapped.
+    #
+    # Because the behavior that kernel executes on mapped Memory objects
+    # is undefined, we restrict that there is only one 
+    def map
+      return nil if @mapped
+      
+      begin
+        cq = @context.command_queue_of @context.default_device
+        @pointer, _ = cq.enqueue_map_buffer self.memory, true, map_flag, 0, self.byte_size, nil
+        @mapped = true
+      rescue Capi::CLError => e
+        warn self.to_s + ".map(), " + CLError.new(e.message).to_s
+      end
+      return @pointer
+    end
+    
+    # Un-maps the buffer object, or does nothing is the receiver is not mapped.
+    #
+    # Returns the receiver.
+    def unmap
+      return self unless @mapped
+
+      begin
+        cq = @context.command_queue_of @context.default_device
+        cq.enqueue_unmap_mem_object self.memory, @pointer, nil
+
+        @pointer = nil
+        @mapped = false
+      rescue Capi::CLError => e
+        warn self.to_s + ".unmap(), " + CLError.new(e.message).to_s
+      end
+      self
+    end
+    
+    # Returns +true+ if the recevier has been mapped to a host pointer.
+    def mapped?
+      @mapped
+    end
+    
     # Returns +true+ if the receiver is readable by the device.
     def in?
       @io != Capi::CL_MEM_WRITE_ONLY
@@ -83,11 +125,29 @@ module OpenCL
       @io != Capi::CL_MEM_READ_ONLY
     end
     
-    def inspect
-      "<#{self.class} #{self.object_id}>"
+    def to_s
+      io_str = self.in? ? "read, " : ""
+      io_str += "write, " if self.out?
+      
+      sz = self.byte_size
+      sz_str = if sz < 1024
+        "#{sz} Bytes"
+      elsif sz < 1024 * 1024
+        "#{sz.fdiv(1024)} KB"
+      else
+        "#{sz.fdiv(1024 * 1024)} MB"
+      end
+      
+      "#<#{self.class}: #{sz_str}, #{io_str}#{@mapped ? 'mapped' : 'unmapped'}>"
     end
     
     private
+    
+    def map_flag
+      flag = 0
+      flag |= Capi::CL_MAP_READ if self.in?
+      flag |= Capi::CL_MAP_WRITE if self.out?
+    end
     
     def rw_mem(rw, pointer, offset, size)
       ts = pointer.type_size
@@ -128,6 +188,5 @@ module OpenCL
       self
     end
     
-  end
-  
+  end  
 end

@@ -24,14 +24,13 @@ module OpenCL
     def initialize(length, type = :cl_float)
       
       super OpenCL.type_size(type) * length
-      @pointer = OpenCL::HostPointer.new type, length
-
+      
+      # Collects kernel sources and build @@program.
       update_cl_program
 
       @length = length
       @type = type
-
-      @dirty = @new = false
+      
       self
     end
     
@@ -41,48 +40,15 @@ module OpenCL
     
     private
     
-    def new?
-      @new
-    end
-    
-    def dirty?
-      @dirty
-    end
-    
-    # Used in sub-class methods in which the CL computation changed
-    # contents of device buffer. This method should be called to indicate
-    # such situation.
-    def need_sync   # :doc:
-      @new = true; self
-    end
-    
-    def not_new
-      @new = false
-    end
-    
-    def now_dirty
-      @dirty = true
-    end
-    
-    def not_dirty
-      @dirty = false
-    end
-    alias :now_clean :not_dirty
-
-    #--
-    # FEATURE: support ruby's subscriber syntax? Like, v[-1], v[-2]
-    #++
     def [](i)
-      if new?
-        self.store_data_to @pointer
-        not_new
-      end    
+      map
       @pointer[i]
     end
     
-    def []=(i, x)
+    def []=(i, x)      
+      map
       @pointer[i] = x
-      now_dirty
+
       self
     end
         
@@ -99,15 +65,20 @@ module OpenCL
     
     # 
     def call_cl_method(meth, *args)   # :doc:
-      if dirty?
-        self.get_data_from @pointer
-        now_clean
-      end
-    
       update_cl_program
+      unmap    
+      # CHECK: prevent map when call_cl_method.
       @@program.call meth, *args
       self
     end
+    
+    def map
+      return nil if mapped?
+      super
+      @pointer.cast_to self.type
+    end
+    
+    private :map, :unmap, :mapped?
     
   end
 end

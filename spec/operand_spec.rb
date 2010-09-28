@@ -18,7 +18,6 @@ class MyVector < Operand
   
   def cl_add(number)
     call_cl_method :my_vector_add, [self.length], :mem, self, :cl_float, number
-    need_sync
   end
   
   def [](i)
@@ -73,4 +72,5 @@ describe Operand do
     should.raise(RuntimeError) { @out[@out.length] }
     should.raise(RuntimeError) { @out[@out.length] = 1 }
   end
+  
 end
