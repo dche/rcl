@@ -1,10 +1,13 @@
-*.gem
 .DS_Store
+ref
+
 *.rbo
 *.rbc
+*.gem
 
-Makefile
 *.o
 *.bundle
+
+Makefile
 
 ci.rb
