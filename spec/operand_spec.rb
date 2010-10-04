@@ -5,7 +5,9 @@ require_relative '../lib/opencl/operand'
 include OpenCL
 
 class MyVector < Operand
- 
+
+  use_cl_modules :random
+
   add_kernels <<-EOK
     __kernel void 
     my_vector_add(__global float *vec, float number)
@@ -72,5 +74,9 @@ describe Operand do
     should.raise(RuntimeError) { @out[@out.length] }
     should.raise(RuntimeError) { @out[@out.length] = 1 }
   end
-  
+
+  the '::cl_modules_in_use' do
+    MyVector.cl_modules_in_use.should.include(:random)
+  end
+
 end
