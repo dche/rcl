@@ -9,6 +9,21 @@ module OpenCL
     # Kernel sources.
     @@kernel_sources = []
     
+    @@cl_modules = []
+    @@cl_module_sources = ''
+
+    def self.use_cl_modules(*modules)
+      modules.reverse_each do |mod|
+        next if @@cl_modules.member?(mod)
+        @@cl_modules.unshift mod
+        @@cl_module_sources.rcl_include(mod.to_s)
+      end
+    end
+
+    def self.cl_modules_in_use
+      @@cl_modules.dup
+    end
+
     def self.add_kernels(string)
       raise ArgumentError, "Invalid CL source code." if !string.is_a?(String) || string.empty?
       @@kernel_sources << string    
