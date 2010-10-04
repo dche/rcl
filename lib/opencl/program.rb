@@ -109,7 +109,7 @@ module OpenCL
         event = cq.enqueue_NDRange_kernel(k, gws.length, gws, lws, nil)
         cq.finish
 
-        profiling event
+        profiling event, kernel
       rescue Capi::CLError => e
         raise CLError.new(e.message)
       ensure
@@ -146,12 +146,12 @@ module OpenCL
     end
     
     private
-    
-    def profiling(event)
+
+    def profiling(event, kernel)
       if self.profiling?
         et = event.profiling_info(Capi::CL_PROFILING_COMMAND_END)
         st = event.profiling_info(Capi::CL_PROFILING_COMMAND_START)
-        @execution_time += (et - st) * 1e-9
+        @execution_time = (et - st) * 1e-9
       end
     end
     
