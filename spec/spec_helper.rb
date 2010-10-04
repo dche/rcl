@@ -1,5 +1,18 @@
 
 require 'rubygems'
+
+def coveragable?
+  RUBY_ENGINE == 'ruby' && RUBY_VERSION >= '1.9'
+end
+
+if coveragable?
+  require 'coverage'
+  
+  at_exit do
+    Coverage.result
+  end
+end
+
 require 'bacon'
 
 module Bacon
@@ -10,4 +23,6 @@ module Bacon
 end
 Bacon.extend Bacon::TapOutput
 
-require File.join(File.dirname(__FILE__), '../lib/opencl')
+Coverage.start if coveragable?
+
+require_relative '../lib/opencl'
