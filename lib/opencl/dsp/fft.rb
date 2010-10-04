@@ -263,21 +263,21 @@ module OpenCL
         return self unless self.data_format == :interleaved_complex
 
         # sanity checks
-        if in_buff.size != out_buff.size
-          raise ArgumentError, "Sizes of input and output buffers mismatch (#{in_buff.size} and #{out_buff.size})."
+        if in_buff.byte_size != out_buff.byte_size
+          raise ArgumentError, "Sizes of input and output buffers mismatch (#{in_buff.byte_size} and #{out_buff.byte_size})."
         end
         
         in_place = (in_buff == out_buff)
         
         # compute batch size
         unit_size = self.shape.reduce(:*) * OpenCL.type_size(:cl_float2)
-        batch_size = in_buff.size / unit_size
+        batch_size = in_buff.byte_size / unit_size
         if batch_size < 1
           raise ArgumentError, 
                 "Buffer sizes are too small, at least #{unit_size} bytes are needed."
         end
      
-        alloc_interleaved_temp_buffer in_buff.size
+        alloc_interleaved_temp_buffer in_buff.byte_size
         # @temp_buffer might be nil, but that's OK.
         mem_objs = [in_buff, out_buff, @temp_buffer]
         curr_read = 0
@@ -329,7 +329,7 @@ module OpenCL
       def execute_split(in_real, in_image, out_real, out_image, direction)
         return self unless self.data_format == :split_complex
         
-        if (in_real.size != in_image.size) || (out_real.size != out_image.size) || (in_real.size != out_real.size)
+        if (in_real.byte_size != in_image.byte_size) || (out_real.byte_size != out_image.byte_size) || (in_real.byte_size != out_real.byte_size)
           raise ArgumentError, "Sizes of buffers mismatch."
         end
         
@@ -340,7 +340,7 @@ module OpenCL
         in_place = (in_real == out_real)        
         dir = (direction == :forward ? -1 : 1)
         
-        size = in_real.size
+        size = in_real.byte_size
         unit_size = (self.shape.reduce(:*) * OpenCL.type_size(:cl_float))
         batch_size = size / unit_size
         if batch_size < 1
@@ -402,7 +402,7 @@ module OpenCL
       
       def alloc_interleaved_temp_buffer(size)
         if need_temp_buffer? && self.data_format == :interleaved_complex
-           unless @temp_buffer && @temp_buffer.size >= size
+           unless @temp_buffer && @temp_buffer.byte_size >= size
              @temp_buffer = OpenCL::Buffer.new size
            end
         end
@@ -411,7 +411,7 @@ module OpenCL
       
       def alloc_split_temp_buffer(size)
         if need_temp_buffer? && self.data_format == :split_complex
-          unless @temp_buffer_real && @temp_buffer_real.size >= size
+          unless @temp_buffer_real && @temp_buffer_real.byte_size >= size
              @temp_buffer_real = OpenCL::Buffer.new size
              @temp_buffer_image = OpenCL::Buffer.new size
           end

@@ -91,6 +91,23 @@ describe FFT do
   end
   
   it 'should be able to execute many times.' do
+    shape = [4096, 2]
+    fft = FFT.new shape
+    
+    sz = shape.reduce(:*) * (Kernel.rand(16) + 1)
+    data = HostPointer.new :cl_float2, sz
+    buffer = Buffer.new sz * OpenCL.type_size(:cl_float2)
+    
+    sz.times { |i| data[i] = [Kernel.rand, Kernel.rand] }
+    buffer.get_data_from data
+
+    1000.times do
+      should.not.raise(Exception) { fft.forward! buffer }
+    end
+    
+    1000.times do
+      should.not.raise(Exception) { fft.inverse! buffer }
+    end
   end
   
 end

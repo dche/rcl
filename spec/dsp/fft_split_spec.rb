@@ -118,4 +118,27 @@ describe FFT do
     end
   end
   
+  it 'should be able to execute many times.' do
+    shape = [4096, 2]
+    fft = FFT.new shape, :split_complex
+    
+    sz = shape.reduce(:*) * (Kernel.rand(16) + 1)
+    data_real = HostPointer.new :cl_float, sz
+    buffer_real = Buffer.new sz * OpenCL.type_size(:cl_float)
+    data_image = HostPointer.new :cl_float, sz
+    buffer_image = Buffer.new sz * OpenCL.type_size(:cl_float)
+    
+    sz.times { |i| data_real[i] = Kernel.rand; data_image[i] = Kernel.rand }
+    buffer_real.get_data_from data_real
+    buffer_image.get_data_from data_image
+
+    1000.times do
+      should.not.raise(Exception) { fft.forward! buffer_real, buffer_image }
+    end
+    
+    1000.times do
+      should.not.raise(Exception) { fft.inverse! buffer_real, buffer_image }
+    end
+  end
+  
 end
