@@ -74,61 +74,60 @@ module OpenCL
       rw_mem :write, pointer, offset, size
     end
     alias :write :get_data_from
-    
+
     # Returns a MappedPointer object, or +nil+ if the receiver has been mapped.
     #
     # Because the behavior that kernel executes on mapped Memory objects
-    # is undefined, we restrict that there is only one 
-    def map
-      return nil if @mapped
-      
+    # is undefined, we restrict that there is only one
+    #
+    def map_pointer
+      return @mapped_pointer unless @mapped_pointer.nil?
+
       begin
         cq = @context.command_queue_of @context.default_device
-        @pointer, _ = cq.enqueue_map_buffer self.memory, true, map_flag, 0, self.byte_size, nil
-        @mapped = true
+        @mapped_pointer, _ = cq.enqueue_map_buffer self.memory, true, map_flag, 0, self.byte_size, nil
       rescue Capi::CLError => e
         warn self.to_s + ".map(), " + CLError.new(e.message).to_s
       end
-      return @pointer
+      return @mapped_pointer
     end
-    
+
     # Un-maps the buffer object, or does nothing is the receiver is not mapped.
     #
     # Returns the receiver.
-    def unmap
-      return self unless @mapped
+    def unmap_pointer
+      return self if @mapped_pointer.nil?
 
       begin
         cq = @context.command_queue_of @context.default_device
-        cq.enqueue_unmap_mem_object self.memory, @pointer, nil
+        cq.enqueue_unmap_mem_object self.memory, @mapped_pointer, nil
 
-        @pointer = nil
-        @mapped = false
+        @mapped_pointer = nil
       rescue Capi::CLError => e
-        warn self.to_s + ".unmap(), " + CLError.new(e.message).to_s
+        warn self.to_s + ".unmap_pointer(), " + CLError.new(e.message).to_s
       end
       self
     end
-    
+
     # Returns +true+ if the recevier has been mapped to a host pointer.
-    def mapped?
-      @mapped
+    def pointer_mapped?
+      !@mapped_pointer.nil?
     end
-    
+
     # Returns +true+ if the receiver is readable by the device.
     def in?
       @io != Capi::CL_MEM_WRITE_ONLY
     end
-    
+
     # Returns +true+ ff the receiver is writable by the device.
     def out?
       @io != Capi::CL_MEM_READ_ONLY
     end
-    
+
     def to_s
       io_str = self.in? ? "read, " : ""
       io_str += "write, " if self.out?
-      
+
       sz = self.byte_size
       sz_str = if sz < 1024
         "#{sz} Bytes"
@@ -137,10 +136,10 @@ module OpenCL
       else
         "#{sz.fdiv(1024 * 1024)} MB"
       end
-      
-      "#<#{self.class}: #{sz_str}, #{io_str}#{@mapped ? 'mapped' : 'unmapped'}>"
+
+      "#<#{self.class}: #{sz_str}, #{io_str}#{@mapped_pointer ? 'mapped' : 'unmapped'}>"
     end
-    
+
     private
     
     def map_flag

@@ -39,46 +39,45 @@ module OpenCL
     end
     
     private
-    
-    def [](i)
-      map
-      @pointer[i]
-    end
-    
-    def []=(i, x)      
-      map
-      @pointer[i] = x
 
+    def [](i)
+      map_pointer[i]
+    end
+
+    def []=(i, x)
+      map_pointer[i] = x
       self
     end
-        
-    #--
-    # FIXME: should be a class method?
-    #++
+
+    def map_pointer
+      unless pointer_mapped?
+        super
+        @mapped_pointer.cast_to self.type
+      end
+      @mapped_pointer
+    end
+
+    private :map_pointer, :unmap_pointer, :pointer_mapped?
+
+    private
+
     def update_cl_program
       unless @@kernel_sources.empty?
-        @@program = OpenCL::Program.new @@kernel_sources.reduce(:+), '-cl-mad-enable'
+        src = @@cl_module_sources + @@kernel_sources.reduce(:+)
+        @@program = OpenCL::Program.new src, '-cl-mad-enable'
         @@kernel_sources.clear
       end
       raise 'No OpenCL kernel defined.' if @@program.nil?
     end
-    
-    # 
+
+    #
     def call_cl_method(meth, *args)   # :doc:
       update_cl_program
-      unmap    
+      unmap_pointer
       # CHECK: prevent map when call_cl_method.
       @@program.call meth, *args
       self
     end
-    
-    def map
-      return nil if mapped?
-      super
-      @pointer.cast_to self.type
-    end
-    
-    private :map, :unmap, :mapped?
-    
+
   end
 end

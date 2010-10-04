@@ -74,4 +74,37 @@ describe Buffer do
     ptr[3].should.equal 4
   end
   
+  the '#map and #unmap' do
+    ptr = HostPointer.new :cl_uint, 8
+    buff = Buffer.new ptr.byte_size
+    
+    ptr.assign [1, 2, 3, 4, 5, 6, 7, 8]
+    buff.write ptr
+    
+    should.not.raise(Exception) { buff.unmap_pointer }
+    buff.pointer_mapped?.should.be.false
+    
+    mp = buff.map_pointer
+    mp.should.is_a MappedPointer
+    mp.byte_size.should.equal buff.byte_size
+    mp.cast_to :cl_uint
+    mp.type.should.equal :cl_uint
+
+    mp[0].should.equal 1
+    mp[1].should.equal 2
+    mp[7].should.equal 8
+    
+    buff.pointer_mapped?.should.be.true
+    
+    mp[0] = 0xEEFF
+    buff.unmap_pointer
+    buff.read ptr
+    ptr[0].should.equal 0xEEFF
+    ptr[1].should.equal 2
+    
+    buff.pointer_mapped?.should.be.false
+    mp.size.should.equal 0
+    mp.null?.should.be.true
+  end
+  
 end
