@@ -32,21 +32,80 @@ module OpenCL
         raise CLError.new(e.message)
       end
     end
-    
+
     def initialize_copy(orig)
-      # BUG
       begin
         @memory = @context.create_buffer(@io, @byte_size, nil)
 
+        orig.unmap_pointer
         cq = @context.command_queue_of @context.default_device
-        # CHECK: ensure all operations upon orig.memory are done?
         cq.enqueue_copy_buffer(orig.memory, @memory, 0, 0, self.byte_size, nil)
-        cq.finish
+
+        @mapped_pointer = nil
       rescue Capi::CLError => e
         raise CLError.new(e.message)
       end
     end
-    
+
+    # Copy the contenst of the receiver to aother buffer.
+    #
+    # buffer - A +Buffer+ object. Its byte_size must be larger than
+    #          the +size+.
+    #
+    def copy_to(buffer, size = nil, start = 0, target_start = 0)
+      return self if buffer.equal? self
+
+      size = self.byte_size if size.nil?
+      return self if size <= 0
+
+      start = 0 if start < 0
+      target_start = 0 if target_start < 0
+
+      if start + size > self.byte_size
+        raise ArgumentError, "Specified buffer region (#{start}, #{start + size - 1}) is invalid."
+      end
+
+      if target_start + size > buffer.byte_size
+        raise ArgumentError, "Specified buffer region (#{target_start}, #{target_start + size - 1}) is invalid."
+      end
+
+      self.unmap_pointer
+      buffer.unmap_pointer
+
+      begin
+        mem_from = self.memory
+        mem_to = buffer.memory
+
+        cq = @context.command_queue_of @context.default_device
+        cq.enqueue_copy_buffer(mem_from, mem_to, start, target_start, size, nil)
+      rescue Capi::CLError => e
+        raise CLError.new e.message
+      end
+      self
+    end
+
+    # Copy contents from another Buffer to the receiver.
+    def copy_from(buffer, size = nil, start = 0, source_start = 0)
+      buffer.copy_to self, size, source_start, start
+      self
+    end
+
+    # Create a new Buffer, and copy +size+ bytes of the receiver
+    # start from the offset +start+.
+    def slice(start = 0, size = nil)
+      size = self.byte_size if size.nil?
+      return nil if size <= 0
+
+      start = 0 if start < 0
+
+      if (start + size) > self.byte_size
+        raise ArgumentError, "Specified slice region (#{start}, #{start + size - 1}) is invalid."
+      end
+
+      io = (self.in? && self.out?) ? :in_out : (self.in? ? :in : :out)
+      self.class.new(size, io).copy_from(self, size, 0, start)
+    end
+
     # Read data from the device memory, and store the data to a HostPointer.
     #
     # Does nothing if the buffer's io flag is :in, or the byte size of the
@@ -146,6 +205,8 @@ module OpenCL
       flag = 0
       flag |= Capi::CL_MAP_READ if self.in?
       flag |= Capi::CL_MAP_WRITE if self.out?
+      # The value of above statement is nil if self.out? is false.
+      flag
     end
     
     def rw_mem(rw, pointer, offset, size)
