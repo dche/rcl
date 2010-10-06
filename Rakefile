@@ -61,7 +61,7 @@ end
 
 rule File.join(extdir, 'capi.bundle') => FileList[File.join(extdir, '*.{c,h}')] do  
   cd(extdir) do
-    system 'ruby extconf.rb && make'
+    system "#{RUBY_ENGINE} extconf.rb && make"
   end
 end
 
