@@ -4,6 +4,8 @@ module OpenCL
   class CLError < Exception
     
     def initialize(cl_err_msg)
+      cl_err_msg = cl_err_msg.message unless cl_err_msg.is_a?(String)
+
       md = /^\((-?[1-9]([0-9]+)?)\)\s(\w[[:print:]]+)$/.match(cl_err_msg)
       raise ArgumentError, "Invalid CL error message." if md.nil?
       
