@@ -89,10 +89,9 @@ module OpenCL
           
           case type
           when :mem
-            k.set_arg i, value.memory
+            k.set_arg i, type, value.memory
           else
-            raise ArgumentError, "Invalid type #{type}." unless OpenCL.valid_type?(type)
-            k.set_arg_with_type i, type, value
+            k.set_arg i, type, value
           end
         end
         

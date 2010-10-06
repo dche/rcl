@@ -48,9 +48,9 @@ describe "Enqueue kernel" do
     out_c = HostPointer.new(:cl_float, 1)
     mem_c = cxt.create_buffer(CL_MEM_WRITE_ONLY, out_c.byte_size)
     
-    k.set_arg(0, mem_a)
-    k.set_arg(1, mem_b)
-    k.set_arg(2, mem_c)
+    k.set_arg(0, :mem, mem_a)
+    k.set_arg(1, :mem, mem_b)
+    k.set_arg(2, :mem, mem_c)
     evt = cq.enqueue_NDRange_kernel(k, 1, [in_a.size], nil, nil)
     cq.finish
 
@@ -71,9 +71,9 @@ describe "Enqueue kernel" do
     out_f = HostPointer.new(:cl_float, 4)
     mem_out = cxt.create_buffer(CL_MEM_WRITE_ONLY, out_f.byte_size)
     
-    k.set_arg(0, mem_in)
-    k.set_arg(1, mem_out)
-    k.set_arg(2, [10.0625].pack('f'))
+    k.set_arg(0, :mem, mem_in)
+    k.set_arg(1, :mem, mem_out)
+    k.set_arg(2, :cl_float, 10.0625)
     evt = cq.enqueue_NDRange_kernel(k, 1, [in_f.size], nil, nil)
     cq.finish
     cq.enqueue_read_buffer(mem_out, true, 0, in_f.byte_size, out_f, nil)

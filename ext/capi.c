@@ -2644,74 +2644,64 @@ rcl_kernel_init_copy(VALUE copy, VALUE orig)
     return copy;
 }
 
+
+extern size_t rcl_type_size(ID);
+extern void rcl_ruby2native(ID, void *, VALUE);
+
+static ID   rcl_kernel_arg_type_memory;
+static ID   rcl_kernel_arg_type_local;
+static ID   rcl_kernel_arg_type_sampler;
+
 /*
  * call-seq:
- *      Kernel#set_arg(0, nil)              -> receiver
- *      Kernel#set_arg(1, aHostPointer)
+ *      aKernel#set_arg(index, type, value)
  *
  * Wrapps +clSetKernelArg()+.
  *
  * Returns the receiver when success, or raise CLError.
  */
+
 static VALUE
-rcl_kernel_set_arg(VALUE self, VALUE index, VALUE arg_value)
-{
-    Extract_Size(index, idx);
-    
-    size_t arg_size = 0;
-    void *arg_ptr = NULL;
-    
-    VALUE klass = CLASS_OF(arg_value);
-    if (klass == rcl_cMemory) {
-        rcl_mem_t *mem;
-        Data_Get_Struct(arg_value, rcl_mem_t, mem);
-
-        arg_ptr = (void *)(&(mem->mem));
-        arg_size = sizeof(cl_mem);
-    } else if (TYPE(arg_value) == T_STRING) {
-        arg_ptr = RSTRING_PTR(arg_value);
-        arg_size = RSTRING_LEN(arg_value);
-    } else if (klass == rcl_cSampler) {
-        rcl_sampler_t *sampler;
-        Data_Get_Struct(arg_value, rcl_sampler_t, sampler);
-        
-        arg_ptr = (void *)(&(sampler->s));
-        arg_size = sizeof(cl_sampler); 
-    } else if (NIL_P(arg_value)) {
-        arg_ptr = NULL;
-        arg_size = 0;        
-    } else {
-        rb_raise(rb_eArgError, "Invalid kernel argument type.");
-    }
-    cl_int res = clSetKernelArg(Kernel_Ptr(self), (cl_uint)idx, arg_size, arg_ptr);
-    Check_And_Raise(res);
-    
-    return self;
-}
-
-extern size_t rcl_type_size(ID);
-extern void rcl_ruby2native(ID, void *, VALUE);
-
-//
-// call-seq:
-//      set_arg_with_type(index, type, value)
-//
-static VALUE
-rcl_kernel_set_arg_with_type(VALUE self, VALUE index, VALUE type, VALUE value)
+rcl_kernel_set_arg(VALUE self, VALUE index, VALUE type, VALUE value)
 {
     Extract_Size(index, idx);
     Check_Type(type, T_SYMBOL);
     
-    ID clt = SYM2ID(type);
-    size_t arg_size = rcl_type_size(clt);
-    assert(arg_size <= 128);
+    size_t arg_size = 0;
+    int8_t *arg_ptr = NULL;
     
-    int8_t arg_ptr[128];
-    rcl_ruby2native(clt, (void *)arg_ptr, value);
-    
+    ID tid = SYM2ID(type);
+    if (tid == rcl_kernel_arg_type_memory) {
+        if (!NIL_P(value)) {
+            Expect_RCL_Type(value, Memory);
+            arg_size = sizeof(cl_mem);
+            
+            rcl_mem_t *mem;
+            Data_Get_Struct(value, rcl_mem_t, mem);
+            arg_ptr = (void *)(&(mem->mem));
+        }
+    } else if (tid == rcl_kernel_arg_type_local) {
+        Extract_Size(value, sz);
+        arg_size = sz;
+        arg_ptr = NULL;
+    } else if (tid == rcl_kernel_arg_type_sampler) {
+        Expect_RCL_Type(value, Sampler);
+        
+        rcl_sampler_t *ps;
+        Data_Get_Struct(value, rcl_sampler_t, ps);       
+        arg_ptr = (void *)(&(ps->s));
+        
+        arg_size = sizeof(cl_sampler);
+    } else {
+        arg_size = rcl_type_size(tid);
+        arg_ptr = ALLOCA_N(int8_t, arg_size);
+
+        rcl_ruby2native(tid, (void *)arg_ptr, value);
+    }
+
     cl_int res = clSetKernelArg(Kernel_Ptr(self), (cl_uint)idx, arg_size, arg_ptr);
     Check_And_Raise(res);
-    
+
     return self;
 }
 
@@ -2799,10 +2789,14 @@ define_class_kernel(void)
     rb_define_alloc_func(rcl_cKernel, rcl_kernel_alloc);
     rb_define_method(rcl_cKernel, "initialize", rcl_kernel_init, 2);
     rb_define_method(rcl_cKernel, "initialize_copy", rcl_kernel_init_copy, 1);
-    rb_define_method(rcl_cKernel, "set_arg", rcl_kernel_set_arg, 2);
-    rb_define_method(rcl_cKernel, "set_arg_with_type", rcl_kernel_set_arg_with_type, 3);
+    rb_define_method(rcl_cKernel, "set_arg", rcl_kernel_set_arg, 3);
     rb_define_method(rcl_cKernel, "info", rcl_kernel_info, 1);
     rb_define_method(rcl_cKernel, "workgroup_info", rcl_kernel_workgroup_info, 2);
+    
+    // Initialize constants.
+    rcl_kernel_arg_type_memory = rb_intern("mem");
+    rcl_kernel_arg_type_local = rb_intern("local");
+    rcl_kernel_arg_type_sampler = rb_intern("sampler");
 }
 
 /*
