@@ -1,6 +1,6 @@
 
 module OpenCL
-  
+
   # Buffer encaplulates the OpenCL memory object.
   #
   class Buffer
@@ -12,7 +12,7 @@ module OpenCL
     # Creates a Buffer object.
     def initialize(size, io_flag = :in_out)
       @context = OpenCL::Context.default_context
-      
+
       @io = case io_flag
       when :in_out
         Capi::CL_MEM_READ_WRITE
@@ -121,11 +121,11 @@ module OpenCL
       rw_mem :read, pointer, offset, size
     end
     alias :read :store_data_to
-    
+
     # Write the data pointed by a HostPointer to the device memroy.
     #
     # (HostPointer) pointer -
-    # (Integer) offset - 
+    # (Integer) offset -
     #
     # Returns the receiver.
     def get_data_from(pointer, offset = 0, size = 0)
@@ -222,15 +222,16 @@ module OpenCL
       else
         size *= ts
       end
-      if size < 1 || size > self.byte_size || not(Integer === size)
-        raise ArgumentError, "Size must be larger than 0 and less than #{self.byte_size}." 
+
+      if size < 1 || size > self.byte_size
+        raise ArgumentError, "Size must be larger than 0 and less than #{self.byte_size}."
       end
-      
+
       if self.byte_size < (offset + size) || pointer.byte_size < size
         raise ArgumentError, 
               "Size is too large." 
       end
-      
+
       begin
         # NOTE: Devices in same context share a combined memory bool.
         #       That's why we can write buffer through a queue of one device,
@@ -240,13 +241,13 @@ module OpenCL
           cq.enqueue_read_buffer(self.memory, true, offset, size, pointer, nil);
         else
           cq.enqueue_write_buffer(self.memory, true, offset, size, pointer, nil);
-        end        
+        end
       rescue Capi::CLError => e
         raise CLError.new(e.message)
       end
-                 
+
       self
     end
-    
-  end  
+
+  end
 end

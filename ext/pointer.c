@@ -82,12 +82,12 @@ static VALUE rcl_vector_types;
         size_t sz = sizeof(type); \
         rb_hash_aset(rcl_vector_types, ID2SYM(id_type_##type), LONG2FIX(sz)); \
     } while (0)
-    
+
 static void define_cl_types(void)
 {
     rcl_types = rb_hash_new();
     rcl_vector_types = rb_hash_new();
-    
+
     DEF_CL_TYPE(cl_bool);
     DEF_CL_TYPE(cl_char);
     DEF_CL_TYPE(cl_uchar);
@@ -100,7 +100,7 @@ static void define_cl_types(void)
     DEF_CL_TYPE(cl_half);
     DEF_CL_TYPE(cl_float);
     DEF_CL_TYPE(cl_double);
-    
+
     DEF_CL_VECTOR_TYPE(cl_char2);
     DEF_CL_VECTOR_TYPE(cl_char4);
     DEF_CL_VECTOR_TYPE(cl_char8);
@@ -141,11 +141,11 @@ static void define_cl_types(void)
     DEF_CL_VECTOR_TYPE(cl_double4);
     DEF_CL_VECTOR_TYPE(cl_double8);
     DEF_CL_VECTOR_TYPE(cl_double16);
-    
+
     // Prevent from change.
     OBJ_FREEZE(rcl_types);
     OBJ_FREEZE(rcl_vector_types);
-    
+
     rb_define_const(rcl_mOpenCL, "SCALAR_TYPES", rcl_types);
     rb_define_const(rcl_mOpenCL, "VECTOR_TYPES", rcl_vector_types);
 }
@@ -158,7 +158,7 @@ rcl_type_size(ID id)
 {
     VALUE sym = ID2SYM(id);
     VALUE sz = rb_hash_lookup(rcl_types, sym);
-    
+
     if (NIL_P(sz)) {
         sz = rb_hash_lookup(rcl_vector_types, sym);
     }
@@ -193,7 +193,7 @@ void
 rcl_ruby2native(ID type, void *address, VALUE value)
 {
     assert(!(NIL_P(value) || NULL == address));
-    
+
     if (type == id_type_cl_bool) {
         Expect_Boolean(value, bv);
         *(cl_bool *)address = bv;
@@ -210,7 +210,7 @@ rcl_ruby2native(ID type, void *address, VALUE value)
     IF_TYPE_TO_NATIVE(cl_half,   Expect_Float,   Extract_Half);
     IF_TYPE_TO_NATIVE(cl_float,  Expect_Float,   NUM2DBL);
     IF_TYPE_TO_NATIVE(cl_double, Expect_Float,   NUM2DBL);
-    
+
     IF_VECTOR_TYPE_TO_NATIVE(cl_char,   2,  Expect_Fixnum,  FIX2INT);
     IF_VECTOR_TYPE_TO_NATIVE(cl_char,   4,  Expect_Fixnum,  FIX2INT);
     IF_VECTOR_TYPE_TO_NATIVE(cl_char,   8,  Expect_Fixnum,  FIX2INT);
@@ -251,7 +251,7 @@ rcl_ruby2native(ID type, void *address, VALUE value)
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 4,  Expect_Float,   NUM2DBL);
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 8,  Expect_Float,   NUM2DBL);
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 16, Expect_Float,   NUM2DBL);
-    
+
     rb_raise(rb_eArgError, "Invalid type tag.");
 }
 
@@ -269,12 +269,12 @@ rcl_ruby2native(ID type, void *address, VALUE value)
         } \
         return ret; \
     }
-    
-static inline VALUE 
+
+static inline VALUE
 Native2Ruby(ID type, void *address)
 {
     assert(NULL != address);
-    
+
     if (type == id_type_cl_bool) {
         return (*(cl_bool *)address) ? Qtrue : Qfalse;
     }
@@ -289,7 +289,7 @@ Native2Ruby(ID type, void *address)
     IF_TYPE_TO_RUBY(cl_half,    rcl_half_float_new);
     IF_TYPE_TO_RUBY(cl_float,   rb_float_new);
     IF_TYPE_TO_RUBY(cl_double,  rb_float_new);
-    
+
     IF_VECTOR_TYPE_TO_RUBY(cl_char,   2,  INT2FIX);
     IF_VECTOR_TYPE_TO_RUBY(cl_char,   4,  INT2FIX);
     IF_VECTOR_TYPE_TO_RUBY(cl_char,   8,  INT2FIX);
@@ -330,7 +330,7 @@ Native2Ruby(ID type, void *address)
     IF_VECTOR_TYPE_TO_RUBY(cl_double, 4,  rb_float_new);
     IF_VECTOR_TYPE_TO_RUBY(cl_double, 8,  rb_float_new);
     IF_VECTOR_TYPE_TO_RUBY(cl_double, 16, rb_float_new);
-    
+
     return Qnil;
 }
 
@@ -339,7 +339,7 @@ Native2Ruby(ID type, void *address)
  */
 
 typedef struct {
-    
+
     int8_t  *alloc_address;
     void    *address;
     size_t   size;              // in number of elements, not in byte.
@@ -361,7 +361,7 @@ Alloc_Memory(rcl_pointer_t *p)
     size_t alloc_sz = AllocSizeOf(p);     // align in 128bytes.
     p->alloc_address = (int8_t *)ALLOC_N(int8_t, alloc_sz);
     bzero(p->alloc_address, alloc_sz);
-    
+
     if (p->alloc_address == NULL) {
         rb_raise(rb_eRuntimeError, "Out of host memory.");
     }
@@ -373,7 +373,7 @@ Pointer_Ptr(VALUE ptr)
 {
     rcl_pointer_t *p;
     Data_Get_Struct(ptr, rcl_pointer_t, p);
-    
+
     return p;
 }
 
@@ -382,7 +382,7 @@ void *
 Pointer_Address(VALUE ptr)
 {
     rcl_pointer_t *p = Pointer_Ptr(ptr);
-    
+
     if (!Is_Pointer(p)) {
         return p->size == 0 ? NULL : &(p->address);
     } else {
@@ -428,7 +428,7 @@ rcl_pointer_alloc(VALUE klass)
 {
     rcl_pointer_t *p;
     VALUE ro = Data_Make_Struct(klass, rcl_pointer_t, 0, rcl_pointer_free_func, p);
-    
+
     p->alloc_address = p->address = NULL;
     p->size = 0;
     p->type = id_type_cl_uint;
@@ -444,7 +444,7 @@ rcl_pointer_alloc(VALUE klass)
  *
  * Wraps a C pointer instead of allocating new memory.
  *
- * +wrap()+ is a simple but dangerous optimization for 
+ * +wrap()+ is a simple but dangerous optimization for
  * reducing memory copying.
  *
  * The wrapper is not on charge of releasing memory pointed by the wrapped
@@ -459,16 +459,16 @@ static VALUE
 rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
 {
     Check_Type(address, T_FIXNUM);
-    void *addr = (void *)NUM2ULONG(address); 
-    
+    void *addr = (void *)NUM2ULONG(address);
+
     Check_Type(type, T_SYMBOL);
     ID clt = SYM2ID(type);
     if (!Is_Type_Valid(clt)) {
         rb_raise(rb_eArgError, "Invalid type tag.");
     }
-    
+
     Extract_Size(size, sz);
-    
+
     rcl_pointer_t *p;
     VALUE ro = Data_Make_Struct(klass, rcl_pointer_t, 0, rcl_pointer_free_func, p);
 
@@ -478,7 +478,7 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
     p->type = clt;
     p->type_size = rcl_type_size(clt);
     p->is_wrapper = 1;
-    
+
     assert(Is_Pointer(p));
 
     return ro;
@@ -487,7 +487,7 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
 /*
  * call-seq:
  *      HostPointer#clear   -> receiver
- * 
+ *
  * Set the memory that the receiver manages to zero.
  */
 static VALUE
@@ -507,7 +507,7 @@ rcl_pointer_clear(VALUE self)
 /*
  * call-seq:
  *      HostPointer::new(type, size)    -> a HostPointer
- * 
+ *
  * Allocate a managed host memory.
  */
 static VALUE
@@ -515,7 +515,7 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
 {
     rcl_pointer_t *p;
     Data_Get_Struct(self, rcl_pointer_t, p);
-    
+
     if (!SYMBOL_P(type)) {
         rb_raise(rb_eTypeError, "Invalid type tag, Expected a Symbol.");
     }
@@ -523,14 +523,14 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
     if (!Is_Type_Valid(p->type)) {
         rb_raise(rb_eArgError, "Unrecognized type tag.");
     }
-    
+
     if (!FIXNUM_P(size) || FIX2UINT(size) < 1) {
         rb_raise(rb_eArgError, "Invalid size.");
     }
     p->size = FIX2UINT(size);
-    p->type_size = rcl_type_size(p->type);    
+    p->type_size = rcl_type_size(p->type);
 
-    if (Need_Alloc(p)) {    
+    if (Need_Alloc(p)) {
         Alloc_Memory(p);
     }
     return rcl_pointer_clear(self);
@@ -543,13 +543,13 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
 
     rcl_pointer_t *copy_p = Pointer_Ptr(copy);
     rcl_pointer_t *orig_p = Pointer_Ptr(orig);
-    
+
     if (orig_p->size == 0) {
         assert(orig_p->alloc_address == NULL && orig_p->address == NULL);
         rb_raise(rb_eRuntimeError, "Can't clone a null pointer.");
     }
-    
-    assert(copy_p->alloc_address == NULL);    
+
+    assert(copy_p->alloc_address == NULL);
     copy_p->type = orig_p->type;
     copy_p->size = orig_p->size;
     copy_p->type_size = orig_p->type_size;
@@ -558,7 +558,7 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
         assert(!Need_Alloc(copy_p));
         copy_p->address = orig_p->address;
     } else {
-        Alloc_Memory(copy_p);        
+        Alloc_Memory(copy_p);
         memcpy(copy_p->address, orig_p->address, BytesOf(copy_p));
     }
     return copy;
@@ -566,9 +566,9 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
 
 /*
  * call-seq:
- *      HostPointer#[0] ->  1.234 
- * 
- * Returns the n-th element stored in the memory region managed by 
+ *      HostPointer#[0] ->  1.234
+ *
+ * Returns the n-th element stored in the memory region managed by
  * the receiver.
  */
 static VALUE
@@ -576,7 +576,7 @@ rcl_pointer_aref(VALUE self, VALUE index)
 {
     rcl_pointer_t *p = Pointer_Ptr(self);
     Extract_Size(index, i);
-    
+
     if (p->size == 0 || i > p->size - 1) {
         rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
     }
@@ -586,7 +586,7 @@ rcl_pointer_aref(VALUE self, VALUE index)
 /*
  * call-seq:
  *      HostPointer#[0]= 1234 ->  receiver
- * 
+ *
  * Sets the n-th element stored to the given value.
  * The value must match with the receiver's type.
  */
@@ -598,7 +598,7 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
     if (NIL_P(value)) {
         rb_raise(rb_eArgError, "Value can't be nil.");
     }
-    
+
     if (i >= p->size) {
         rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
     }
@@ -619,18 +619,18 @@ rcl_pointer_assign(VALUE self, VALUE address, VALUE size, VALUE offset)
 {
     Check_Type(address, T_FIXNUM);
     void *addr = (void *)NUM2ULONG(address);
-    
+
     rcl_pointer_t *p = Pointer_Ptr(self);
-    
+
     Extract_Size(size, sz);
     Extract_Size(offset, os);
     if (sz + os > p->size) {
         rb_raise(rb_eArgError, "size or offset is too large.");
     }
-    
+
     size_t cpysz = sz * p->type_size;
     memcpy(Element_Address(p, os), addr, cpysz);
-    
+
     return self;
 }
 
@@ -642,7 +642,7 @@ static VALUE
 rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
 {
     Check_Type(value, T_STRING);
-    
+
     rcl_pointer_t *p = Pointer_Ptr(self);
     Extract_Size(offset, os);
     if (os >= p->size) {
@@ -654,7 +654,7 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
     if (sz % p->type_size != 0) {
         rb_raise(rb_eArgError, "Size of byte string does not match the data type of receiver.");
     }
-    
+
     size_t bos = os * p->type_size;
     size_t cpysz = (BytesOf(p) - bos) > sz ? sz : (BytesOf(p) - bos);
     memcpy(Element_Address(p, os), ptr, cpysz);
@@ -664,13 +664,13 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
 /*
  * call-seq:
  *      HostPointer#address
- * 
+ *
  * Returns an Integer that is the memory address the recever points to.
  * Needed for enqueuing buffers to CL.
  */
 static VALUE
 rcl_pointer_address(VALUE self)
-{    
+{
     intptr_t addr = (intptr_t)Pointer_Address(self);
     return addr == 0 ? Qnil : LONG2FIX(addr);
 }
@@ -678,24 +678,24 @@ rcl_pointer_address(VALUE self)
 /*
  * call-seq:
  *      HostPointer#type ->  :cl_float16
- * 
+ *
  * Returns the type of the receiver.
  */
 static VALUE
 rcl_pointer_type(VALUE self)
-{    
+{
     return ID2SYM(Pointer_Ptr(self)->type);
 }
 
 /*
  * call-seq:
  *      HostPointer#size    -> aInteger
- * 
+ *
  * Returns the size of the receiver.
  */
 static VALUE
 rcl_pointer_size(VALUE self)
-{    
+{
     return LONG2FIX(Pointer_Ptr(self)->size);
 }
 
@@ -731,21 +731,21 @@ rcl_pointer_free(VALUE self)
         ptr->address = NULL;
         ptr->size = 0;
         return self;
-    }   
+    }
 
-    xfree(ptr->alloc_address); 
+    xfree(ptr->alloc_address);
     ptr->alloc_address = NULL;
     ptr->address = NULL;
     ptr->size = 0;
     ptr->is_wrapper = 0;
-    
+
     return self;
 }
 
 /*
  * call-seq:
  *      HostPointer#copy_from(ptr)   -> receiver
- * 
+ *
  * Copy the contents of a HostPointer to the receiver. The source and receiver
  * must have identical type and size.
  *
@@ -757,10 +757,10 @@ static VALUE
 rcl_pointer_copy_from(VALUE self, VALUE src)
 {
     Expect_RCL_Type(src, Pointer);
-    
+
     rcl_pointer_t *p = Pointer_Ptr(self);
     rcl_pointer_t *sp = Pointer_Ptr(src);
-    
+
     if (p->type != sp->type || p->size != sp->size) {
         rb_raise(rb_eRuntimeError, "Size or type of source and target mismatch.");
     }
@@ -775,7 +775,7 @@ rcl_pointer_copy_from(VALUE self, VALUE src)
 /*
  * call-seq:
  *      HostPointer#slice(start, size)  -> a HostPointer
- * 
+ *
  * Returns a new created HostPointer object which contains copied data from
  * receiver. The range of data starts from +start+ and with length +size+.
  *
@@ -786,45 +786,45 @@ rcl_pointer_slice(VALUE self, VALUE start, VALUE size)
 {
     Extract_Size(start, st);
     Extract_Size(size, sz);
-    
+
     rcl_pointer_t *p = Pointer_Ptr(self);
-    
+
     if (p->size == 0) return Qnil;
     if (st + sz > p->size) return Qnil;
-    
+
     VALUE ro = rcl_pointer_alloc(rcl_cPointer);
     assert(CLASS_OF(ro) == rcl_cPointer);
     rcl_pointer_t *hp = Pointer_Ptr(ro);
     assert(hp->alloc_address == NULL);
-    
+
     hp->type = p->type;
     hp->size = sz;
     hp->type_size = p->type_size;
-    
+
     if (Need_Alloc(hp)) {
         Alloc_Memory(hp);
     }
     memcpy(Element_Address(hp, 0), Element_Address(p, st), BytesOf(hp));
-    
+
     return ro;
 }
 
 /*
  * class MappedPointer
  */
- 
+
 VALUE
 rcl_create_mapped_pointer(void *address, size_t size)
 {
     rcl_pointer_t *p;
     VALUE mp = Data_Make_Struct(rcl_cMappedPointer, rcl_pointer_t, 0, 0, p);
-    
+
     p->type = id_type_cl_uchar;
     p->type_size = sizeof(cl_uchar);
     p->alloc_address = p->address = address;
     p->size = size;
     p->is_wrapper = 1;
-    
+
     return mp;
 }
 
@@ -847,22 +847,22 @@ rcl_mapped_pointer_coerce(VALUE self, VALUE type)
     if (!SYMBOL_P(type)) {
         rb_raise(rb_eArgError, "Expected argument 2 is a Symbol.");
     }
-    
+
     ID tid = SYM2ID(type);
     if (!Is_Type_Valid(tid)) {
         rb_raise(rb_eArgError, "Unrecognized type name.");
     }
-    
+
     rcl_pointer_t *p = Pointer_Ptr(self);
     if (p->type == tid) return self;
     if (p->size == 0) {
         rb_warn("Receiver is a null pointer.");
         return self;
     }
-    
+
     size_t tsz = rcl_type_size(tid);
-    size_t sz = BytesOf(p);    
-    
+    size_t sz = BytesOf(p);
+
     if (sz % tsz != 0) {
         rb_raise(rb_eRuntimeError, "Casting to incompatible pointer type.");
     }
@@ -871,7 +871,7 @@ rcl_mapped_pointer_coerce(VALUE self, VALUE type)
     p->type = tid;
     p->size = csz;
     p->type_size = tsz;
-    
+
     return self;
 }
 
@@ -883,7 +883,7 @@ void
 define_rcl_class_pointer(void)
 {
     define_cl_types();
-    
+
     rcl_cPointer = rb_define_class_under(rcl_mOpenCL, "HostPointer", rb_cObject);
     rb_define_singleton_method(rcl_cPointer, "wrap_pointer", rcl_pointer_wrap, 3);
     rb_define_alloc_func(rcl_cPointer, rcl_pointer_alloc);
@@ -901,7 +901,7 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cPointer, "clear", rcl_pointer_clear, 0);
     rb_define_method(rcl_cPointer, "copy_from", rcl_pointer_copy_from, 1);
     rb_define_method(rcl_cPointer, "slice", rcl_pointer_slice, 2);
-    
+
     rcl_cMappedPointer = rb_define_class_under(rcl_mOpenCL, "MappedPointer", rb_cObject);
     rb_undef_alloc_func(rcl_cMappedPointer);
     rb_define_method(rcl_cMappedPointer, "[]", rcl_pointer_aref, 1);

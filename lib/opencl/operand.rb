@@ -1,14 +1,14 @@
 
 module OpenCL
-  
+
   # The base class of Vector and Matrix
   class Operand < OpenCL::Buffer
-    
+
     # The program to execute the computation on the Operand.
     @@program = nil
     # Kernel sources.
     @@kernel_sources = []
-    
+
     @@cl_modules = []
     @@cl_module_sources = ''
 
@@ -28,31 +28,31 @@ module OpenCL
       raise ArgumentError, "Invalid CL source code." if !string.is_a?(String) || string.empty?
       @@kernel_sources << string    
     end
-    
+
     # Number of items.
     attr_reader :length
     alias :size :length
-    
+
     # Type of items.
     attr_reader :type
 
     def initialize(length, type = :cl_float)
-      
+
       super OpenCL.type_size(type) * length
-      
+
       # Collects kernel sources and build @@program.
       update_cl_program
 
       @length = length
       @type = type
-      
+
       self
     end
-    
+
     def to_s
       "#<#{self.class}: @length = #{self.length}, @type = #{self.type}>"
     end
-    
+
     private
 
     def [](i)

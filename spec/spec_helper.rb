@@ -7,7 +7,7 @@ end
 
 if coveragable?
   require 'coverage'
-  
+
   at_exit do
     Coverage.result
   end
@@ -18,7 +18,7 @@ require 'bacon'
 module Bacon
   class Context
     alias :the :it
-    alias :its :it    
+    alias :its :it
   end
 end
 Bacon.extend Bacon::TapOutput

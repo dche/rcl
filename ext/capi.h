@@ -8,7 +8,7 @@
 
 #define TRACE(...)     fprintf(stderr, __VA_ARGS__)
 
-// NOTE: this macro needs local defined class variables 
+// NOTE: this macro needs local defined class variables
 //       using a special pattern for name, /rcl_c\w+/
 #define Expect_RCL_Type(o, klass) \
     do { \
@@ -33,14 +33,14 @@
             rb_raise(rb_eTypeError, \
                      "Expected %s is a Fixnum.", #ro); \
     } while (0)
-    
+
 #define Expect_Array(ro) \
     do { \
         if (TYPE(ro) != T_ARRAY) \
             rb_raise(rb_eTypeError, \
                     "Expected %s is an Array.", #ro); \
     } while (0)
-    
+
 #define Expect_NonEmpty_Array(ro) \
     do { \
         Expect_Array(ro); \

@@ -22,11 +22,11 @@ describe Kernel do
     @prog = Program.new(@cxt, [src])
     @prog.build(@devs, "", nil)
   end
-  
+
   the 'constructor' do
     should.not.raise(Exception) { OpenCL::Capi::Kernel.new(@prog, "dot_product") }
   end
-  
+
   the 'info() method' do
     kernels = @prog.create_kernels
     kernels.length.should.equal 1
@@ -34,7 +34,7 @@ describe Kernel do
     k.info(CL_KERNEL_FUNCTION_NAME).should.equal 'dot_product'
     k.info(CL_KERNEL_NUM_ARGS).should.equal 3
   end
-  
+
   the 'workgroup_info()' do
     k = @prog.create_kernels.first
     lws = k.workgroup_info(@cxt.devices.first, CL_KERNEL_WORK_GROUP_SIZE)

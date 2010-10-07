@@ -11,7 +11,7 @@ def valid_fft_shapes(num = 10)
   mix2 = ptwo.permutation(2).to_a
   mix3 = ptwo.permutation(3).to_a
   shapes = mix2.shuffle.take(num) + mix3.shuffle.take(num) + pairs.shuffle.take(num) << [1048576]
-  
+
   shapes.delete_if do |shp|
     shp.reduce(:*) * 6 * OpenCL.type_size(:cl_float2) > OpenCL::Context.default_context.max_mem_alloc_size
   end

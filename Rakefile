@@ -10,21 +10,21 @@ spec = Gem::Specification.new do |s|
   s.version = '0.3.3'
   s.summary = 'Exploiting the power of GPUs.'
   s.description = s.summary
-  
+
   s.author = 'Che Kenan'
   s.email = 'chekenan@gmail.com'
-  
-  s.files = %w(README.md LICENSE Rakefile) + 
+
+  s.files = %w(README.md LICENSE Rakefile) +
             FileList['{lib,spec,bm}/**/*.rb'] +
             FileList['ext/*.{rb,c,h}']
   s.extensions << 'ext/extconf.rb'
-  
+
   s.required_ruby_version = '>= 1.9'
   s.platform = Gem::Platform::RUBY
-  
+
   s.add_development_dependency 'bacon', '>= 1.1.0'
   s.add_development_dependency 'narray', '>= 0.5.9'
-  
+
   s.rdoc_options << '--title' << 'Ruby OpenCL' <<
                     '--main' << 'README.md' <<
                     '--line-numbers' << '--exclude="spec/*"'
@@ -49,17 +49,17 @@ task :spec => :build do
     require File.join(dir, 'spec/spec_helper')
   rescue LoadError
     $sederr.puts 'bacon is needed to run specification.'
-  end    
-  
+  end
+
   Bacon.extend Bacon::TestUnitOutput
   FileList[File.join(dir, 'spec/**/*_spec.rb')].each do |f|
     load f
   end
-  
+
   Bacon.handle_summary
 end
 
-rule File.join(extdir, 'capi.bundle') => FileList[File.join(extdir, '*.{c,h}')] do  
+rule File.join(extdir, 'capi.bundle') => FileList[File.join(extdir, '*.{c,h}')] do
   cd(extdir) do
     system "#{RUBY_ENGINE} extconf.rb && make"
   end

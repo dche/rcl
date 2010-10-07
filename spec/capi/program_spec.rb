@@ -31,7 +31,7 @@ describe Program do
   before do
     @cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_DEFAULT)
   end
-  
+
   the 'initializer' do
     should.not.raise(Exception) { Program.new @cxt, [src] }
   end
@@ -39,18 +39,18 @@ describe Program do
   the 'build mehtod' do
     p = Program.new @cxt, [src]
     devs =  @cxt.info(CL_CONTEXT_DEVICES)
-    should.not.raise(Exception) { p.build devs, "", nil }   
+    should.not.raise(Exception) { p.build devs, "", nil }
     build_log = p.build_info(devs.first, CL_PROGRAM_BUILD_LOG)
     build_log.should.is_a String
   end
-  
+
   the 'info() method.' do
     p = Program.new @cxt, [src]
     s = p.info(CL_PROGRAM_SOURCE)
     s.should.is_a String
     puts s
   end
-  
+
   it 'should report build errors.' do
     p = Program.new @cxt, [wrong_src]
     devs = @cxt.info(CL_CONTEXT_DEVICES)

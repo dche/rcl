@@ -105,10 +105,10 @@ static inline cl_context
 Context_Ptr(VALUE ro)
 {
     Expect_RCL_Type(ro, Context);
-    
+
     rcl_context_t *p;
     Data_Get_Struct(ro, rcl_context_t, p);
-    
+
     return p->c;
 }
 
@@ -117,20 +117,20 @@ RContext(cl_context ptr)
 {
     rcl_context_t *p;
     VALUE ret = Data_Make_Struct(rcl_cContext, rcl_context_t, 0, rcl_context_free, p);
-    
+
     p->c = ptr;
-    return ret;   
+    return ret;
 }
 
 static inline VALUE
 RImageFormat(cl_image_format *imf)
 {
     VALUE ro = rb_obj_alloc(rcl_cImageFormat);
-    rb_iv_set(ro, "@channel_order", 
+    rb_iv_set(ro, "@channel_order",
               LONG2FIX(imf->image_channel_order));
-    rb_iv_set(ro, "@channel_data_type", 
+    rb_iv_set(ro, "@channel_data_type",
               LONG2FIX(imf->image_channel_data_type));
-    
+
     return ro;
 }
 
@@ -152,7 +152,7 @@ static inline VALUE
 RCommandQueue(cl_command_queue ptr)
 {
     rcl_command_queue_t *p;
-    VALUE ret = Data_Make_Struct(rcl_cCommandQueue, rcl_command_queue_t, 
+    VALUE ret = Data_Make_Struct(rcl_cCommandQueue, rcl_command_queue_t,
                                  0, rcl_command_queue_free, p);
     p->cq = ptr;
     return ret;
@@ -162,10 +162,10 @@ static inline cl_command_queue
 CommandQueue_Ptr(VALUE ro)
 {
     Expect_RCL_Type(ro, CommandQueue);
-    
+
     rcl_command_queue_t *p;
     Data_Get_Struct(ro, rcl_command_queue_t, p);
-    
+
     return p->cq;
 }
 
@@ -177,10 +177,10 @@ static inline cl_sampler
 Sampler_Ptr(VALUE ro)
 {
     Expect_RCL_Type(ro, Sampler);
-    
+
     rcl_sampler_t *ps;
     Data_Get_Struct(ro, rcl_sampler_t, ps);
-    
+
     return ps->s;
 }
 
@@ -222,10 +222,10 @@ static inline cl_event
 Event_Ptr(VALUE ro)
 {
     Expect_RCL_Type(ro, Event);
-    
+
     rcl_event_t *p;
     Data_Get_Struct(ro, rcl_event_t, p);
-    
+
     return p->e;
 }
 
@@ -247,11 +247,11 @@ static inline cl_mem
 Memory_Ptr(VALUE ro)
 {
     Expect_RCL_Type(ro, Memory);
-    
+
     rcl_mem_t *p;
     Data_Get_Struct(ro, rcl_mem_t, p);
-    
-    return p->mem;    
+
+    return p->mem;
 }
 
 static inline VALUE
@@ -260,7 +260,7 @@ RMemory(cl_mem m)
     rcl_mem_t *p;
     VALUE ret = Data_Make_Struct(rcl_cMemory, rcl_mem_t, 0, rcl_mem_free, p);
     p->mem = m;
-    
+
     return ret;
 }
 
@@ -319,7 +319,7 @@ RKernel(cl_kernel k)
 {
     rcl_kernel_t *p;
     VALUE ret = Data_Make_Struct(rcl_cKernel, rcl_kernel_t, 0, rcl_kernel_free, p);
-    
+
     p->k = k;
     return ret;
 }
@@ -328,10 +328,10 @@ static inline cl_kernel
 Kernel_Ptr(VALUE ro)
 {
     Expect_RCL_Type(ro, Kernel);
-    
+
     rcl_kernel_t *p;
     Data_Get_Struct(ro, rcl_kernel_t, p);
-    
+
     return p->k;
 }
 
@@ -346,9 +346,9 @@ Kernel_Ptr(VALUE ro)
 
 static void
 define_opencl_constants(void)
-{   
-     
-    // cl_addressing_mode	
+{
+
+    // cl_addressing_mode
     RCL_DEF_CONSTANT(CL_ADDRESS_NONE);
     RCL_DEF_CONSTANT(CL_ADDRESS_CLAMP_TO_EDGE);
     RCL_DEF_CONSTANT(CL_ADDRESS_CLAMP);
@@ -358,13 +358,13 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_FALSE);
     RCL_DEF_CONSTANT(CL_TRUE);
 
-    // cl_build_status	
+    // cl_build_status
     RCL_DEF_CONSTANT(CL_BUILD_ERROR);
     RCL_DEF_CONSTANT(CL_BUILD_IN_PROGRESS);
     RCL_DEF_CONSTANT(CL_BUILD_NONE);
     RCL_DEF_CONSTANT(CL_BUILD_SUCCESS);
 
-    // cl_channel_order	
+    // cl_channel_order
     RCL_DEF_CONSTANT(CL_A);
     RCL_DEF_CONSTANT(CL_R);
     RCL_DEF_CONSTANT(CL_RG);
@@ -376,7 +376,7 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_INTENSITY);
     RCL_DEF_CONSTANT(CL_LUMINANCE);
 
-    // cl_channel_type	
+    // cl_channel_type
     RCL_DEF_CONSTANT(CL_FLOAT);
     RCL_DEF_CONSTANT(CL_HALF_FLOAT);
     RCL_DEF_CONSTANT(CL_SIGNED_INT16);
@@ -392,18 +392,18 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_UNSIGNED_INT16);
     RCL_DEF_CONSTANT(CL_UNSIGNED_INT32);
     RCL_DEF_CONSTANT(CL_UNSIGNED_INT8);
-    
+
     // cl_command_queue_info
     RCL_DEF_CONSTANT(CL_QUEUE_CONTEXT);
     RCL_DEF_CONSTANT(CL_QUEUE_DEVICE);
     RCL_DEF_CONSTANT(CL_QUEUE_REFERENCE_COUNT);
     RCL_DEF_CONSTANT(CL_QUEUE_PROPERTIES);
-    
+
     // cl_command_queue_properties
     RCL_DEF_CONSTANT(CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE);
     RCL_DEF_CONSTANT(CL_QUEUE_PROFILING_ENABLE);
-    
-    // cl_command_type	
+
+    // cl_command_type
     RCL_DEF_CONSTANT(CL_COMMAND_ACQUIRE_GL_OBJECTS);
     RCL_DEF_CONSTANT(CL_COMMAND_COPY_BUFFER);
     RCL_DEF_CONSTANT(CL_COMMAND_COPY_BUFFER_TO_IMAGE);
@@ -421,20 +421,20 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_COMMAND_UNMAP_MEM_OBJECT);
     RCL_DEF_CONSTANT(CL_COMMAND_WRITE_BUFFER);
     RCL_DEF_CONSTANT(CL_COMMAND_WRITE_IMAGE);
-    
+
     // cl_context_info
     RCL_DEF_CONSTANT(CL_CONTEXT_REFERENCE_COUNT);
     RCL_DEF_CONSTANT(CL_CONTEXT_DEVICES);
     RCL_DEF_CONSTANT(CL_CONTEXT_PROPERTIES);
-    
+
     // cl_context_properties
     RCL_DEF_CONSTANT(CL_CONTEXT_PLATFORM);
-    
+
     // cl_device_exec_capabilities
-    RCL_DEF_CONSTANT(CL_EXEC_KERNEL); 
+    RCL_DEF_CONSTANT(CL_EXEC_KERNEL);
     RCL_DEF_CONSTANT(CL_EXEC_NATIVE_KERNEL);
 
-    // cl_device_fp_config	
+    // cl_device_fp_config
     RCL_DEF_CONSTANT(CL_FP_DENORM);
     RCL_DEF_CONSTANT(CL_FP_FMA);
     RCL_DEF_CONSTANT(CL_FP_INF_NAN);
@@ -443,62 +443,62 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_FP_ROUND_TO_ZERO);
 
     // cl_device_info
-    RCL_DEF_CONSTANT(CL_DEVICE_ADDRESS_BITS);                       
-    RCL_DEF_CONSTANT(CL_DEVICE_AVAILABLE);                          
-    RCL_DEF_CONSTANT(CL_DEVICE_COMPILER_AVAILABLE);                 
-    RCL_DEF_CONSTANT(CL_DEVICE_ENDIAN_LITTLE);                    
-    RCL_DEF_CONSTANT(CL_DEVICE_ERROR_CORRECTION_SUPPORT);        
-    RCL_DEF_CONSTANT(CL_DEVICE_EXECUTION_CAPABILITIES);             
+    RCL_DEF_CONSTANT(CL_DEVICE_ADDRESS_BITS);
+    RCL_DEF_CONSTANT(CL_DEVICE_AVAILABLE);
+    RCL_DEF_CONSTANT(CL_DEVICE_COMPILER_AVAILABLE);
+    RCL_DEF_CONSTANT(CL_DEVICE_ENDIAN_LITTLE);
+    RCL_DEF_CONSTANT(CL_DEVICE_ERROR_CORRECTION_SUPPORT);
+    RCL_DEF_CONSTANT(CL_DEVICE_EXECUTION_CAPABILITIES);
     RCL_DEF_CONSTANT(CL_DEVICE_EXTENSIONS);
-    RCL_DEF_CONSTANT(CL_DEVICE_GLOBAL_MEM_CACHE_SIZE);              
-    RCL_DEF_CONSTANT(CL_DEVICE_GLOBAL_MEM_CACHE_TYPE);              
-    RCL_DEF_CONSTANT(CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE);          
-    RCL_DEF_CONSTANT(CL_DEVICE_GLOBAL_MEM_SIZE);                    
-    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE_SUPPORT);                      
-    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE2D_MAX_HEIGHT);                
-    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE2D_MAX_WIDTH);                  
-    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE3D_MAX_DEPTH);                  
-    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE3D_MAX_HEIGHT);                 
-    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE3D_MAX_WIDTH);                  
-    RCL_DEF_CONSTANT(CL_DEVICE_LOCAL_MEM_SIZE);                     
-    RCL_DEF_CONSTANT(CL_DEVICE_LOCAL_MEM_TYPE);                     
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_CLOCK_FREQUENCY);                
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_COMPUTE_UNITS);                  
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_CONSTANT_ARGS);                  
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE);           
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_MEM_ALLOC_SIZE);                 
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_PARAMETER_SIZE);                 
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_READ_IMAGE_ARGS);                
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_SAMPLERS);                       
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_WORK_GROUP_SIZE);                
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS);           
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_WORK_ITEM_SIZES);                
-    RCL_DEF_CONSTANT(CL_DEVICE_MAX_WRITE_IMAGE_ARGS);               
-    RCL_DEF_CONSTANT(CL_DEVICE_MEM_BASE_ADDR_ALIGN);                
-    RCL_DEF_CONSTANT(CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE);           
-    RCL_DEF_CONSTANT(CL_DEVICE_NAME);                               
+    RCL_DEF_CONSTANT(CL_DEVICE_GLOBAL_MEM_CACHE_SIZE);
+    RCL_DEF_CONSTANT(CL_DEVICE_GLOBAL_MEM_CACHE_TYPE);
+    RCL_DEF_CONSTANT(CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE);
+    RCL_DEF_CONSTANT(CL_DEVICE_GLOBAL_MEM_SIZE);
+    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE_SUPPORT);
+    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE2D_MAX_HEIGHT);
+    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE2D_MAX_WIDTH);
+    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE3D_MAX_DEPTH);
+    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE3D_MAX_HEIGHT);
+    RCL_DEF_CONSTANT(CL_DEVICE_IMAGE3D_MAX_WIDTH);
+    RCL_DEF_CONSTANT(CL_DEVICE_LOCAL_MEM_SIZE);
+    RCL_DEF_CONSTANT(CL_DEVICE_LOCAL_MEM_TYPE);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_CLOCK_FREQUENCY);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_COMPUTE_UNITS);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_CONSTANT_ARGS);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_MEM_ALLOC_SIZE);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_PARAMETER_SIZE);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_READ_IMAGE_ARGS);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_SAMPLERS);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_WORK_GROUP_SIZE);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_WORK_ITEM_SIZES);
+    RCL_DEF_CONSTANT(CL_DEVICE_MAX_WRITE_IMAGE_ARGS);
+    RCL_DEF_CONSTANT(CL_DEVICE_MEM_BASE_ADDR_ALIGN);
+    RCL_DEF_CONSTANT(CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE);
+    RCL_DEF_CONSTANT(CL_DEVICE_NAME);
     RCL_DEF_CONSTANT(CL_DEVICE_PLATFORM);
-    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR);        
-    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE);      
-    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT);       
-    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT);         
-    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG);        
-    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT);       
-    RCL_DEF_CONSTANT(CL_DEVICE_PROFILE);                           
-    RCL_DEF_CONSTANT(CL_DEVICE_PROFILING_TIMER_RESOLUTION);         
-    RCL_DEF_CONSTANT(CL_DEVICE_QUEUE_PROPERTIES);                   
-    RCL_DEF_CONSTANT(CL_DEVICE_SINGLE_FP_CONFIG);                   
-    RCL_DEF_CONSTANT(CL_DEVICE_TYPE);                              
-    RCL_DEF_CONSTANT(CL_DEVICE_VENDOR_ID);                          
-    RCL_DEF_CONSTANT(CL_DEVICE_VENDOR);                            
-    RCL_DEF_CONSTANT(CL_DEVICE_VERSION);                      
+    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR);
+    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE);
+    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT);
+    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT);
+    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG);
+    RCL_DEF_CONSTANT(CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT);
+    RCL_DEF_CONSTANT(CL_DEVICE_PROFILE);
+    RCL_DEF_CONSTANT(CL_DEVICE_PROFILING_TIMER_RESOLUTION);
+    RCL_DEF_CONSTANT(CL_DEVICE_QUEUE_PROPERTIES);
+    RCL_DEF_CONSTANT(CL_DEVICE_SINGLE_FP_CONFIG);
+    RCL_DEF_CONSTANT(CL_DEVICE_TYPE);
+    RCL_DEF_CONSTANT(CL_DEVICE_VENDOR_ID);
+    RCL_DEF_CONSTANT(CL_DEVICE_VENDOR);
+    RCL_DEF_CONSTANT(CL_DEVICE_VERSION);
     RCL_DEF_CONSTANT(CL_DRIVER_VERSION);
-    
-    // cl_device_local_mem_type	
+
+    // cl_device_local_mem_type
     RCL_DEF_CONSTANT(CL_GLOBAL);
     RCL_DEF_CONSTANT(CL_LOCAL);
 
-    // cl_device_mem_cache_type	
+    // cl_device_mem_cache_type
     RCL_DEF_CONSTANT(CL_NONE);
     RCL_DEF_CONSTANT(CL_READ_ONLY_CACHE);
     RCL_DEF_CONSTANT(CL_READ_WRITE_CACHE);
@@ -509,34 +509,34 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_DEVICE_TYPE_ACCELERATOR);
     RCL_DEF_CONSTANT(CL_DEVICE_TYPE_DEFAULT);
     RCL_DEF_CONSTANT(CL_DEVICE_TYPE_ALL);
-    
-    // cl_event_info	
+
+    // cl_event_info
     RCL_DEF_CONSTANT(CL_EVENT_COMMAND_QUEUE);
     RCL_DEF_CONSTANT(CL_EVENT_COMMAND_TYPE);
     RCL_DEF_CONSTANT(CL_EVENT_REFERENCE_COUNT);
     RCL_DEF_CONSTANT(CL_EVENT_COMMAND_EXECUTION_STATUS);
-    
+
     // cl_int
     RCL_DEF_CONSTANT(CL_QUEUED);
     RCL_DEF_CONSTANT(CL_SUBMITTED);
     RCL_DEF_CONSTANT(CL_RUNNING);
     RCL_DEF_CONSTANT(CL_COMPLETE);
 
-    // cl_filter_mode	
+    // cl_filter_mode
     RCL_DEF_CONSTANT(CL_FILTER_NEAREST);
     RCL_DEF_CONSTANT(CL_FILTER_LINEAR);
 
-    // cl_gl_object_type	
+    // cl_gl_object_type
     RCL_DEF_CONSTANT(CL_GL_OBJECT_BUFFER);
     RCL_DEF_CONSTANT(CL_GL_OBJECT_TEXTURE2D);
     RCL_DEF_CONSTANT(CL_GL_OBJECT_TEXTURE3D);
     RCL_DEF_CONSTANT(CL_GL_OBJECT_RENDERBUFFER);
 
-    // cl_gl_texture_info	
+    // cl_gl_texture_info
     RCL_DEF_CONSTANT(CL_GL_TEXTURE_TARGET);
     RCL_DEF_CONSTANT(CL_GL_MIPMAP_LEVEL);
 
-    // cl_image_info	
+    // cl_image_info
     RCL_DEF_CONSTANT(CL_IMAGE_FORMAT);
     RCL_DEF_CONSTANT(CL_IMAGE_ELEMENT_SIZE);
     RCL_DEF_CONSTANT(CL_IMAGE_ROW_PITCH);
@@ -545,57 +545,57 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_IMAGE_HEIGHT);
     RCL_DEF_CONSTANT(CL_IMAGE_DEPTH);
 
-    // cl_kernel_info	
+    // cl_kernel_info
     RCL_DEF_CONSTANT(CL_KERNEL_FUNCTION_NAME);
     RCL_DEF_CONSTANT(CL_KERNEL_NUM_ARGS);
     RCL_DEF_CONSTANT(CL_KERNEL_REFERENCE_COUNT);
     RCL_DEF_CONSTANT(CL_KERNEL_CONTEXT);
     RCL_DEF_CONSTANT(CL_KERNEL_PROGRAM);
 
-    // cl_kernel_work_group_info	
+    // cl_kernel_work_group_info
     RCL_DEF_CONSTANT(CL_KERNEL_WORK_GROUP_SIZE);
     RCL_DEF_CONSTANT(CL_KERNEL_COMPILE_WORK_GROUP_SIZE);
     RCL_DEF_CONSTANT(CL_KERNEL_LOCAL_MEM_SIZE);
 
-    // cl_map_flags	
+    // cl_map_flags
     RCL_DEF_CONSTANT(CL_MAP_READ);
     RCL_DEF_CONSTANT(CL_MAP_WRITE);
 
-    // cl_mem_flags	
+    // cl_mem_flags
     RCL_DEF_CONSTANT(CL_MEM_READ_WRITE);
     RCL_DEF_CONSTANT(CL_MEM_WRITE_ONLY);
     RCL_DEF_CONSTANT(CL_MEM_READ_ONLY);
     RCL_DEF_CONSTANT(CL_MEM_USE_HOST_PTR);
     RCL_DEF_CONSTANT(CL_MEM_ALLOC_HOST_PTR);
     RCL_DEF_CONSTANT(CL_MEM_COPY_HOST_PTR);
-    
+
     // cl_mem_info
     RCL_DEF_CONSTANT(CL_MEM_TYPE);
     RCL_DEF_CONSTANT(CL_MEM_FLAGS);
-    RCL_DEF_CONSTANT(CL_MEM_SIZE); 
-    RCL_DEF_CONSTANT(CL_MEM_HOST_PTR); 
-    RCL_DEF_CONSTANT(CL_MEM_MAP_COUNT); 
-    RCL_DEF_CONSTANT(CL_MEM_REFERENCE_COUNT); 
+    RCL_DEF_CONSTANT(CL_MEM_SIZE);
+    RCL_DEF_CONSTANT(CL_MEM_HOST_PTR);
+    RCL_DEF_CONSTANT(CL_MEM_MAP_COUNT);
+    RCL_DEF_CONSTANT(CL_MEM_REFERENCE_COUNT);
     RCL_DEF_CONSTANT(CL_MEM_CONTEXT);
-    
-    // cl_mem_object_type	
+
+    // cl_mem_object_type
     RCL_DEF_CONSTANT(CL_MEM_OBJECT_BUFFER);
     RCL_DEF_CONSTANT(CL_MEM_OBJECT_IMAGE2D);
     RCL_DEF_CONSTANT(CL_MEM_OBJECT_IMAGE3D);
-    
-    // cl_platform_info 
+
+    // cl_platform_info
     RCL_DEF_CONSTANT(CL_PLATFORM_PROFILE);
     RCL_DEF_CONSTANT(CL_PLATFORM_VERSION);
     RCL_DEF_CONSTANT(CL_PLATFORM_NAME);
     RCL_DEF_CONSTANT(CL_PLATFORM_VENDOR);
     RCL_DEF_CONSTANT(CL_PLATFORM_EXTENSIONS);
-    
-    // cl_profiling_info	
-    RCL_DEF_CONSTANT(CL_PROFILING_COMMAND_QUEUED); 
-    RCL_DEF_CONSTANT(CL_PROFILING_COMMAND_SUBMIT); 
-    RCL_DEF_CONSTANT(CL_PROFILING_COMMAND_START); 
+
+    // cl_profiling_info
+    RCL_DEF_CONSTANT(CL_PROFILING_COMMAND_QUEUED);
+    RCL_DEF_CONSTANT(CL_PROFILING_COMMAND_SUBMIT);
+    RCL_DEF_CONSTANT(CL_PROFILING_COMMAND_START);
     RCL_DEF_CONSTANT(CL_PROFILING_COMMAND_END);
-    
+
     // cl_program_info
     RCL_DEF_CONSTANT(CL_PROGRAM_REFERENCE_COUNT);
     RCL_DEF_CONSTANT(CL_PROGRAM_CONTEXT);
@@ -605,17 +605,17 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_PROGRAM_BINARY_SIZES);
     RCL_DEF_CONSTANT(CL_PROGRAM_BINARIES);
 
-    // cl_program_build_info	
-    RCL_DEF_CONSTANT(CL_PROGRAM_BUILD_STATUS); 
-    RCL_DEF_CONSTANT(CL_PROGRAM_BUILD_OPTIONS); 
+    // cl_program_build_info
+    RCL_DEF_CONSTANT(CL_PROGRAM_BUILD_STATUS);
+    RCL_DEF_CONSTANT(CL_PROGRAM_BUILD_OPTIONS);
     RCL_DEF_CONSTANT(CL_PROGRAM_BUILD_LOG);
 
-    // cl_sampler_info	
-    RCL_DEF_CONSTANT(CL_SAMPLER_REFERENCE_COUNT); 
-    RCL_DEF_CONSTANT(CL_SAMPLER_CONTEXT); 
-    RCL_DEF_CONSTANT(CL_SAMPLER_NORMALIZED_COORDS); 
-    RCL_DEF_CONSTANT(CL_SAMPLER_ADDRESSING_MODE); 
-    RCL_DEF_CONSTANT(CL_SAMPLER_FILTER_MODE);    
+    // cl_sampler_info
+    RCL_DEF_CONSTANT(CL_SAMPLER_REFERENCE_COUNT);
+    RCL_DEF_CONSTANT(CL_SAMPLER_CONTEXT);
+    RCL_DEF_CONSTANT(CL_SAMPLER_NORMALIZED_COORDS);
+    RCL_DEF_CONSTANT(CL_SAMPLER_ADDRESSING_MODE);
+    RCL_DEF_CONSTANT(CL_SAMPLER_FILTER_MODE);
 }
 
 /*
@@ -623,7 +623,7 @@ define_opencl_constants(void)
  *
  * error code and error message.
  */
- 
+
 static VALUE rb_eOpenCL;
 static VALUE rcl_errors;    // { errcode => message }
 
@@ -637,7 +637,7 @@ static void
 define_opencl_errors(void)
 {
     rcl_errors = rb_hash_new();
-    
+
     RCL_DEF_CL_ERROR(CL_BUILD_PROGRAM_FAILURE, "Failure to build the program executable.");
     RCL_DEF_CL_ERROR(CL_COMPILER_NOT_AVAILABLE, "Compiler is not available.");
     RCL_DEF_CL_ERROR(CL_DEVICE_NOT_AVAILABLE, "Specified device is not currently available.");
@@ -682,7 +682,7 @@ define_opencl_errors(void)
     RCL_DEF_CL_ERROR(CL_OUT_OF_HOST_MEMORY, "Failed to allocate resources required by the OpenCL implementation on the host.");
     RCL_DEF_CL_ERROR(CL_OUT_OF_RESOURCES, "Failed to queue the execution instance of given kernel on the command-queue because of insufficient resources needed to execute the kernel.");
     RCL_DEF_CL_ERROR(CL_PROFILING_INFO_NOT_AVAILABLE, "CL_QUEUE_PROFILING_ENABLE flag is not set for the command-queue and the profiling information is currently not available.");
-    
+
     OBJ_FREEZE(rcl_errors);
     rb_gc_register_address(&rcl_errors);
 }
@@ -690,9 +690,9 @@ define_opencl_errors(void)
 
 static void
 check_cl_error(cl_int errcode, int warn)
-{   
+{
     if (errcode == CL_SUCCESS) return;
-    
+
     VALUE str = rb_hash_aref(rcl_errors, INT2FIX(errcode));
     // NOTE:
     // Because rb_raise can only new a Exception class with one parameter
@@ -706,14 +706,14 @@ check_cl_error(cl_int errcode, int warn)
         if (warn) {
             rb_warn(fmt, errcode);
         } else {
-            rb_raise(rb_eOpenCL, fmt, errcode);            
+            rb_raise(rb_eOpenCL, fmt, errcode);
         }
     } else {
-        char *msg = RSTRING_PTR(str);
+        const char *msg = RSTRING_PTR(str);
         if (warn) {
             rb_warn("(%d) %s", errcode, msg);
         } else {
-            rb_raise(rb_eOpenCL, "(%d) %s", errcode, msg);           
+            rb_raise(rb_eOpenCL, "(%d) %s", errcode, msg);
         }
     }
 }
@@ -742,7 +742,7 @@ rcl_platforms(VALUE self)
 {
     cl_uint num_p;
     cl_platform_id p_ids[16];   // CHECK: literal constant.
-    
+
     VALUE list = rb_ary_new();
     cl_int res = clGetPlatformIDs(16, p_ids, &num_p);   // CHECK: ditto.
     if (CL_SUCCESS == res) {
@@ -757,7 +757,7 @@ rcl_platforms(VALUE self)
 }
 
 /*
- * call-seq: 
+ * call-seq:
  *      Platform#info(CL_PLATFORM_VENDOR) -> "NVIDIA, Inc."
  *
  * Wrapps the +clGetPlatformInfo()+.
@@ -768,19 +768,19 @@ rcl_platform_info(VALUE self, VALUE platform_info)
 {
     Expect_RCL_Const(platform_info);
     cl_platform_info info = FIX2UINT(platform_info);
-    
+
     cl_int res;
     void *param_value;
     size_t param_value_size;
-    
+
     cl_platform_id platform = Platform_Ptr(self);
-    res = clGetPlatformInfo(platform, info, 0, NULL, &param_value_size);    
+    res = clGetPlatformInfo(platform, info, 0, NULL, &param_value_size);
     Check_And_Raise(res);
-    
+
     param_value = ALLOCA_N(int8_t, param_value_size);
     res = clGetPlatformInfo(platform, info, param_value_size, param_value, NULL);
     Check_And_Raise(res);
-    
+
     return rb_str_new(param_value, param_value_size);
 }
 
@@ -790,7 +790,7 @@ define_class_platform(void)
     rcl_cPlatform = rb_define_class_under(rcl_mCapi, "Platform", rb_cObject);
     rb_define_module_function(rcl_mCapi, "platforms", rcl_platforms, 0);
     rb_undef_alloc_func(rcl_cPlatform);
-    rb_define_method(rcl_cPlatform, "info", rcl_platform_info, 1);    
+    rb_define_method(rcl_cPlatform, "info", rcl_platform_info, 1);
 }
 
 /*
@@ -814,9 +814,9 @@ rcl_devices(VALUE self, VALUE device_type, VALUE platform)
     cl_device_id d_ids[256];    // CHECK: literal constant and correct value.
     cl_uint num_id;
     cl_int res;
-    
+
     res = clGetDeviceIDs(pid, dt, 256, d_ids, &num_id);
-    
+
     VALUE devs = rb_ary_new();
     if (res != CL_SUCCESS) {
         Check_And_Warn(res);
@@ -825,7 +825,7 @@ rcl_devices(VALUE self, VALUE device_type, VALUE platform)
             VALUE o = RDevice(d_ids[i]);
             rb_ary_push(devs, o);
         }
-    }    
+    }
     return devs;
 }
 
@@ -840,19 +840,19 @@ rcl_device_info(VALUE self, VALUE device_info)
 {
     Expect_RCL_Const(device_info);
     cl_device_info info = FIX2UINT(device_info);
-    
+
     cl_int res;
     void *param_value;
     size_t param_value_size;
-    
+
     cl_device_id device = Device_Ptr(self);
     res = clGetDeviceInfo(device, info, 0, NULL, &param_value_size);
     Check_And_Raise(res);
-    
+
     param_value = ALLOCA_N(int8_t, param_value_size);
     res = clGetDeviceInfo(device, info, param_value_size, param_value, NULL);
     Check_And_Raise(res);
-                              
+
     VALUE ret = Qnil;
     switch (info) {
         // cl_device_fp_config
@@ -950,7 +950,7 @@ rcl_device_eql(VALUE self, VALUE dev)
 {
     cl_device_id myid = Device_Ptr(self);
     cl_device_id youid = Device_Ptr(dev);
-    
+
     return myid == youid ? Qtrue : Qfalse;
 }
 
@@ -980,7 +980,7 @@ define_class_device(void)
  */
 static VALUE
 rcl_context_alloc(VALUE klass)
-{    
+{
     return RContext(NULL);
 }
 
@@ -996,9 +996,9 @@ set_context_properties(cl_context_properties *props, VALUE arr, size_t len)
     for (uint i = 0; i < len; i += 2) {
         VALUE pn = rb_ary_entry(arr, i);
         VALUE ptr = rb_ary_entry(arr, i + 1);
-        
+
         assert(!(NIL_P(pn) || NIL_P(ptr)));
-                
+
         props[i] = FIX2UINT(pn);
         switch (props[i]) {
             case CL_CONTEXT_PLATFORM:
@@ -1015,12 +1015,12 @@ build_device_array(cl_device_id *devs, size_t cb)
 {
     VALUE ret = rb_ary_new();
     size_t num_dev = cb / sizeof(cl_device_id);
-    
+
     for (uint i = 0; i < num_dev; i++) {
         VALUE dev = RDevice(devs[i]);
         rb_ary_push(ret, dev);
     }
-    
+
     return ret;
 }
 
@@ -1040,15 +1040,15 @@ rcl_context_init(VALUE self, VALUE parg, VALUE darg)
         if ((ar_len  % 2) != 0) {
             rb_raise(rb_eArgError, "Invalid context properties list.");
         }
-        
+
         props = ALLOCA_N(cl_context_properties, ar_len + 1);
         set_context_properties(props, parg, ar_len);
         props[ar_len] = 0;
     }
-    
+
     VALUE devs = Qnil;
     cl_device_type dev_type = CL_DEVICE_TYPE_DEFAULT;
-    
+
     if (TYPE(darg) == T_ARRAY && RARRAY_LEN(darg) > 0) {
         devs = darg;
     } else if(FIXNUM_P(darg)) {
@@ -1056,25 +1056,25 @@ rcl_context_init(VALUE self, VALUE parg, VALUE darg)
     } else {
         rb_raise(rb_eArgError, "Invalid argument. Expected device type or device array.");
     }
-    
+
     cl_int res;
     cl_context context;
-    
+
     if (!NIL_P(devs)) {
         cl_uint num_dev = (cl_uint)RARRAY_LEN(devs);
         cl_device_id *dev_ids;
         CL_Pointers(devs, Device, cl_device_id, dev_ids);
-        
+
         context = clCreateContext(props, num_dev, dev_ids, rcl_pfn_notify, NULL, &res);
     } else {
         context = clCreateContextFromType(props, dev_type, rcl_pfn_notify, NULL, &res);
-    }    
+    }
     Check_And_Raise(res);
-    
-    rcl_context_t *pc;    
+
+    rcl_context_t *pc;
     Data_Get_Struct(self, rcl_context_t, pc);
     pc->c = context;
-    
+
     return self;
 }
 
@@ -1090,15 +1090,15 @@ rcl_context_init_copy(VALUE copy, VALUE orig)
 {
     if (copy == orig) return copy;
     Expect_RCL_Type(orig, Context);
-    
+
     rcl_context_t *copy_p;
     rcl_context_t *orig_p;
-    
+
     Data_Get_Struct(copy, rcl_context_t, copy_p);
     Data_Get_Struct(orig, rcl_context_t, orig_p);
-    
+
     if (copy_p->c == orig_p->c) return copy;
-    
+
     cl_int res;
     if (copy_p->c != NULL) {
         res = clReleaseContext(copy_p->c);
@@ -1106,9 +1106,9 @@ rcl_context_init_copy(VALUE copy, VALUE orig)
     }
     res = clRetainContext(orig_p->c);
     Check_And_Raise(res);
-    
+
     copy_p->c = orig_p->c;
-    
+
     return copy;
 }
 
@@ -1122,16 +1122,16 @@ rcl_context_init_copy(VALUE copy, VALUE orig)
 static VALUE
 rcl_context_info(VALUE self, VALUE context_info)
 {
-    Expect_RCL_Const(context_info); 
-    cl_context_info iname = FIX2UINT(context_info);       
+    Expect_RCL_Const(context_info);
+    cl_context_info iname = FIX2UINT(context_info);
     cl_context cxt = Context_Ptr(self);
-    
+
     char info[512];
     size_t info_size;
-     
-    cl_int res = clGetContextInfo(cxt, iname, 512, (void *)info, &info_size);    
+
+    cl_int res = clGetContextInfo(cxt, iname, 512, (void *)info, &info_size);
     Check_And_Raise(res);
-    
+
     switch (iname) {
         case CL_CONTEXT_REFERENCE_COUNT:
             return INT2NUM(*(int *)info);
@@ -1152,7 +1152,7 @@ define_class_context(void)
     rcl_cContext = rb_define_class_under(rcl_mCapi, "Context", rb_cObject);
     rb_define_alloc_func(rcl_cContext, rcl_context_alloc);
     rb_define_method(rcl_cContext, "initialize", rcl_context_init, 2);
-    rb_define_method(rcl_cContext, "initialize_copy", 
+    rb_define_method(rcl_cContext, "initialize_copy",
                                   rcl_context_init_copy, 1);
     rb_define_method(rcl_cContext, "info", rcl_context_info, 1);
 }
@@ -1165,13 +1165,13 @@ rcl_image_format_init(VALUE self, VALUE channel_order, VALUE channel_data_type)
 {
     Expect_RCL_Const(channel_order);
     Expect_RCL_Const(channel_data_type);
-    
+
     rb_iv_set(self, "@channel_order", channel_order);
     rb_iv_set(self, "@channel_data_type", channel_data_type);
-    
+
     return self;
 }
- 
+
 static VALUE
 rcl_context_supported_image_formats(VALUE self, VALUE mem_flag, VALUE mem_obj_type)
 {
@@ -1179,19 +1179,19 @@ rcl_context_supported_image_formats(VALUE self, VALUE mem_flag, VALUE mem_obj_ty
     cl_mem_object_type mt = FIX2INT(mem_obj_type);
     Expect_RCL_Const(mem_flag);
     cl_mem_flags mf = FIX2UINT(mem_flag);
-    
+
     cl_context cxt = Context_Ptr(self);
     cl_uint num_ret = 0;
     cl_int res = clGetSupportedImageFormats(cxt, mf, mt, 0, NULL, &num_ret);
     Check_And_Raise(res);
-    
+
     cl_image_format *ifs = ALLOCA_N(cl_image_format, num_ret);
     if (NULL == ifs) {
         rb_raise(rb_eRuntimeError, "Out of memory.");
     }
     res = clGetSupportedImageFormats(cxt, mf, mt, num_ret, ifs, NULL);
     Check_And_Raise(res);
-    
+
     VALUE ret = rb_ary_new2(num_ret);
     for (uint i = 0; i < num_ret; i++) {
         rb_ary_push(ret, RImageFormat(ifs + i));
@@ -1206,9 +1206,9 @@ define_class_image_format(void)
     rb_define_attr(rcl_cImageFormat, "channel_order", 1, 0);
     rb_define_attr(rcl_cImageFormat, "channel_data_type", 1, 0);
     rb_define_method(rcl_cImageFormat, "initialize", rcl_image_format_init, 2);
-    rb_define_method(rcl_cContext, "supported_image_formats", 
+    rb_define_method(rcl_cContext, "supported_image_formats",
                      rcl_context_supported_image_formats, 2);
-                                  
+
 }
 
 /*
@@ -1224,31 +1224,31 @@ rcl_command_queue_alloc(VALUE klass)
  * call-seq:
  *      CommandQueue.new(context, device, 0)
  *
- * Wrapps +clCreateCommandQueue()+. 
+ * Wrapps +clCreateCommandQueue()+.
  *
- * Note that command queue properties must be +0+, 
- * +CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE+, +CL_QUEUE_PROFILING_ENABLE+, 
+ * Note that command queue properties must be +0+,
+ * +CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE+, +CL_QUEUE_PROFILING_ENABLE+,
  * or the bit-or of the last two.
  */
 
 static VALUE
 rcl_command_queue_init(VALUE self, VALUE context, VALUE device, VALUE props)
 {
-    cl_context cxt = Context_Ptr(context);   
+    cl_context cxt = Context_Ptr(context);
     cl_device_id did = Device_Ptr(device);
-    
+
     Expect_RCL_Const(props);
     cl_uint properties = FIX2UINT(props);
-    
+
     cl_int res;
-    cl_command_queue q = clCreateCommandQueue(cxt, did, properties, &res);    
+    cl_command_queue q = clCreateCommandQueue(cxt, did, properties, &res);
     Check_And_Raise(res);
-    
+
     rcl_command_queue_t *pcq;
     Data_Get_Struct(self, rcl_command_queue_t, pcq);
-    
+
     pcq->cq = q;
-    
+
     return self;
 }
 
@@ -1256,16 +1256,16 @@ static VALUE
 rcl_command_queue_init_copy(VALUE copy, VALUE orig)
 {
     if (copy == orig) return copy;
-    
+
     Expect_RCL_Type(orig, CommandQueue);
-    
+
     rcl_command_queue_t *copy_p;
-    rcl_command_queue_t *orig_p;    
+    rcl_command_queue_t *orig_p;
     Data_Get_Struct(copy, rcl_command_queue_t, copy_p);
     Data_Get_Struct(orig, rcl_command_queue_t, orig_p);
-    
+
     if (copy_p->cq == orig_p->cq) return copy;
-    
+
     cl_int res;
     if (copy_p->cq != NULL) {
         res = clReleaseCommandQueue(copy_p->cq);
@@ -1273,9 +1273,9 @@ rcl_command_queue_init_copy(VALUE copy, VALUE orig)
     }
     res = clRetainCommandQueue(orig_p->cq);
     Check_And_Raise(res);
-    
+
     copy_p->cq = orig_p->cq;
-    
+
     return copy;
 }
 
@@ -1289,15 +1289,15 @@ rcl_command_queue_info(VALUE self, VALUE command_queue_info)
 {
     Expect_RCL_Const(command_queue_info);
     cl_command_queue_info info = FIX2UINT(command_queue_info);
-    
+
     intptr_t param_value;   // CHECK: extensibility. should get param size first.
     size_t sz_ret;
-    
+
     cl_command_queue cq = CommandQueue_Ptr(self);
-    
+
     cl_int res = clGetCommandQueueInfo(cq, info, sizeof(intptr_t), (void *)&param_value, &sz_ret);
     Check_And_Raise(res);
-    
+
     switch (info) {
     case CL_QUEUE_CONTEXT:
         return RContext((cl_context)param_value);
@@ -1326,13 +1326,13 @@ static VALUE
 rcl_command_queue_set_property(VALUE self, VALUE props, VALUE yesno)
 {
     Expect_Boolean(yesno, yn);
-    
+
     cl_command_queue q = CommandQueue_Ptr(self);
     cl_command_queue_properties pval = NUM2UINT(props);
-    
+
     cl_int res = clSetCommandQueueProperty(q, pval, yn, NULL);
     Check_And_Raise(res);
-    
+
     return self;
 }
 
@@ -1341,7 +1341,7 @@ rcl_flush(VALUE self)
 {
     cl_int res = clFlush(CommandQueue_Ptr(self));
     Check_And_Raise(res);
-    
+
     return self;
 }
 
@@ -1350,7 +1350,7 @@ rcl_finish(VALUE self)
 {
     cl_int res = clFinish(CommandQueue_Ptr(self));
     Check_And_Raise(res);
-    
+
     return self;
 }
 
@@ -1374,14 +1374,14 @@ rcl_finish(VALUE self)
             CL_Pointers(events, Event, cl_event, pevts); \
         } \
     } while (0)
-    
+
 #define Extract_Pointer(ptr, var) \
     void *var; \
     do { \
         if (!NIL_P(ptr)) Expect_RCL_Type(ptr, Pointer); \
         var = NIL_P(ptr) ? NULL : Pointer_Address(ptr); \
     } while (0)
-    
+
 #define Extract_Size_Array(dim, ar, var) \
     size_t *var = NULL; \
     do { \
@@ -1415,20 +1415,20 @@ rcl_finish(VALUE self)
     } while (0)
 
 static VALUE
-rcl_cq_enqueue_read_buffer(VALUE self, VALUE buffer, VALUE blocking_read, 
+rcl_cq_enqueue_read_buffer(VALUE self, VALUE buffer, VALUE blocking_read,
                            VALUE offset, VALUE size, VALUE host_ptr, VALUE events)
 {
-    Extract_Mem_Object(buffer, buf);    
+    Extract_Mem_Object(buffer, buf);
     Expect_Boolean(blocking_read, br);
     Extract_Size(offset, os);
     Extract_Size(size, cb);
     Extract_Pointer(host_ptr, ptr);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_event e;
     cl_event *ep = blocking_read ? NULL : &e;
-    
+
     cl_int res = clEnqueueReadBuffer(cq, buf, br, os, cb, ptr, num_evt, pevts, ep);
     Check_And_Raise(res);
 
@@ -1439,7 +1439,7 @@ static VALUE
 rcl_cq_enqueue_write_buffer(VALUE self, VALUE buffer, VALUE blocking_write,
                             VALUE offset, VALUE size, VALUE host_ptr, VALUE events)
 {
-    Extract_Mem_Object(buffer, buf);    
+    Extract_Mem_Object(buffer, buf);
     Expect_Boolean(blocking_write, bw);
     Extract_Size(offset, os);
     Extract_Size(size, cb);
@@ -1466,19 +1466,19 @@ rcl_cq_enqueue_copy_buffer(VALUE self, VALUE src_buffer, VALUE dst_buffer,
     Extract_Size(dst_offset, dos);
     Extract_Size(size, cb);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_event e;
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueCopyBuffer(cq, sbuf, dbuf, sos, dos, cb, num_evt, pevts, &e);
     Check_And_Raise(res);
-    
+
     return REvent(e);
 }
 
 static VALUE
 rcl_cq_enqueue_read_image(VALUE self, VALUE image, VALUE blocking_read,
                           VALUE origin, VALUE region,
-                          VALUE row_pitch, VALUE slice_pitch, 
+                          VALUE row_pitch, VALUE slice_pitch,
                           VALUE host_ptr, VALUE events)
 {
     Extract_Mem_Object(image, img);
@@ -1489,10 +1489,10 @@ rcl_cq_enqueue_read_image(VALUE self, VALUE image, VALUE blocking_read,
     Extract_Size(slice_pitch, sp);
     Extract_Pointer(host_ptr, hp);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_event e;
     cl_event *ep = blocking_read ? NULL : &e;
-    
+
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueReadImage(cq, img, br, ovec, rvec, rp, sp, hp, num_evt, pevts, ep);
     Check_And_Raise(res);
@@ -1503,7 +1503,7 @@ rcl_cq_enqueue_read_image(VALUE self, VALUE image, VALUE blocking_read,
 static VALUE
 rcl_cq_enqueue_write_image(VALUE self, VALUE image, VALUE blocking_write,
                            VALUE origin, VALUE region,
-                           VALUE row_pitch, VALUE slice_pitch, 
+                           VALUE row_pitch, VALUE slice_pitch,
                            VALUE host_ptr, VALUE events)
 {
     Extract_Mem_Object(image, img);
@@ -1514,10 +1514,10 @@ rcl_cq_enqueue_write_image(VALUE self, VALUE image, VALUE blocking_write,
     Extract_Size(slice_pitch, sp);
     Extract_Pointer(host_ptr, hp);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_event e;
     cl_event *ep = blocking_write ? NULL : &e;
-    
+
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueWriteImage(cq, img, bw, ovec, rvec, rp, sp, hp, num_evt, pevts, ep);
     Check_And_Raise(res);
@@ -1536,12 +1536,12 @@ rcl_cq_enqueue_copy_image(VALUE self, VALUE src_image, VALUE dst_image,
     Extract_Vector(dst_origin, dovec);
     Extract_Vector(region, rvec);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_event e;
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueCopyImage(cq, simg, dimg, sovec, dovec, rvec, num_evt, pevts, &e);
     Check_And_Raise(res);
-    
+
     return REvent(e);
 }
 
@@ -1556,18 +1556,18 @@ rcl_cq_enqueue_copy_image_to_buffer(VALUE self, VALUE src_image, VALUE dst_buffe
     Extract_Vector(region, rvec);
     Extract_Size(dst_offset, cb);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_event e;
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueCopyImageToBuffer(cq, img, buf, sovec, rvec, cb, num_evt, pevts, &e);
     Check_And_Raise(res);
-    
+
     return REvent(e);
 }
 
 static VALUE
 rcl_cq_enqueue_copy_buffer_to_image(VALUE self, VALUE src_buffer, VALUE dst_image,
-                                    VALUE src_offset, VALUE dst_origin, 
+                                    VALUE src_offset, VALUE dst_origin,
                                     VALUE region, VALUE events)
 {
     Extract_Mem_Object(src_buffer, buf);
@@ -1576,12 +1576,12 @@ rcl_cq_enqueue_copy_buffer_to_image(VALUE self, VALUE src_buffer, VALUE dst_imag
     Extract_Vector(dst_origin, sovec);
     Extract_Vector(region, rvec);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_event e;
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueCopyBufferToImage(cq, buf, img, cb, sovec, rvec, num_evt, pevts, &e);
     Check_And_Raise(res);
-    
+
     return REvent(e);
 }
 
@@ -1605,15 +1605,15 @@ rcl_cq_enqueue_map_buffer(VALUE self, VALUE mem_obj, VALUE blocking_map,
     Extract_Size(offset, os);
     Extract_Size(cb, sz);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_event e;
     cl_event *pe = blocking_map ? NULL : &e;
-    
+
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res;
     void *ptr = clEnqueueMapBuffer(cq, mo, bm, mf, os, sz, num_evt, pevts, pe, &res);
     Check_And_Raise(res);
-    
+
     VALUE mp = rcl_create_mapped_pointer(ptr, sz);
     VALUE ret = rb_ary_new();
     rb_ary_push(ret, mp);
@@ -1641,23 +1641,23 @@ rcl_cq_enqueue_map_image(VALUE self, VALUE image, VALUE blocking_map,
     Expect_Boolean(blocking_map, bm);
     Expect_Fixnum(flags);
     cl_mem_flags mf = FIX2INT(flags);
-    
+
     Extract_Vector(origin, ovec);
     Extract_Vector(region, rvec);
-    
+
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     size_t row_pitch;
     size_t slice_pitch;
-    
+
     cl_event e;
     cl_event *ep = blocking_map ? NULL : &e;
-    
+
     cl_command_queue cq = CommandQueue_Ptr(self);
-    cl_int res;    
+    cl_int res;
     void *ptr = clEnqueueMapImage(cq, img, bm, mf, ovec, rvec, &row_pitch, &slice_pitch, num_evt, pevts, ep, &res);
     Check_And_Raise(res);
-    
+
     // compute the size of mapped memory.
     size_t byte_size = (slice_pitch == 0) ? (rvec[1] * row_pitch) : (rvec[2] * slice_pitch);
     VALUE mp = rcl_create_mapped_pointer(ptr, byte_size);
@@ -1670,21 +1670,21 @@ rcl_cq_enqueue_map_image(VALUE self, VALUE image, VALUE blocking_map,
 }
 
 static VALUE
-rcl_cq_enqueue_unmap_mem_obj(VALUE self, VALUE mem_obj, VALUE mapped_ptr, 
+rcl_cq_enqueue_unmap_mem_obj(VALUE self, VALUE mem_obj, VALUE mapped_ptr,
                              VALUE events)
 {
     Extract_Mem_Object(mem_obj, mo);
     if (CLASS_OF(mapped_ptr) != rcl_cMappedPointer) {
         rb_raise(rb_eArgError, "Expected argument 2 is a MappedPointer.");
     }
-    void *mp = Pointer_Address(mapped_ptr);    
+    void *mp = Pointer_Address(mapped_ptr);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_event e;
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueUnmapMemObject(cq, mo, mp, num_evt, pevts, &e);
     Check_And_Raise(res);
-    
+
     rcl_invalidate_mapped_pointer(mapped_ptr);
     return REvent(e);
 }
@@ -1704,19 +1704,22 @@ rcl_cq_enqueue_ndrange_kernel(VALUE self, VALUE kernel, VALUE work_dim,
     Expect_Fixnum(work_dim);
     cl_uint wd = FIX2UINT(work_dim);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     Extract_Size_Array(wd, global_work_size, gws);
+    if (gws == NULL) {
+        rb_raise(rb_eArgError, "Global work sizes can't be nil.");
+    }
     Extract_Size_Array(wd, local_work_size, lws);
-    
+
     cl_event e;
     cl_kernel k = Kernel_Ptr(kernel);
     cl_command_queue cq = CommandQueue_Ptr(self);
-    
+
     cl_int res = clEnqueueNDRangeKernel(cq, k, wd, NULL, /* global work offset, must be NULL */
                                         gws, lws,
                                         num_evt, pevts, &e);
     Check_And_Raise(res);
-    
+
     return REvent(e);
 }
 
@@ -1725,13 +1728,13 @@ rcl_cq_enqueue_task(VALUE self, VALUE kernel, VALUE events)
 {
     Expect_RCL_Type(kernel, Kernel);
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_event e;
     cl_kernel k = Kernel_Ptr(kernel);
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueTask(cq, k, num_evt, pevts, &e);
     Check_And_Raise(res);
-    
+
     return REvent(e);
 }
 
@@ -1752,11 +1755,11 @@ static VALUE
 rcl_cq_enqueue_marker(VALUE self)
 {
     cl_command_queue cq = CommandQueue_Ptr(self);
-    
+
     cl_event e;
     cl_int res = clEnqueueMarker(cq, &e);
     Check_And_Raise(res);
-    
+
     return REvent(e);
 }
 
@@ -1774,7 +1777,7 @@ rcl_cq_enqueue_waitfor_events(VALUE self, VALUE events)
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueWaitForEvents(cq, num_evt, pes);
     Check_And_Raise(res);
-    
+
     return self;
 }
 
@@ -1790,7 +1793,7 @@ rcl_cq_enqueue_barrier(VALUE self)
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueBarrier(cq);
     Check_And_Raise(res);
-    
+
     return self;
 }
 
@@ -1804,20 +1807,20 @@ rcl_cq_enqueue_barrier(VALUE self)
 static VALUE
 rcl_cq_enqueue_acquire_gl_objects(VALUE self, VALUE mem_objects, VALUE events)
 {
-    Expect_Array(mem_objects);    
+    Expect_Array(mem_objects);
     cl_uint num_mo = (cl_uint)RARRAY_LEN(mem_objects);
     if (num_mo == 0) return self;
 
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_mem *pmos;
     CL_Pointers(mem_objects, Memory, cl_mem, pmos);
-    
+
     cl_event evt;
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueAcquireGLObjects(cq, num_mo, pmos, num_evt, pevts, &evt);
     Check_And_Raise(res);
-    
+
     return REvent(evt);
 }
 
@@ -1830,20 +1833,20 @@ rcl_cq_enqueue_acquire_gl_objects(VALUE self, VALUE mem_objects, VALUE events)
 static VALUE
 rcl_cq_enqueue_release_gl_objects(VALUE self, VALUE mem_objects, VALUE events)
 {
-    Expect_Array(mem_objects);    
+    Expect_Array(mem_objects);
     cl_uint num_mo = (cl_uint)RARRAY_LEN(mem_objects);
     if (num_mo == 0) return self;
 
     Extract_Wait_For_Events(events, num_evt, pevts);
-    
+
     cl_mem *pmos;
     CL_Pointers(mem_objects, Memory, cl_mem, pmos);
-    
+
     cl_event evt;
     cl_command_queue cq = CommandQueue_Ptr(self);
     cl_int res = clEnqueueReleaseGLObjects(cq, num_mo, pmos, num_evt, pevts, &evt);
     Check_And_Raise(res);
-    
+
     return REvent(evt);
 }
 
@@ -1856,7 +1859,7 @@ define_class_command_queue(void)
     rb_define_method(rcl_cCommandQueue, "initialize_copy", rcl_command_queue_init_copy, 1);
     rb_define_method(rcl_cCommandQueue, "info", rcl_command_queue_info, 1);
     rb_define_method(rcl_cCommandQueue, "set_property", rcl_command_queue_set_property, 2);
-    
+
     // mem
     rb_define_method(rcl_cCommandQueue, "enqueue_read_buffer", rcl_cq_enqueue_read_buffer, 6);
     rb_define_method(rcl_cCommandQueue, "enqueue_write_buffer", rcl_cq_enqueue_write_buffer, 6);
@@ -1869,24 +1872,24 @@ define_class_command_queue(void)
     rb_define_method(rcl_cCommandQueue, "enqueue_map_buffer", rcl_cq_enqueue_map_buffer, 6);
     rb_define_method(rcl_cCommandQueue, "enqueue_map_image", rcl_cq_enqueue_map_image, 6);
     rb_define_method(rcl_cCommandQueue, "enqueue_unmap_mem_object", rcl_cq_enqueue_unmap_mem_obj, 3);
-    
+
     // execution
     rb_define_method(rcl_cCommandQueue, "enqueue_NDRange_kernel", rcl_cq_enqueue_ndrange_kernel, 5);
     rb_define_method(rcl_cCommandQueue, "enqueue_task", rcl_cq_enqueue_task, 2);
     rb_define_method(rcl_cCommandQueue, "enqueue_native_kernel", rcl_cq_enqueue_native_kernel, 0);
-    
-    // sync 
+
+    // sync
     rb_define_method(rcl_cCommandQueue, "enqueue_marker",rcl_cq_enqueue_marker, 0);
     rb_define_method(rcl_cCommandQueue, "enqueue_wait_for_events", rcl_cq_enqueue_waitfor_events, 1);
     rb_define_method(rcl_cCommandQueue, "enequeu_barrier", rcl_cq_enqueue_barrier, 0);
-    
+
     rb_define_method(rcl_cCommandQueue, "flush", rcl_flush, 0);
     rb_define_method(rcl_cCommandQueue, "finish", rcl_finish, 0);
-    
+
     // gl interoperation
     rb_define_method(rcl_cCommandQueue, "enqueue_acquire_gl_objects", rcl_cq_enqueue_acquire_gl_objects, 2);
     rb_define_method(rcl_cCommandQueue, "enqueue_release_gl_objects", rcl_cq_enqueue_release_gl_objects, 2);
-    
+
 }
 
 /*
@@ -1894,32 +1897,32 @@ define_class_command_queue(void)
  */
 static VALUE
 rcl_sampler_alloc(VALUE klass)
-{    
+{
     rcl_sampler_t *ps;
     return Data_Make_Struct(klass, rcl_sampler_t, 0, rcl_sampler_free, ps);
 }
 
 static VALUE
-rcl_sampler_init(VALUE self, VALUE context, VALUE normalized_coords, 
+rcl_sampler_init(VALUE self, VALUE context, VALUE normalized_coords,
                  VALUE addressing_mode, VALUE filter_mode)
 {
     cl_context cxt = Context_Ptr(context);
-    
-    Expect_Boolean(normalized_coords, nc);    
-    
+
+    Expect_Boolean(normalized_coords, nc);
+
     Expect_RCL_Const(addressing_mode);
-    Expect_RCL_Const(filter_mode);    
+    Expect_RCL_Const(filter_mode);
     cl_addressing_mode am = FIX2UINT(addressing_mode);
     cl_filter_mode fm = FIX2UINT(filter_mode);
-    
+
     cl_int res;
     cl_sampler s = clCreateSampler(cxt, nc, am, fm, &res);
     Check_And_Raise(res);
-    
+
     rcl_sampler_t *p;
     Data_Get_Struct(self, rcl_sampler_t, p);
     p->s = s;
-    
+
     return self;
 }
 
@@ -1927,27 +1930,27 @@ static VALUE
 rcl_sampler_init_copy(VALUE copy, VALUE orig)
 {
     if (copy == orig) return copy;
-    
+
     Expect_RCL_Type(orig, Sampler);
-    
+
     rcl_sampler_t *copy_p;
     Data_Get_Struct(copy, rcl_sampler_t, copy_p);
     rcl_sampler_t *orig_p;
     Data_Get_Struct(orig, rcl_sampler_t, orig_p);
-    
+
     if (copy_p->s == orig_p->s) return copy;
-    
+
     cl_int res;
     if (copy_p->s != NULL) {
         res = clReleaseSampler(copy_p->s);
         Check_And_Raise(res);
     }
-    
+
     res = clRetainSampler(orig_p->s);
     Check_And_Raise(res);
-    
+
     copy_p->s = orig_p->s;
-    
+
     return copy;
 }
 
@@ -1956,16 +1959,16 @@ rcl_sampler_info(VALUE self, VALUE sampler_info)
 {
     Expect_RCL_Const(sampler_info);
     cl_sampler_info si = FIX2UINT(sampler_info);
-    
+
     cl_sampler s = Sampler_Ptr(self);
-    
+
     cl_int res;
     intptr_t param_value = 0;   // CHECK: again, extensibility.
                                 // The best way is to get size first.
-    
+
     res = clGetSamplerInfo(s, si, sizeof(intptr_t), &param_value, NULL);
     Check_And_Raise(res);
-    
+
     switch (si) {
     case CL_SAMPLER_REFERENCE_COUNT:
     case CL_SAMPLER_ADDRESSING_MODE:
@@ -1988,7 +1991,7 @@ define_class_sampler(void)
     rb_define_alloc_func(rcl_cSampler, rcl_sampler_alloc);
     rb_define_method(rcl_cSampler, "initialize", rcl_sampler_init, 4);
     rb_define_method(rcl_cSampler, "initialize_copy", rcl_sampler_init_copy, 1);
-    rb_define_method(rcl_cSampler, "info", rcl_sampler_info, 1);       
+    rb_define_method(rcl_cSampler, "info", rcl_sampler_info, 1);
 }
 
 /*
@@ -2004,13 +2007,13 @@ rcl_event_info(VALUE self, VALUE event_info)
 {
     Expect_RCL_Const(event_info);
     cl_event_info info = FIX2UINT(event_info);
-    
+
     cl_event e = Event_Ptr(self);
     intptr_t param_value;
-    
+
     cl_int res = clGetEventInfo(e, info, sizeof(intptr_t), &param_value, NULL);
     Check_And_Raise(res);
-    
+
     switch (info) {
         case CL_EVENT_COMMAND_QUEUE:
             return RCommandQueue((cl_command_queue)param_value);
@@ -2023,7 +2026,7 @@ rcl_event_info(VALUE self, VALUE event_info)
             break;
     }
     return Qnil;
-    
+
 }
 
 /*
@@ -2036,13 +2039,13 @@ rcl_wait_for_events(VALUE self, VALUE events)
     Expect_Array(events);
     cl_uint num = (cl_uint)RARRAY_LEN(events);
     if (num == 0) return Qfalse;
-    
+
     cl_event *pe;
     CL_Pointers(events, Event, cl_event, pe);
 
     cl_int res = clWaitForEvents(num, pe);
     Check_And_Raise(res);
-    
+
     return Qtrue;
 }
 
@@ -2051,13 +2054,13 @@ rcl_event_profiling_info(VALUE self, VALUE profiling_info)
 {
     Expect_RCL_Const(profiling_info);
     cl_profiling_info itype = FIX2UINT(profiling_info);
-    
-    cl_ulong info;    
+
+    cl_ulong info;
     cl_event e = Event_Ptr(self);
-    
-    cl_int res = clGetEventProfilingInfo(e, itype, sizeof(cl_ulong), &info, NULL);    
+
+    cl_int res = clGetEventProfilingInfo(e, itype, sizeof(cl_ulong), &info, NULL);
     Check_And_Raise(res);
-    
+
     return ULONG2NUM(info);
 }
 
@@ -2085,14 +2088,15 @@ rcl_mem_create_buffer(VALUE mod, VALUE context, VALUE flags, VALUE size, VALUE h
     Expect_RCL_Type(context, Context);
     Expect_Fixnum(flags);
     if (!NIL_P(host_ptr)) Expect_RCL_Type(host_ptr, Pointer);
-    
+
     cl_context cxt = Context_Ptr(context);
     cl_mem_flags mf = FIX2INT(flags);
-    
+
     Extract_Size(size, sz);
 
     void *hp = NULL;
     if (!NIL_P(host_ptr)) {
+        // BUG
         sz = Pointer_Size(host_ptr);
         hp = Pointer_Address(host_ptr);
     }
@@ -2105,34 +2109,34 @@ rcl_mem_create_buffer(VALUE mod, VALUE context, VALUE flags, VALUE size, VALUE h
 }
 
 static VALUE
-rcl_mem_create_image_2d(VALUE mod, VALUE context, 
-                                   VALUE flags, 
-                                   VALUE image_format, 
-                                   VALUE width, VALUE height, VALUE row_pitch, 
+rcl_mem_create_image_2d(VALUE mod, VALUE context,
+                                   VALUE flags,
+                                   VALUE image_format,
+                                   VALUE width, VALUE height, VALUE row_pitch,
                                    VALUE host_ptr)
 {
     Expect_RCL_Type(context, Context);
     Expect_Fixnum(flags);
-    
+
     Extract_Size(width, w);
     Extract_Size(height, h);
     Extract_Size(row_pitch, rp);
-    
+
     cl_context cxt = Context_Ptr(context);
     cl_mem_flags mf = FIX2INT(flags);
     Extract_ImageFormat(image_format, imgfmt);
-        
+
     Extract_Pointer(host_ptr, hp);
-    
-    cl_int res;    
+
+    cl_int res;
     cl_mem img = clCreateImage2D(cxt, mf, &imgfmt, w, h, rp, hp, &res);
     Check_And_Raise(res);
-    
+
     return RMemory(img);
 }
 
 static VALUE
-rcl_mem_create_image_3d(VALUE mod, VALUE context, VALUE flags, 
+rcl_mem_create_image_3d(VALUE mod, VALUE context, VALUE flags,
                                    VALUE image_format,
                                    VALUE width, VALUE height, VALUE depth,
                                    VALUE row_pitch, VALUE slice_pitch,
@@ -2144,21 +2148,21 @@ rcl_mem_create_image_3d(VALUE mod, VALUE context, VALUE flags,
         rb_raise(rb_eTypeError, "expected argument 3 is a ImageFormat.");
     }
     cl_mem_flags mf = FIX2INT(flags);
-    
+
     Extract_Size(width, w);
     Extract_Size(height, h);
     Extract_Size(depth, d);
     Extract_Size(row_pitch, rp);
     Extract_Size(slice_pitch, sp);
-    
+
     cl_context cxt = Context_Ptr(context);
     Extract_ImageFormat(image_format, imgfmt);
     Extract_Pointer(host_ptr, hp);
-    
+
     cl_int res;
     cl_mem img = clCreateImage3D(cxt, mf, &imgfmt, w, h, d, rp, sp, hp, &res);
     Check_And_Raise(res);
-    
+
     return RMemory(img);
 }
 
@@ -2166,14 +2170,14 @@ static VALUE
 rcl_mem_info(VALUE self, VALUE param_name)
 {
     Expect_RCL_Const(param_name);
-    
+
     cl_mem_info mi = FIX2UINT(param_name);
     cl_mem m = Memory_Ptr(self);
     intptr_t param_value;
-    
+
     cl_int res = clGetMemObjectInfo(m, mi, sizeof(intptr_t), &param_value, NULL);
     Check_And_Raise(res);
-    
+
     switch (mi) {
     case CL_MEM_TYPE:
     case CL_MEM_FLAGS:
@@ -2188,7 +2192,7 @@ rcl_mem_info(VALUE self, VALUE param_name)
     default:
         break;
     }
-    
+
     return Qnil;
 }
 
@@ -2198,12 +2202,12 @@ rcl_mem_image_info(VALUE self, VALUE param_name)
     Expect_RCL_Const(param_name);
     cl_image_info ii = FIX2UINT(param_name);
     cl_mem m = Memory_Ptr(self);
-    
+
     cl_image_format imgfmt;
-    
+
     cl_int res = clGetImageInfo(m, ii, sizeof(cl_image_format), (void *)&imgfmt, NULL);
     Check_And_Raise(res);
-    
+
     switch (ii) {
     case CL_IMAGE_FORMAT:
         return RImageFormat(&imgfmt);
@@ -2294,10 +2298,10 @@ rcl_program_create_from_source(cl_context context, VALUE sources)
 {
     Expect_Array(sources);
     uint num_src = (uint)RARRAY_LEN(sources);
-    
+
     const char **srcp = (const char **)ALLOCA_N(intptr_t, num_src);
     size_t *lenp = ALLOCA_N(size_t, num_src);
-    
+
     for (uint i = 0; i < num_src; i++) {
         VALUE srcstr = rb_ary_entry(sources, i);
         if (TYPE(srcstr) != T_STRING) {
@@ -2306,12 +2310,12 @@ rcl_program_create_from_source(cl_context context, VALUE sources)
         srcp[i] = RSTRING_PTR(srcstr);
         lenp[i] = RSTRING_LEN(srcstr);
     }
-    
+
     cl_int res;
     cl_program prog = clCreateProgramWithSource(context, num_src, srcp, lenp, &res);
     Check_And_Raise(res);
-    
-    return prog; 
+
+    return prog;
 }
 
 static cl_program
@@ -2319,20 +2323,20 @@ rcl_program_create_from_binary(cl_context context, VALUE devices, VALUE binaries
 {
     Expect_Array(devices);
     Expect_Array(binaries);
-    
+
     uint num_dev = (uint)RARRAY_LEN(devices);
     if (RARRAY_LEN(binaries) != num_dev) {
         rb_raise(rb_eArgError, "Number of binaries shall equal to number of devices.");
     }
-    
+
     cl_device_id *devs = ALLOCA_N(cl_device_id, num_dev);
     size_t *len_ar = ALLOCA_N(size_t, num_dev);
     const unsigned char **bin_ar = (const unsigned char **)ALLOCA_N(intptr_t, num_dev);
-    
+
     for (uint i = 0; i < num_dev; i++) {
         VALUE dev = rb_ary_entry(devices, i);
         Expect_RCL_Type(dev, Device);
-        
+
         VALUE bin = rb_ary_entry(binaries, i);
         if (TYPE(bin) != T_STRING) {
             rb_raise(rb_eTypeError, "Invalid binary. Expected a byte string.");
@@ -2341,12 +2345,12 @@ rcl_program_create_from_binary(cl_context context, VALUE devices, VALUE binaries
         len_ar[i] = RSTRING_LEN(bin);
         bin_ar[i] = (unsigned char *)RSTRING_PTR(bin);
     }
-    
+
     cl_int res;
     cl_int *bin_status = ALLOCA_N(cl_int, num_dev);
     cl_program prog = clCreateProgramWithBinary(context, num_dev, devs, len_ar, bin_ar, bin_status, &res);
     Check_And_Raise(res);
-    
+
     // FIXME: we got binary status, but do not use these information yet.
 
     return prog;
@@ -2363,24 +2367,24 @@ rcl_program_init(int argc, VALUE *argv, VALUE self)
     if (argc != 2 && argc != 3) {
         rb_raise(rb_eArgError, "Wrong number of arguments.");
     }
-    
+
     Expect_RCL_Type(argv[0], Context);
     cl_context context = Context_Ptr(argv[0]);
-    
+
     rcl_program_t *dp;
     Data_Get_Struct(self, rcl_program_t, dp);
-    
+
     if (argc == 2) {
         VALUE sources = argv[1];
-        
+
         dp->p = rcl_program_create_from_source(context, sources);
     } else {
         VALUE devices = argv[1];
         VALUE binaries = argv[2];
-        
+
         dp->p = rcl_program_create_from_binary(context, devices, binaries);
     }
-    
+
     return self;
 }
 
@@ -2388,15 +2392,15 @@ static VALUE
 rcl_program_init_copy(VALUE copy, VALUE orig)
 {
     if (copy == orig) return copy;
-    
+
     Expect_RCL_Type(orig, Program);
     rcl_program_t *copy_p, *orig_p;
-    
+
     Data_Get_Struct(copy, rcl_program_t, copy_p);
     Data_Get_Struct(orig, rcl_program_t, orig_p);
-    
+
     if (copy_p->p == orig_p->p) return copy;
-    
+
     cl_int res;
     if (copy_p->p != NULL) {
         res = clReleaseProgram(copy_p->p);
@@ -2404,9 +2408,9 @@ rcl_program_init_copy(VALUE copy, VALUE orig)
     }
     res = clRetainProgram(orig_p->p);
     Check_And_Raise(res);
-    
+
     copy_p->p = orig_p->p;
-    
+
     return copy;
 }
 
@@ -2422,21 +2426,21 @@ build_notify(cl_program program, void *user_data)
 /*
  * call-seq:
  *      Program#build([Device, ..], "-D")   -> the receiver
- * 
+ *
  * Wrapps +clProgramBuild()+.
  */
 static VALUE
 rcl_program_build(VALUE self, VALUE devices, VALUE options, VALUE memo)
 {
     if (TYPE(options) != T_STRING) {
-        rb_raise(rb_eTypeError, "Expected options is a String.");        
+        rb_raise(rb_eTypeError, "Expected options is a String.");
     }
     Expect_Array(devices);
-    
+
     uint num_dev = (uint)RARRAY_LEN(devices);
     cl_device_id *devs;
     CL_Pointers(devices, Device, cl_device_id, devs);
-        
+
     cl_program prog = Program_Ptr(self);
     pfn_build_notify pbn = NIL_P(memo) ? NULL : build_notify;
     cl_int res = clBuildProgram(prog, num_dev, devs, RSTRING_PTR(options), pbn, (void *)memo);
@@ -2456,19 +2460,19 @@ rcl_program_build_info(VALUE self, VALUE device, VALUE param_name)
 {
     Expect_RCL_Type(device, Device);
     Expect_RCL_Const(param_name);
-    
+
     cl_program prog = Program_Ptr(self);
     cl_device_id dev = Device_Ptr(device);
     cl_program_build_info bi = FIX2UINT(param_name);
-    
+
     size_t sz_ret = 0;
     cl_int res = clGetProgramBuildInfo(prog, dev, bi, 0, NULL, &sz_ret);
     Check_And_Raise(res);
-    
+
     char *param_value = ALLOCA_N(char, sz_ret);
     res = clGetProgramBuildInfo(prog, dev, bi, sz_ret, param_value, NULL);
     Check_And_Raise(res);
-    
+
     switch (bi) {
     case CL_PROGRAM_BUILD_STATUS:
         return UINT2NUM(*(cl_build_status *)param_value);
@@ -2478,7 +2482,7 @@ rcl_program_build_info(VALUE self, VALUE device, VALUE param_name)
     default:
         break;
     }
-    
+
     return Qnil;
 }
 
@@ -2492,18 +2496,18 @@ static VALUE
 rcl_program_info(VALUE self, VALUE param_name)
 {
     Expect_RCL_Const(param_name);
-    
+
     cl_program prog = Program_Ptr(self);
     cl_program_info pi = FIX2UINT(param_name);
-    
+
     size_t sz_ret;
     cl_int res = clGetProgramInfo(prog, pi, 0, NULL, &sz_ret);
     Check_And_Raise(res);
-    
+
     char *param_value = ALLOCA_N(char, sz_ret);
     res = clGetProgramInfo(prog, pi, sz_ret, param_value, NULL);
     Check_And_Raise(res);
-    
+
     switch (pi) {
     case CL_PROGRAM_REFERENCE_COUNT:
     case CL_PROGRAM_NUM_DEVICES:
@@ -2528,7 +2532,7 @@ rcl_program_info(VALUE self, VALUE param_name)
     default:
         break;
     }
-    
+
     return Qnil;
 }
 
@@ -2543,11 +2547,11 @@ rcl_program_create_kernels(VALUE self)
 {
     cl_kernel kernels[128]; // TOOD: literal constant?
     cl_program prog = Program_Ptr(self);
-    
+
     cl_uint num_ret;
     cl_int res = clCreateKernelsInProgram(prog, 128, kernels, &num_ret);
     Check_And_Raise(res);
-    
+
     VALUE ary = rb_ary_new2(num_ret);
     for (uint i = 0; i < num_ret; i++) {
         rb_ary_push(ary, RKernel(kernels[i]));
@@ -2567,7 +2571,7 @@ rcl_unload_compiler(VALUE self)
 {
     cl_int res = clUnloadCompiler();
     Check_And_Raise(res);
-    
+
     return self;
 }
 
@@ -2605,17 +2609,17 @@ rcl_kernel_init(VALUE self, VALUE program, VALUE name)
 {
     Expect_RCL_Type(program, Program);
     Check_Type(name, T_STRING);
-    
+
     cl_program prog = Program_Ptr(program);
     char *str = RSTRING_PTR(name);
     
     cl_int res;
     cl_kernel k = clCreateKernel(prog, str, &res);
     Check_And_Raise(res);
-    
+
     rcl_kernel_t *pk;
     Data_Get_Struct(self, rcl_kernel_t, pk);
-    
+
     pk->k = k;
     return self;
 }
@@ -2625,13 +2629,13 @@ rcl_kernel_init_copy(VALUE copy, VALUE orig)
 {
     if (copy == orig) return copy;
     Expect_RCL_Type(orig, Kernel);
-    
+
     rcl_kernel_t *copy_p, *orig_p;
     Data_Get_Struct(copy, rcl_kernel_t, copy_p);
     Data_Get_Struct(orig, rcl_kernel_t, orig_p);
-    
+
     if (copy_p->k == orig_p->k) return copy;
-    
+
     cl_int res;
     if (copy_p->k != NULL) {
         res = clReleaseKernel(copy_p->k);
@@ -2639,7 +2643,7 @@ rcl_kernel_init_copy(VALUE copy, VALUE orig)
     }
     res = clRetainKernel(orig_p->k);
     Check_And_Raise(res);
-    
+
     copy_p->k = orig_p->k;
     return copy;
 }
@@ -2666,16 +2670,16 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE type, VALUE value)
 {
     Extract_Size(index, idx);
     Check_Type(type, T_SYMBOL);
-    
+
     size_t arg_size = 0;
     int8_t *arg_ptr = NULL;
-    
+
     ID tid = SYM2ID(type);
     if (tid == rcl_kernel_arg_type_memory) {
         if (!NIL_P(value)) {
             Expect_RCL_Type(value, Memory);
             arg_size = sizeof(cl_mem);
-            
+
             rcl_mem_t *mem;
             Data_Get_Struct(value, rcl_mem_t, mem);
             arg_ptr = (void *)(&(mem->mem));
@@ -2686,11 +2690,11 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE type, VALUE value)
         arg_ptr = NULL;
     } else if (tid == rcl_kernel_arg_type_sampler) {
         Expect_RCL_Type(value, Sampler);
-        
+
         rcl_sampler_t *ps;
-        Data_Get_Struct(value, rcl_sampler_t, ps);       
+        Data_Get_Struct(value, rcl_sampler_t, ps);
         arg_ptr = (void *)(&(ps->s));
-        
+
         arg_size = sizeof(cl_sampler);
     } else {
         arg_size = rcl_type_size(tid);
@@ -2715,21 +2719,21 @@ static VALUE
 rcl_kernel_info(VALUE self, VALUE param_name)
 {
     Expect_RCL_Const(param_name);
-    
+
     cl_kernel k = Kernel_Ptr(self);
     cl_kernel_info ki = FIX2UINT(param_name);
-    
+
     char param_value[128];
     size_t sz_ret;
     cl_int res = clGetKernelInfo(k, ki, 128, param_value, &sz_ret);
     Check_And_Raise(res);
-    
+
     switch (ki) {
     case CL_KERNEL_FUNCTION_NAME:
         return rb_str_new2(param_value);
     case CL_KERNEL_NUM_ARGS:
     case CL_KERNEL_REFERENCE_COUNT:
-        return UINT2NUM((*(cl_uint *)param_value));        
+        return UINT2NUM((*(cl_uint *)param_value));
     case CL_KERNEL_CONTEXT:
         return RContext(*(cl_context *)param_value);
     case CL_KERNEL_PROGRAM:
@@ -2755,16 +2759,16 @@ rcl_kernel_workgroup_info(VALUE self, VALUE device, VALUE param_name)
 {
     Expect_RCL_Type(device, Device);
     Expect_RCL_Const(param_name);
-    
+
     cl_kernel k = Kernel_Ptr(self);
     cl_device_id dev = NIL_P(device) ? NULL : Device_Ptr(device);
     cl_kernel_work_group_info kwi = FIX2UINT(param_name);
-    
+
     size_t param_value[3];
-    
+
     cl_uint res = clGetKernelWorkGroupInfo(k, dev, kwi, sizeof(size_t) * 3, param_value, NULL);
     Check_And_Raise(res);
-    
+
     VALUE ret = Qnil;
     switch (kwi) {
     case CL_KERNEL_WORK_GROUP_SIZE:
@@ -2792,7 +2796,7 @@ define_class_kernel(void)
     rb_define_method(rcl_cKernel, "set_arg", rcl_kernel_set_arg, 3);
     rb_define_method(rcl_cKernel, "info", rcl_kernel_info, 1);
     rb_define_method(rcl_cKernel, "workgroup_info", rcl_kernel_workgroup_info, 2);
-    
+
     // Initialize constants.
     rcl_kernel_arg_type_memory = rb_intern("mem");
     rcl_kernel_arg_type_local = rb_intern("local");
@@ -2803,18 +2807,18 @@ define_class_kernel(void)
  * Entry point
  */
 
-void 
+void
 Init_capi()
 {
     rcl_mOpenCL = rb_define_module("OpenCL");
     rcl_mCapi = rb_define_module_under(rcl_mOpenCL, "Capi");
-    
-    define_opencl_constants();    
+
+    define_opencl_constants();
     define_opencl_errors();
-    
+
     define_class_clerror();
-    
-    define_class_platform();    
+
+    define_class_platform();
     define_class_device();
     define_class_context();
     define_class_image_format();
@@ -2824,6 +2828,6 @@ Init_capi()
     define_class_memory();
     define_class_program();
     define_class_kernel();
-    
+
     define_rcl_class_pointer();
 }

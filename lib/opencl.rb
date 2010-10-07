@@ -11,11 +11,11 @@ require_relative 'opencl/buffer'
 module OpenCL
 
   module_function
-  
+
   def type_size(type)
     SCALAR_TYPES[type] || VECTOR_TYPES[type]
   end
-  
+
   def valid_type?(type)
     SCALAR_TYPES.has_key?(type) || VECTOR_TYPES.has_key?(type)
   end

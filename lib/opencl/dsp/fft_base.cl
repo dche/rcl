@@ -6,7 +6,7 @@
 
 #define complexMul(a,b) ((float2)(mad(-(a).y, (b).y, (a).x * (b).x), mad((a).y, (b).x, (a).x * (b).y)))
 #define conj(a) ((float2)((a).x, -(a).y))
-#define conjTransp(a) ((float2)(-(a).y, (a).x))	   
+#define conjTransp(a) ((float2)(-(a).y, (a).x))
 
 /*
  *  |1  1|   |a0|

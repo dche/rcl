@@ -34,7 +34,7 @@ describe "Enqueue kernel" do
   the 'dot product' do
     prog = cxt.create_program(dot_product)
     prog.build cxt.devices, "", nil
-    
+
     k = prog.create_kernels.first
     in_a = HostPointer.new(:cl_float4, 1)
     in_b = HostPointer.new(:cl_float4, 1)
@@ -47,7 +47,7 @@ describe "Enqueue kernel" do
 
     out_c = HostPointer.new(:cl_float, 1)
     mem_c = cxt.create_buffer(CL_MEM_WRITE_ONLY, out_c.byte_size)
-    
+
     k.set_arg(0, :mem, mem_a)
     k.set_arg(1, :mem, mem_b)
     k.set_arg(2, :mem, mem_c)
@@ -62,15 +62,15 @@ describe "Enqueue kernel" do
   the 'mult' do
     prog = cxt.create_program(mult)
     prog.build cxt.devices, "", nil
-    
+
     k = prog.create_kernels.first
     in_f = HostPointer.new(:cl_float, 4)
     in_f.assign [1, 2, 3, 4]
-    
+
     mem_in = cxt.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 0, in_f)
     out_f = HostPointer.new(:cl_float, 4)
     mem_out = cxt.create_buffer(CL_MEM_WRITE_ONLY, out_f.byte_size)
-    
+
     k.set_arg(0, :mem, mem_in)
     k.set_arg(1, :mem, mem_out)
     k.set_arg(2, :cl_float, 10.0625)

@@ -15,26 +15,26 @@
  *
  *  This code uses the BSD License:
  *
- *  Redistribution and use in source and binary forms, with or without 
- *  modification, are permitted provided that the following conditions are 
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are
  *  met:
  *
- *     * Redistributions of source code must retain the above copyright 
+ *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright 
- *       notice, this list of conditions and the following disclaimer in 
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the distribution
- *      
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
- *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
  */
@@ -65,10 +65,10 @@ inline cl_half Extract_Half(VALUE ro)
     Expect_Float(ro);
 
     double v = NUM2DBL(ro);
-    uint32_t *xp = (uint32_t *)&v; 
+    uint32_t *xp = (uint32_t *)&v;
     xp++;    // Skip low mantissa bits.
     uint32_t x = *xp;
-    
+
     cl_half h;
     if ((x & 0x7FFFFFFFu) == 0) {   // signed zero.
         h = (cl_half)(x >> 16);
@@ -77,7 +77,7 @@ inline cl_half Extract_Half(VALUE ro)
         xs = x & 0x80000000u;
         xe = x & 0x7FF00000u;
         xm = x & 0x000FFFFFu;
-        
+
         if( xe == 0 ) {  // Denormal will underflow, return a signed zero
             h = (cl_half) (xs >> 16);
         } else if( xe == 0x7FF00000u ) {  // Inf or NaN (all the exponent bits are set)
@@ -89,7 +89,7 @@ inline cl_half Extract_Half(VALUE ro)
         } else { // Normalized number
             uint16_t hs, he, hm;
             int hes;
-            
+
             hs = (uint16_t)(xs >> 16); // Sign bit
             hes = ((int)(xe >> 20)) - 1023 + 15; // Exponent unbias the double, then bias the halfp
             if ( hes >= 0x1F ) {  // Overflow
@@ -122,7 +122,7 @@ inline cl_half Extract_Half(VALUE ro)
 inline VALUE rcl_half_float_new(cl_half h)
 {
     double v = 0;
-    uint32_t *f = ((uint32_t *)&v); 
+    uint32_t *f = ((uint32_t *)&v);
     f++; // Leave low mantissa bits as 0.
 
     if((h & 0x7FFFu) == 0) {  // Signed zero
@@ -131,7 +131,7 @@ inline VALUE rcl_half_float_new(cl_half h)
         uint16_t hs, he, hm;
         uint32_t xs, xe, xm;
         int32_t xes;
-        
+
         hs = h & 0x8000u;  // Pick off sign bit
         he = h & 0x7C00u;  // Pick off exponent bits
         hm = h & 0x03FFu;  // Pick off mantissa bits
@@ -159,7 +159,7 @@ inline VALUE rcl_half_float_new(cl_half h)
             xm = ((uint32_t)hm) << 10; // Mantissa
             *f = (xs | xe | xm); // Combine sign bit, exponent bits, and mantissa bits
         }
-    }   
+    }
     return rb_float_new(v);
 }
 

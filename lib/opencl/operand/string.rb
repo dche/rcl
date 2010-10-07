@@ -1,7 +1,7 @@
 
 
 class String
-  
+
   # Include a common OpenCL utility module. The effect of this method is
   # read the contents of a OpenCL source file from a predefined
   # position (at present, it's the 'cl' directory under 'lib'), and then
@@ -19,7 +19,7 @@ class String
     unless File.file?(path)
       raise ArgumentError, "No OpenCL source named '#{mod_name}.cl' found."
     end
-    
+
     self << File.open(path) do |f|
       f.read
     end

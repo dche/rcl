@@ -1,11 +1,11 @@
 
-/* 
+/*
  A PRNG used in each the kernel.
 
- Implemented a simplified CMWC. 
+ Implemented a simplified CMWC.
 
  Borrowed from here: http://inst.cs.berkeley.edu/~ianh/proj1.html.
- 
+
  I have not verified if the author's smplification to CMWC is valid yet.
 
  TODO: 1. Find another PRNG with small memory trace, or

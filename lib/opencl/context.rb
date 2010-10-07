@@ -27,7 +27,7 @@ module OpenCL
       
       private :new
     end
-    
+
     def initialize(device_type)
       begin
         devs = Capi.devices(device_type, nil)
@@ -35,7 +35,7 @@ module OpenCL
 
         @context = Capi::Context.new nil, devs
         @queues = {}
-        
+
         devs.each do |dev|
           @queues[dev] = @context.create_command_queue dev
         end
@@ -44,12 +44,12 @@ module OpenCL
         raise CLError.new(e.message)
       end
     end
-    
+
     # Returns the default Capi::Device object.
     def default_device
       @context.devices.first
     end
-    
+
     # Returns the a Capi::Device object based on certain dispatching mechanism.
     def device
       # TODO: choose device based on load
@@ -62,19 +62,19 @@ module OpenCL
         dev.max_mem_alloc_size
       end.min
     end
-    
+
     # Returns the Capi::CommandQueue object of given device.
     #
     # Returns +nil+ if the +device+ is invalid.
     def command_queue_of(device)
       @queues[device]
     end
-    
+
     # Returns a profiling enabled Capi::CommandQueue object of given device.
     def profiling_command_queue_of(device)
       @context.create_profiling_command_queue(device)
     end
-    
+
     def method_missing(meth, *args, &blk)
       case meth
       when :create_program, :devices, :create_buffer
@@ -84,5 +84,5 @@ module OpenCL
       end
     end
   end
-    
+
 end

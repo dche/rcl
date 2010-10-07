@@ -19,7 +19,7 @@ module OpenCL
 
         tp = <<-EOT
 
-__kernel void 
+__kernel void
 <%= name %>(<%= args %>)
 {
 <% if lmem_size > 0 %>
@@ -598,7 +598,7 @@ __kernel void
 
         radixArray, r1Array, r2Array = global_radix_info(n)
 
-        data_len = n        
+        data_len = n
         m = Math.log2(n).to_i
         r_init = vertical ? bs : 1
         batch_size = [bs, batch_size].min if vertical
