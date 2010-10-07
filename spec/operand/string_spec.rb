@@ -1,6 +1,6 @@
 
-require_relative 'spec_helper'
-require_relative '../lib/opencl/string'
+require_relative '../spec_helper'
+require_relative '../../lib/opencl/string'
 
 describe String do
   
