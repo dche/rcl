@@ -217,8 +217,8 @@ rcl_type_size(ID id)
         return; \
     }
 
-// Referenced by kernel_set_arg_with_type() in capi.c
-void 
+// Referenced by kernel_set_arg in capi.c
+void
 rcl_ruby2native(ID type, void *address, VALUE value)
 {
     assert(!(NIL_P(value) || NULL == address));
