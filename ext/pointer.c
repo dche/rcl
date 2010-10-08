@@ -82,6 +82,13 @@ static ID id_type_cl_double16;
 static VALUE rcl_sym_vector_types;
 static VALUE rcl_sym_scalar_types;
 
+/*
+ * call-seq:
+ *      OpenCL.type_size(type_tag)
+ *
+ * Returns the byte size of given type, or 0 if +type_tag+ is unrecognized
+ * or invalid.
+ */
 static VALUE rcl_sizeof(VALUE self, VALUE id)
 {
     VALUE sz = Qnil;
@@ -97,16 +104,29 @@ static VALUE rcl_sizeof(VALUE self, VALUE id)
     return NIL_P(sz) ? INT2FIX(0) : sz;
 }
 
+/*
+ * call-seq:
+ *      OpenCL.valid_vector?(type_tag)
+ *
+ * Returns +true+ if given type is a vector type, e.g., :cl_float16.
+ *
+ */
 static VALUE rcl_is_type_vector(VALUE self, VALUE id)
 {
     if (SYMBOL_P(id)) {
         VALUE vectors = rb_const_get(self, rcl_sym_vector_types);
         assert(!NIL_P(vectors));
-        return !NIL_P(rb_hash_lookup(vectors, id));
+        return NIL_P(rb_hash_lookup(vectors, id)) ? Qfalse : Qtrue;
     }
     return Qfalse;
 }
 
+/*
+ * call-seq:
+ *      OpenCL.valid_type?(type_tag)
+ *
+ * Returns +true+ if given type is a valid OpenCL type.
+ */
 static VALUE rcl_is_type_valid(VALUE self, VALUE id)
 {
     return rcl_sizeof(self, id) != INT2FIX(0) ? Qtrue : Qfalse;
@@ -415,7 +435,7 @@ Pointer_Address(VALUE ptr)
     if (!Is_Pointer(p)) {
         return p->size == 0 ? NULL : &(p->address);
     } else {
-        return p->address;        
+        return p->address;
     }
 }
 
