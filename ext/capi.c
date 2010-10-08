@@ -625,66 +625,64 @@ define_opencl_constants(void)
  */
 
 static VALUE rb_eOpenCL;
-static VALUE rcl_errors;    // { errcode => message }
 
-#define RCL_DEF_CL_ERROR(errcode, errstr) \
+#define RCL_DEF_CL_ERROR(hash, errcode, errstr) \
     do { \
         rb_define_const(rcl_mCapi, #errcode, INT2FIX(errcode)); \
-        rb_hash_aset(rcl_errors, INT2FIX(errcode), rb_str_new2(errstr)); \
+        rb_hash_aset(hash, INT2FIX(errcode), rb_str_new2(errstr)); \
     } while (0)
 
 static void
 define_opencl_errors(void)
 {
-    rcl_errors = rb_hash_new();
+    VALUE rcl_errors = rb_hash_new();
 
-    RCL_DEF_CL_ERROR(CL_BUILD_PROGRAM_FAILURE, "Failure to build the program executable.");
-    RCL_DEF_CL_ERROR(CL_COMPILER_NOT_AVAILABLE, "Compiler is not available.");
-    RCL_DEF_CL_ERROR(CL_DEVICE_NOT_AVAILABLE, "Specified device is not currently available.");
-    RCL_DEF_CL_ERROR(CL_DEVICE_NOT_FOUND, "No OpenCL devices that match the specified devices were found.");
-    RCL_DEF_CL_ERROR(CL_IMAGE_FORMAT_MISMATCH, "Specified source and destination images are not valid image objects.");
-    RCL_DEF_CL_ERROR(CL_IMAGE_FORMAT_NOT_SUPPORTED, "Specified image format is not supported.");
-    RCL_DEF_CL_ERROR(CL_INVALID_ARG_INDEX, "Invalid argument index.");
-    RCL_DEF_CL_ERROR(CL_INVALID_ARG_SIZE, "Invalid argument size.");
-    RCL_DEF_CL_ERROR(CL_INVALID_ARG_VALUE, "Invalid argument value.");
-    RCL_DEF_CL_ERROR(CL_INVALID_BINARY, "Invalid binary.");
-    RCL_DEF_CL_ERROR(CL_INVALID_BUFFER_SIZE, "Invalid buffer size.");
-    RCL_DEF_CL_ERROR(CL_INVALID_BUILD_OPTIONS, "Invalid build options.");
-    RCL_DEF_CL_ERROR(CL_INVALID_COMMAND_QUEUE, "Invalid command queue.");
-    RCL_DEF_CL_ERROR(CL_INVALID_CONTEXT, "Invalid context.");
-    RCL_DEF_CL_ERROR(CL_INVALID_DEVICE, "Invalid device.");
-    RCL_DEF_CL_ERROR(CL_INVALID_DEVICE_TYPE, "Invalid device type.");
-    RCL_DEF_CL_ERROR(CL_INVALID_EVENT, "Invalie event object.");
-    RCL_DEF_CL_ERROR(CL_INVALID_EVENT_WAIT_LIST, "Invalid event wait list.");
-    RCL_DEF_CL_ERROR(CL_INVALID_GL_OBJECT, "Invalie GL object.");
-    RCL_DEF_CL_ERROR(CL_INVALID_GLOBAL_OFFSET, "Argument global_work_offset shall not be nil.");
-    RCL_DEF_CL_ERROR(CL_INVALID_HOST_PTR, "Invalid host pointer.");
-    RCL_DEF_CL_ERROR(CL_INVALID_IMAGE_FORMAT_DESCRIPTOR, "Invalid image format descriptor.");
-    RCL_DEF_CL_ERROR(CL_INVALID_IMAGE_SIZE, "Invalid image size.");
-    RCL_DEF_CL_ERROR(CL_INVALID_KERNEL_NAME, "Specified kernel name is not found in program.");
-    RCL_DEF_CL_ERROR(CL_INVALID_KERNEL, "Specified kernel is not a valid kernel object.");
-    RCL_DEF_CL_ERROR(CL_INVALID_KERNEL_ARGS, "Invalid kernel arguments.");
-    RCL_DEF_CL_ERROR(CL_INVALID_KERNEL_DEFINITION, "Invalid kernel definition.");
-    RCL_DEF_CL_ERROR(CL_INVALID_MEM_OBJECT, "Invalid memory, image, or buffer object.");
-    RCL_DEF_CL_ERROR(CL_INVALID_OPERATION, "Invalid operation.");
-    RCL_DEF_CL_ERROR(CL_INVALID_PLATFORM, "A parameter is not a valid platform.");
-    RCL_DEF_CL_ERROR(CL_INVALID_PROGRAM, "Specified program is not a valid program object.");
-    RCL_DEF_CL_ERROR(CL_INVALID_PROGRAM_EXECUTABLE, "Invalid program executable.");
-    RCL_DEF_CL_ERROR(CL_INVALID_QUEUE_PROPERTIES, "Invalid queue properties.");
-    RCL_DEF_CL_ERROR(CL_INVALID_SAMPLER, "Invalid sampler.");
-    RCL_DEF_CL_ERROR(CL_INVALID_VALUE, "Invalid value.");
-    RCL_DEF_CL_ERROR(CL_INVALID_WORK_DIMENSION, "Invalid work dimension value.");
-    RCL_DEF_CL_ERROR(CL_INVALID_WORK_GROUP_SIZE, "Invalid work group size.");
-    RCL_DEF_CL_ERROR(CL_INVALID_WORK_ITEM_SIZE, "Invalid work item size.");
-    RCL_DEF_CL_ERROR(CL_MAP_FAILURE, "Failed to map the requested region into the host address space.");
-    RCL_DEF_CL_ERROR(CL_MEM_OBJECT_ALLOCATION_FAILURE, "Failed to allocate memory for data store associated with image or buffer objects specified as arguments to kernel.");
-    RCL_DEF_CL_ERROR(CL_MEM_COPY_OVERLAP, "Source and destination images are the same image (or the source and destination buffers are the same buffer), and the source and destination regions overlap.");
-    RCL_DEF_CL_ERROR(CL_OUT_OF_HOST_MEMORY, "Failed to allocate resources required by the OpenCL implementation on the host.");
-    RCL_DEF_CL_ERROR(CL_OUT_OF_RESOURCES, "Failed to queue the execution instance of given kernel on the command-queue because of insufficient resources needed to execute the kernel.");
-    RCL_DEF_CL_ERROR(CL_PROFILING_INFO_NOT_AVAILABLE, "CL_QUEUE_PROFILING_ENABLE flag is not set for the command-queue and the profiling information is currently not available.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_BUILD_PROGRAM_FAILURE, "Failure to build the program executable.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_COMPILER_NOT_AVAILABLE, "Compiler is not available.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_DEVICE_NOT_AVAILABLE, "Specified device is not currently available.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_DEVICE_NOT_FOUND, "No OpenCL devices that match the specified devices were found.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_IMAGE_FORMAT_MISMATCH, "Specified source and destination images are not valid image objects.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_IMAGE_FORMAT_NOT_SUPPORTED, "Specified image format is not supported.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_ARG_INDEX, "Invalid argument index.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_ARG_SIZE, "Invalid argument size.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_ARG_VALUE, "Invalid argument value.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_BINARY, "Invalid binary.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_BUFFER_SIZE, "Invalid buffer size.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_BUILD_OPTIONS, "Invalid build options.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_COMMAND_QUEUE, "Invalid command queue.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_CONTEXT, "Invalid context.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_DEVICE, "Invalid device.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_DEVICE_TYPE, "Invalid device type.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_EVENT, "Invalie event object.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_EVENT_WAIT_LIST, "Invalid event wait list.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_GL_OBJECT, "Invalie GL object.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_GLOBAL_OFFSET, "Argument global_work_offset shall not be nil.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_HOST_PTR, "Invalid host pointer.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_IMAGE_FORMAT_DESCRIPTOR, "Invalid image format descriptor.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_IMAGE_SIZE, "Invalid image size.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_KERNEL_NAME, "Specified kernel name is not found in program.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_KERNEL, "Specified kernel is not a valid kernel object.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_KERNEL_ARGS, "Invalid kernel arguments.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_KERNEL_DEFINITION, "Invalid kernel definition.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_MEM_OBJECT, "Invalid memory, image, or buffer object.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_OPERATION, "Invalid operation.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_PLATFORM, "A parameter is not a valid platform.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_PROGRAM, "Specified program is not a valid program object.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_PROGRAM_EXECUTABLE, "Invalid program executable.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_QUEUE_PROPERTIES, "Invalid queue properties.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_SAMPLER, "Invalid sampler.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_VALUE, "Invalid value.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_WORK_DIMENSION, "Invalid work dimension value.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_WORK_GROUP_SIZE, "Invalid work group size.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_INVALID_WORK_ITEM_SIZE, "Invalid work item size.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_MAP_FAILURE, "Failed to map the requested region into the host address space.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_MEM_OBJECT_ALLOCATION_FAILURE, "Failed to allocate memory for data store associated with image or buffer objects specified as arguments to kernel.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_MEM_COPY_OVERLAP, "Source and destination images are the same image (or the source and destination buffers are the same buffer), and the source and destination regions overlap.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_OUT_OF_HOST_MEMORY, "Failed to allocate resources required by the OpenCL implementation on the host.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_OUT_OF_RESOURCES, "Failed to queue the execution instance of given kernel on the command-queue because of insufficient resources needed to execute the kernel.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_PROFILING_INFO_NOT_AVAILABLE, "CL_QUEUE_PROFILING_ENABLE flag is not set for the command-queue and the profiling information is currently not available.");
 
-    OBJ_FREEZE(rcl_errors);
-    rb_gc_register_address(&rcl_errors);
+    rb_define_const(rcl_mCapi, "ERROR_MESSAGES", rcl_errors);
 }
 
 
@@ -693,28 +691,11 @@ check_cl_error(cl_int errcode, int warn)
 {
     if (errcode == CL_SUCCESS) return;
 
-    VALUE str = rb_hash_aref(rcl_errors, INT2FIX(errcode));
-    // NOTE:
-    // Because rb_raise can only new a Exception class with one parameter
-    // (message) for the constructor, we have to encode the CL error code
-    // to the error message. This is ugly. Should be change as soon as the
-    // rb_raise() API is improved.
-    //
-    // See also: opencl.rb
-    if (NIL_P(str)) {
-        const char *fmt = "Unexpected error: [%d].";
-        if (warn) {
-            rb_warn(fmt, errcode);
-        } else {
-            rb_raise(rb_eOpenCL, fmt, errcode);
-        }
+    const char *fmt = "%d";
+    if (warn) {
+        rb_warn(fmt, errcode);
     } else {
-        const char *msg = RSTRING_PTR(str);
-        if (warn) {
-            rb_warn("(%d) %s", errcode, msg);
-        } else {
-            rb_raise(rb_eOpenCL, "(%d) %s", errcode, msg);
-        }
+        rb_raise(rb_eOpenCL, fmt, errcode);
     }
 }
 
