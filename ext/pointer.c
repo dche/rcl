@@ -65,82 +65,111 @@ static ID id_type_cl_double4;
 static ID id_type_cl_double8;
 static ID id_type_cl_double16;
 
-// Storages for types.
-static VALUE rcl_types;         // { type tag => type size }
-static VALUE rcl_vector_types;
-
-#define DEF_CL_TYPE(type) \
+#define DEF_CL_TYPE(hash, type) \
     do { \
         id_type_##type = rb_intern( #type ); \
         size_t sz = sizeof(type); \
-        rb_hash_aset(rcl_types, ID2SYM(id_type_##type), LONG2FIX(sz)); \
+        rb_hash_aset(hash, ID2SYM(id_type_##type), LONG2FIX(sz)); \
     } while (0)
 
-#define DEF_CL_VECTOR_TYPE(type) \
+#define DEF_CL_VECTOR_TYPE(hash, type) \
     do { \
         id_type_##type = rb_intern( #type ); \
         size_t sz = sizeof(type); \
-        rb_hash_aset(rcl_vector_types, ID2SYM(id_type_##type), LONG2FIX(sz)); \
+        rb_hash_aset(hash, ID2SYM(id_type_##type), LONG2FIX(sz)); \
     } while (0)
+
+static VALUE rcl_sym_vector_types;
+static VALUE rcl_sym_scalar_types;
+
+static VALUE rcl_sizeof(VALUE self, VALUE id)
+{
+    VALUE sz = Qnil;
+    if (SYMBOL_P(id)) {
+        VALUE scalars = rb_const_get(self, rcl_sym_scalar_types);
+        assert(!NIL_P(scalars));
+        sz = rb_hash_lookup(scalars, id);
+        if (NIL_P(sz)) {
+            VALUE vectors = rb_const_get(self, rcl_sym_vector_types);
+            sz = rb_hash_lookup(vectors, id);
+        }
+    }
+    return NIL_P(sz) ? INT2FIX(0) : sz;
+}
+
+static VALUE rcl_is_type_vector(VALUE self, VALUE id)
+{
+    if (SYMBOL_P(id)) {
+        VALUE vectors = rb_const_get(self, rcl_sym_vector_types);
+        assert(!NIL_P(vectors));
+        return !NIL_P(rb_hash_lookup(vectors, id));
+    }
+    return Qfalse;
+}
+
+static VALUE rcl_is_type_valid(VALUE self, VALUE id)
+{
+    return rcl_sizeof(self, id) != INT2FIX(0) ? Qtrue : Qfalse;
+}
 
 static void define_cl_types(void)
 {
-    rcl_types = rb_hash_new();
-    rcl_vector_types = rb_hash_new();
+    VALUE rcl_types = rb_hash_new();
+    VALUE rcl_vector_types = rb_hash_new();
 
-    DEF_CL_TYPE(cl_bool);
-    DEF_CL_TYPE(cl_char);
-    DEF_CL_TYPE(cl_uchar);
-    DEF_CL_TYPE(cl_short);
-    DEF_CL_TYPE(cl_ushort);
-    DEF_CL_TYPE(cl_int);
-    DEF_CL_TYPE(cl_uint);
-    DEF_CL_TYPE(cl_long);
-    DEF_CL_TYPE(cl_ulong);
-    DEF_CL_TYPE(cl_half);
-    DEF_CL_TYPE(cl_float);
-    DEF_CL_TYPE(cl_double);
+    DEF_CL_TYPE(rcl_types, cl_bool);
+    DEF_CL_TYPE(rcl_types, cl_char);
+    DEF_CL_TYPE(rcl_types, cl_uchar);
+    DEF_CL_TYPE(rcl_types, cl_short);
+    DEF_CL_TYPE(rcl_types, cl_ushort);
+    DEF_CL_TYPE(rcl_types, cl_int);
+    DEF_CL_TYPE(rcl_types, cl_uint);
+    DEF_CL_TYPE(rcl_types, cl_long);
+    DEF_CL_TYPE(rcl_types, cl_ulong);
+    DEF_CL_TYPE(rcl_types, cl_half);
+    DEF_CL_TYPE(rcl_types, cl_float);
+    DEF_CL_TYPE(rcl_types, cl_double);
 
-    DEF_CL_VECTOR_TYPE(cl_char2);
-    DEF_CL_VECTOR_TYPE(cl_char4);
-    DEF_CL_VECTOR_TYPE(cl_char8);
-    DEF_CL_VECTOR_TYPE(cl_char16);
-    DEF_CL_VECTOR_TYPE(cl_uchar2);
-    DEF_CL_VECTOR_TYPE(cl_uchar4);
-    DEF_CL_VECTOR_TYPE(cl_uchar8);
-    DEF_CL_VECTOR_TYPE(cl_uchar16);
-    DEF_CL_VECTOR_TYPE(cl_short2);
-    DEF_CL_VECTOR_TYPE(cl_short4);
-    DEF_CL_VECTOR_TYPE(cl_short8);
-    DEF_CL_VECTOR_TYPE(cl_short16);
-    DEF_CL_VECTOR_TYPE(cl_ushort2);
-    DEF_CL_VECTOR_TYPE(cl_ushort4);
-    DEF_CL_VECTOR_TYPE(cl_ushort8);
-    DEF_CL_VECTOR_TYPE(cl_ushort16);
-    DEF_CL_VECTOR_TYPE(cl_int2);
-    DEF_CL_VECTOR_TYPE(cl_int4);
-    DEF_CL_VECTOR_TYPE(cl_int8);
-    DEF_CL_VECTOR_TYPE(cl_int16);
-    DEF_CL_VECTOR_TYPE(cl_uint2);
-    DEF_CL_VECTOR_TYPE(cl_uint4);
-    DEF_CL_VECTOR_TYPE(cl_uint8);
-    DEF_CL_VECTOR_TYPE(cl_uint16);
-    DEF_CL_VECTOR_TYPE(cl_long2);
-    DEF_CL_VECTOR_TYPE(cl_long4);
-    DEF_CL_VECTOR_TYPE(cl_long8);
-    DEF_CL_VECTOR_TYPE(cl_long16);
-    DEF_CL_VECTOR_TYPE(cl_ulong2);
-    DEF_CL_VECTOR_TYPE(cl_ulong4);
-    DEF_CL_VECTOR_TYPE(cl_ulong8);
-    DEF_CL_VECTOR_TYPE(cl_ulong16);
-    DEF_CL_VECTOR_TYPE(cl_float2);
-    DEF_CL_VECTOR_TYPE(cl_float4);
-    DEF_CL_VECTOR_TYPE(cl_float8);
-    DEF_CL_VECTOR_TYPE(cl_float16);
-    DEF_CL_VECTOR_TYPE(cl_double2);
-    DEF_CL_VECTOR_TYPE(cl_double4);
-    DEF_CL_VECTOR_TYPE(cl_double8);
-    DEF_CL_VECTOR_TYPE(cl_double16);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_char2);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_char4);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_char8);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_char16);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uchar2);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uchar4);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uchar8);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uchar16);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_short2);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_short4);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_short8);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_short16);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ushort2);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ushort4);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ushort8);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ushort16);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_int2);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_int4);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_int8);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_int16);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uint2);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uint4);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uint8);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uint16);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_long2);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_long4);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_long8);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_long16);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ulong2);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ulong4);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ulong8);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ulong16);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_float2);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_float4);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_float8);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_float16);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_double2);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_double4);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_double8);
+    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_double16);
 
     // Prevent from change.
     OBJ_FREEZE(rcl_types);
@@ -148,22 +177,22 @@ static void define_cl_types(void)
 
     rb_define_const(rcl_mOpenCL, "SCALAR_TYPES", rcl_types);
     rb_define_const(rcl_mOpenCL, "VECTOR_TYPES", rcl_vector_types);
+
+    rcl_sym_scalar_types = rb_intern("SCALAR_TYPES");
+    rcl_sym_vector_types = rb_intern("VECTOR_TYPES");
+
+    rb_define_module_function(rcl_mOpenCL, "type_size", rcl_sizeof, 1);
+    rb_define_module_function(rcl_mOpenCL, "valid_type?", rcl_is_type_valid, 1);
+    rb_define_module_function(rcl_mOpenCL, "valid_vector?", rcl_is_type_vector, 1);
 }
 
-#define Is_Type_Valid(id)  (!NIL_P(rb_hash_lookup(rcl_types, ID2SYM(id))) || !NIL_P(rb_hash_lookup(rcl_vector_types, ID2SYM(id))))
-#define Is_Type_Vector(id) (!NIL_P(rb_hash_lookup(rcl_vector_types, ID2SYM(id))))
+#define Is_Type_Valid(id)  (rcl_is_type_valid(rcl_mOpenCL, ID2SYM(id)) == Qtrue)
+#define Is_Type_Vector(id) (rcl_is_type_vector(rcl_mOpenCL, ID2SYM(id)) == Qtrue)
 
 size_t
 rcl_type_size(ID id)
 {
-    VALUE sym = ID2SYM(id);
-    VALUE sz = rb_hash_lookup(rcl_types, sym);
-
-    if (NIL_P(sz)) {
-        sz = rb_hash_lookup(rcl_vector_types, sym);
-    }
-    assert(FIXNUM_P(sz));
-    return FIX2UINT(sz);
+    return FIX2UINT(rcl_sizeof(rcl_mOpenCL, ID2SYM(id)));
 }
 
 #define IF_TYPE_TO_NATIVE(c_type, expector, convertor) \
