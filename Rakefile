@@ -47,16 +47,16 @@ task :spec => :build do
   begin
     require 'bacon'
     require File.join(dir, 'spec/spec_helper')
+
+    Bacon.extend Bacon::TestUnitOutput
+    FileList[File.join(dir, 'spec/**/*_spec.rb')].each do |f|
+      load f
+    end
+
+    Bacon.handle_summary
   rescue LoadError
     $sederr.puts 'bacon is needed to run specification.'
   end
-
-  Bacon.extend Bacon::TestUnitOutput
-  FileList[File.join(dir, 'spec/**/*_spec.rb')].each do |f|
-    load f
-  end
-
-  Bacon.handle_summary
 end
 
 rule File.join(extdir, 'capi.bundle') => FileList[File.join(extdir, '*.{c,h}')] do
