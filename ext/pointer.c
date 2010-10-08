@@ -677,8 +677,8 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
     if (os >= p->size) {
         rb_raise(rb_eArgError, "Offset exceeds the boundary.");
     }
-    
-    void *ptr = RSTRING_PTR(value);
+
+    const char *ptr = RSTRING_PTR(value);
     size_t sz = RSTRING_LEN(value);
     if (sz % p->type_size != 0) {
         rb_raise(rb_eArgError, "Size of byte string does not match the data type of receiver.");
@@ -686,7 +686,7 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
 
     size_t bos = os * p->type_size;
     size_t cpysz = (BytesOf(p) - bos) > sz ? sz : (BytesOf(p) - bos);
-    memcpy(Element_Address(p, os), ptr, cpysz);
+    memcpy(Element_Address(p, os), (void *)ptr, cpysz);
     return self;
 }
 

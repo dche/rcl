@@ -2592,8 +2592,8 @@ rcl_kernel_init(VALUE self, VALUE program, VALUE name)
     Check_Type(name, T_STRING);
 
     cl_program prog = Program_Ptr(program);
-    char *str = RSTRING_PTR(name);
-    
+    const char *str = RSTRING_PTR(name);
+
     cl_int res;
     cl_kernel k = clCreateKernel(prog, str, &res);
     Check_And_Raise(res);
