@@ -1,6 +1,6 @@
 
-require_relative '../spec_helper'
-require_relative '../../lib/opencl/operand'
+require File.join(File.dirname(__FILE__), '../spec_helper')
+require File.join(File.dirname(__FILE__), '../../lib/opencl/operand')
 
 include OpenCL
 

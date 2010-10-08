@@ -6,7 +6,7 @@ module OpenCL
   class Buffer
     # Buffer size in byte.
     attr_reader :byte_size
-    # Capi::Memory. You should not use it.
+    # Capi::Memory object. You should not use it.
     attr_reader :memory
 
     # Creates a Buffer object.
@@ -27,9 +27,9 @@ module OpenCL
       begin
         @memory = @context.create_buffer(@io, size, nil)
         @byte_size = size
-        @mapped = false
+        @mapped_pointer = nil
       rescue Capi::CLError => e
-        raise CLError.new(e.message)
+        raise CLError.new(e)
       end
     end
 
@@ -108,12 +108,12 @@ module OpenCL
 
     # Read data from the device memory, and store the data to a HostPointer.
     #
-    # Does nothing if the buffer's io flag is :in, or the byte size of the
+    # Does nothing if the buffer's IO flag is :in, or the byte size of the
     # HostPointer is less than the size of memory.
     #
-    # (HostPointer) pointer - 
+    # pointer:: A HostPointer object.
     #
-    # (Integer) offset - 
+    # offset::
     #
     # Returns the receiver.
     def store_data_to(pointer, offset = 0, size = 0)
@@ -184,8 +184,8 @@ module OpenCL
     end
 
     def to_s
-      io_str = self.in? ? "read, " : ""
-      io_str += "write, " if self.out?
+      io_str = self.in? ? "r" : ""
+      io_str += "w" if self.out?
 
       sz = self.byte_size
       sz_str = if sz < 1024
@@ -196,11 +196,13 @@ module OpenCL
         "#{sz.fdiv(1024 * 1024)} MB"
       end
 
-      "#<#{self.class}: #{sz_str}, #{io_str}#{@mapped_pointer ? 'mapped' : 'unmapped'}>"
+      "#<#{self.class}: #{sz_str}, #{io_str}, #{@mapped_pointer ? 'mapped' : 'unmapped'}>"
     end
 
     private
-    
+
+    # Construct flag parameter for enqueue_map_buffer, based on the value
+    # of @io.
     def map_flag
       flag = 0
       flag |= Capi::CL_MAP_READ if self.in?
@@ -208,15 +210,15 @@ module OpenCL
       # The value of above statement is nil if self.out? is false.
       flag
     end
-    
+
+    # Do the work of read from/wrie to a HostPointer.
     def rw_mem(rw, pointer, offset, size)
       ts = pointer.type_size
-      
+
+      offset = 0 if offset < 0
       offset *= ts
-      if offset < 0 || not(Integer === offset)
-        raise ArgumentError, 'Offset must be 0 or a positive Integer.' 
-      end
-           
+
+      size = 0 if size < 0
       if size == 0
         size = self.byte_size
       else
@@ -228,14 +230,14 @@ module OpenCL
       end
 
       if self.byte_size < (offset + size) || pointer.byte_size < size
-        raise ArgumentError, 
-              "Size is too large." 
+        raise ArgumentError, "Size is too large."
       end
 
       begin
         # NOTE: Devices in same context share a combined memory bool.
-        #       That's why we can write buffer through a queue of one device,
-        #       and read through queue of another device.
+        #       That's why we can always use the queue of default device,
+        #       i.e., it's OK a buffer is written through a queue of one device,
+        #       and read by the kernel executed on another device.
         cq = @context.command_queue_of @context.default_device
         if rw == :read
           cq.enqueue_read_buffer(self.memory, true, offset, size, pointer, nil);

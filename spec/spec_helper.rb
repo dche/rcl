@@ -25,4 +25,4 @@ Bacon.extend Bacon::TapOutput
 
 Coverage.start if coveragable?
 
-require_relative '../lib/opencl'
+require File.join(File.dirname(__FILE__), '../lib/opencl')

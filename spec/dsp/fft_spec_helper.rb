@@ -1,5 +1,5 @@
-require_relative '../spec_helper'
-require_relative '../../lib/opencl/dsp/fft'
+require File.join(File.dirname(__FILE__), '../spec_helper')
+require File.join(File.dirname(__FILE__), '../../lib/opencl/dsp/fft')
 
 include OpenCL
 include OpenCL::DSP

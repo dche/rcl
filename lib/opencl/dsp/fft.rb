@@ -6,7 +6,7 @@
 #++
 #
 
-require_relative 'fft_kernel_templates'
+require File.join(File.dirname(__FILE__), 'fft_kernel_templates')
 
 module OpenCL
   module DSP

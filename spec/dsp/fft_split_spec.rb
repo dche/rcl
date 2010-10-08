@@ -1,4 +1,4 @@
-require_relative 'fft_spec_helper'
+require File.join(File.dirname(__FILE__), 'fft_spec_helper')
 
 describe FFT do
   the 'Inverse of forward FFT should be the waveform itself (after scale).' do

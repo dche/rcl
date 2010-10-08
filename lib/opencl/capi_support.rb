@@ -7,7 +7,7 @@
 #                    
 # copyright (c) 2010, Che Kenan
 
-require_relative 'capi'
+require File.join(File.dirname(__FILE__), 'capi')
 
 module OpenCL
   module Capi

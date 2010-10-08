@@ -1,4 +1,6 @@
 
+require File.join(File.dirname(__FILE__), 'operand/string')
+
 module OpenCL
 
   # The base class of Vector and Matrix
@@ -96,3 +98,7 @@ module OpenCL
 
   end
 end
+
+require File.join(File.dirname(__FILE__), 'operand/reduce')
+require File.join(File.dirname(__FILE__), 'operand/sort')
+
