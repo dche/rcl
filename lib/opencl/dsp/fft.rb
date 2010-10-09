@@ -168,7 +168,7 @@ module OpenCL
             raise TypeError, "Invalid option value for #{k}. Expected a positive Integer."
           end
 
-          self.instance_variable_set ('@' + k).to_sym, val
+          self.instance_variable_set(('@' + k).to_sym, val)
         end
 
         # prevent max_radix <= 1
