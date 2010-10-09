@@ -37,7 +37,7 @@ __kernel void
 <%= body %>
 }
         EOT
-        ERB.new(tp, nil, '>').result(binding)
+        ERB.new(tp).result(binding)
       end
 
       def formatted_load(aIndex, gIndex)
@@ -62,7 +62,7 @@ __kernel void
     fftKernel<%= size %>(a + <%= i * size %>, dir);
 <% end %>
         EOT
-        ERB.new(tp, nil, '>').result(binding)
+        ERB.new(tp).result(binding)
       end
 
       def twiddle_kernel(body, nr, numIter, n_prev, len, numWorkItemsPerXForm)
@@ -91,7 +91,7 @@ __kernel void
 <% end %>
 <% end %>
         EOT
-        body << ERB.new(tp, nil, '>').result(binding)
+        body << ERB.new(tp).result(binding)
       end
 
       def local_load_index_arith(body, n_prev, nr, numWorkItemsReq, numWorkItemsPerXForm, numXFormsPerWG, offset, mid_pad)
@@ -231,7 +231,7 @@ __kernel void
 <% end %>
     }
             EOT
-            body << ERB.new(tp, nil, '>').result(binding)
+            body << ERB.new(tp).result(binding)
           else
             tp = <<-EOT
     ii = lId;
@@ -250,7 +250,7 @@ __kernel void
     <%= formatted_load i, i * numWorkItemsPerXForm %>
 <% end %>
             EOT
-            body << ERB.new(tp, nil, '>').result(binding)
+            body << ERB.new(tp).result(binding)
           end
         elsif n >= @mem_coalesce_width
           numInnerIter = n / @mem_coalesce_width
@@ -317,7 +317,7 @@ __kernel void
 <% end %>
     barrier( CLK_LOCAL_MEM_FENCE );
           EOT
-          body << ERB.new(tp, nil, '>').result(binding)
+          body << ERB.new(tp).result(binding)
           lmem_size = (n + numWorkItemsPerXForm) * numXFormsPerWG
         else
           tp =<<-EOT
@@ -374,7 +374,8 @@ __kernel void
 <% end %>
     barrier( CLK_LOCAL_MEM_FENCE );
           EOT
-          body << ERB.new(tp, nil, '>').result(binding)
+
+          body << ERB.new(tp).result(binding)
           lmem_size = (n + numWorkItemsPerXForm) * numXFormsPerWG
         end
         lmem_size
@@ -398,7 +399,7 @@ __kernel void
     }
 <% end %>
           EOT
-          body << ERB.new(tp, nil, '>').result(binding)
+          body << ERB.new(tp).result(binding)
         elsif n >= @mem_coalesce_width
           numInnerIter = n / @mem_coalesce_width
           numOuterIter = numXFormsPerWG / (groupSize / @mem_coalesce_width)
@@ -449,7 +450,7 @@ __kernel void
 <% end %>
     }
           EOT
-          body << ERB.new(tp, nil, '>').result(binding)
+          body << ERB.new(tp).result(binding)
           lmem_size = (n + numWorkItemsPerXForm) * numXFormsPerWG
         else
           tp = <<-EOT
@@ -490,7 +491,7 @@ __kernel void
 <% end %>
     }
           EOT
-          body << ERB.new(tp, nil, '>').result(binding)
+          body << ERB.new(tp).result(binding)
           lmem_size = (n + numWorkItemsPerXForm) * numXFormsPerWG
         end
         lmem_size
@@ -809,7 +810,7 @@ __kernel void
 <% end %>
 <% end %>
           EOT
-          body = ERB.new(tp, nil, '>').result(binding)
+          body = ERB.new(tp).result(binding)
 
           kernel[:source] = kernel(kernel[:name], r1, kernel[:lmem_size], body)
           @kernels << kernel
