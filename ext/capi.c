@@ -761,7 +761,7 @@ rcl_platform_info(VALUE self, VALUE platform_info)
     res = clGetPlatformInfo(platform, info, param_value_size, param_value, NULL);
     Check_And_Raise(res);
 
-    return rb_str_new(param_value, param_value_size);
+    return rb_str_new2(param_value);
 }
 
 static void
@@ -857,7 +857,7 @@ rcl_device_info(VALUE self, VALUE device_info)
         case CL_DEVICE_VENDOR:
         case CL_DEVICE_VERSION:
         case CL_DRIVER_VERSION:
-            return rb_str_new((char *)param_value, param_value_size);
+            return rb_str_new2((char *)param_value);
         // cl_bool
         case CL_DEVICE_AVAILABLE:
         case CL_DEVICE_COMPILER_AVAILABLE:
@@ -2458,7 +2458,7 @@ rcl_program_build_info(VALUE self, VALUE device, VALUE param_name)
         return UINT2NUM(*(cl_build_status *)param_value);
     case CL_PROGRAM_BUILD_OPTIONS:
     case CL_PROGRAM_BUILD_LOG:
-        return rb_str_new(param_value, sz_ret);
+        return rb_str_new2(param_value);
     default:
         break;
     }
