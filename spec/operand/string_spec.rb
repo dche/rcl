@@ -1,6 +1,6 @@
 
 require File.join(File.dirname(__FILE__), '../spec_helper')
-require File.join(File.dirname(__FILE__), '../../lib/opencl/string')
+require File.join(File.dirname(__FILE__), '../../lib/opencl/operand/string')
 
 describe String do
 
@@ -14,10 +14,4 @@ describe String do
     ''.rcl_include('random').should.not.be.empty
   end
 
-end
-
-describe OpenCL do
-  the '#utility_modules' do
-    OpenCL.utility_modules.should.include('random')
-  end
 end
