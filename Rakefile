@@ -39,6 +39,7 @@ end
 dir = File.dirname(__FILE__)
 extdir = File.join(dir, 'ext')
 libdir = File.join(dir, 'lib/opencl')
+ext_target = 'capi.bundle'
 
 task :default => :spec
 
@@ -59,18 +60,23 @@ task :spec => :build do
   end
 end
 
-rule File.join(extdir, 'capi.bundle') => FileList[File.join(extdir, '*.{c,h}')] do
+desc 'Install locally.'
+task :install => :gem do
+  system "gem install pkg/#{spec.name}-#{spec.version}.gem"
+end
+
+rule File.join(extdir, ext_target) => FileList[File.join(extdir, '*.{c,h}')] do
   cd(extdir) do
     system "#{RUBY_ENGINE} extconf.rb && make"
   end
 end
 
-file File.join(libdir, 'capi.bundle') => File.join(extdir, 'capi.bundle') do
-  cp File.join(extdir, 'capi.bundle'), libdir
+file File.join(libdir, ext_target) => File.join(extdir, ext_target) do
+  cp File.join(extdir, ext_target), libdir
 end
 
 desc 'Build the extension.'
-task :build => File.join(libdir, 'capi.bundle')
+task :build => File.join(libdir, ext_target)
 
 desc 'Clean the project directory.'
 task :clean => :clobber_package do
