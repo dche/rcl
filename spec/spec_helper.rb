@@ -1,3 +1,4 @@
+# encoding: utf-8
 
 require 'rubygems'
 
@@ -19,6 +20,9 @@ module Bacon
   class Context
     alias :the :it
     alias :its :it
+
+    alias :given :describe
+    alias :expect :it
   end
 end
 Bacon.extend Bacon::TapOutput
@@ -26,3 +30,4 @@ Bacon.extend Bacon::TapOutput
 Coverage.start if coveragable?
 
 require File.join(File.dirname(__FILE__), '../lib/opencl')
+include OpenCL
