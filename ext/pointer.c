@@ -491,9 +491,9 @@ rcl_pointer_alloc(VALUE klass)
  * call-seq:
  *      HostPointer.wrap(aBuffer.pointer, :cl_float, 2048)
  *
- * Wraps a C pointer instead of allocating new memory.
+ * Wraps a C pointer instead of allocating memory.
  *
- * +wrap()+ is a simple but dangerous optimization for
+ * +wrap()+ is a simple but dangerous optimization by
  * reducing memory copying.
  *
  * The wrapper is not on charge of releasing memory pointed by the wrapped
