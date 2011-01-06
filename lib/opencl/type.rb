@@ -36,6 +36,10 @@ module OpenCL
       @tag.to_s
     end
 
+    def inspect
+      "#<#{self.class}:#{self.object_id} @tag=#{self.tag}>"
+    end
+
     def ==(other)
       self.tag == other.tag
     end
