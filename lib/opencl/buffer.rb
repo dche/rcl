@@ -1,3 +1,4 @@
+# encoding: utf-8
 
 module OpenCL
 
@@ -79,7 +80,7 @@ module OpenCL
         cq = @context.command_queue_of @context.default_device
         cq.enqueue_copy_buffer(mem_from, mem_to, start, target_start, size, nil)
       rescue Capi::CLError => e
-        raise CLError.new e.message
+        raise CLError.new(e)
       end
       self
     end
@@ -134,7 +135,7 @@ module OpenCL
     end
     alias :write :get_data_from
 
-    # Returns a MappedPointer object, or +nil+ if the receiver has been mapped.
+    # Returns a MappedPointer object.
     #
     # Because the behavior that kernel executes on mapped Memory objects
     # is undefined, we restrict that there is only one
@@ -146,7 +147,8 @@ module OpenCL
         cq = @context.command_queue_of @context.default_device
         @mapped_pointer, _ = cq.enqueue_map_buffer self.memory, true, map_flag, 0, self.byte_size, nil
       rescue Capi::CLError => e
-        warn self.to_s + ".map(), " + CLError.new(e.message).to_s
+        warn self.inspect + ".map(), " + CLError.new(e.message).to_s
+        raise CLError.new(e.message)
       end
       return @mapped_pointer
     end
@@ -163,7 +165,8 @@ module OpenCL
 
         @mapped_pointer = nil
       rescue Capi::CLError => e
-        warn self.to_s + ".unmap_pointer(), " + CLError.new(e.message).to_s
+        warn self.inspect + ".unmap_pointer(), " + CLError.new(e.message).to_s
+        raise CLError.new(e.message)
       end
       self
     end

@@ -1,7 +1,7 @@
+# encoding: utf-8
 
 require File.join(File.dirname(__FILE__), '../spec_helper')
 
-include OpenCL
 include OpenCL::Capi
 
 cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_DEFAULT)

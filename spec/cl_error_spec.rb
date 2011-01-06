@@ -1,6 +1,6 @@
-require File.join(File.dirname(__FILE__), 'spec_helper')
+# encoding: utf-8
 
-include OpenCL
+require File.join(File.dirname(__FILE__), 'spec_helper')
 
 describe CLError do
   it 'should reject invalid error code.' do

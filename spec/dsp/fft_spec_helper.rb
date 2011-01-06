@@ -1,7 +1,8 @@
+# encoding: utf-8
+
 require File.join(File.dirname(__FILE__), '../spec_helper')
 require File.join(File.dirname(__FILE__), '../../lib/opencl/dsp/fft')
 
-include OpenCL
 include OpenCL::DSP
 
 def valid_fft_shapes(num = 10)

@@ -2,14 +2,14 @@
 module OpenCL
 
   class Context
-    
+
     class <<self
       #--
       # Reduce the number of creation of OpenCL context and Device objects.
       #++
       def context_of(device_type)
         @contexts ||= {}
-        
+
         dt = case device_type
         when :gpu
           Capi::CL_DEVICE_TYPE_GPU
@@ -20,11 +20,11 @@ module OpenCL
         end
         @contexts[device_type] ||= new(dt)
       end
-      
+
       def default_context
         context_of(:gpu) || context_of(:cpu)
       end
-      
+
       private :new
     end
 
@@ -52,11 +52,11 @@ module OpenCL
 
     # Returns the a Capi::Device object based on certain dispatching mechanism.
     def device
-      # TODO: choose device based on load
+      # TODO: choose device based on load. How? Possible?
       self.default_device
     end
-    
-    # Max global memory the context can accept.
+
+    # Maximum global memory the context can allocate.
     def max_mem_alloc_size
       @mgm ||= @context.devices.map do |dev|
         dev.max_mem_alloc_size

@@ -1,7 +1,6 @@
+# encoding: utf-8
 
 require File.join(File.dirname(__FILE__), 'spec_helper')
-
-include OpenCL
 
 describe Buffer do
   the 'Buffer::new' do
@@ -27,7 +26,6 @@ describe Buffer do
     buff = Buffer.new 4
     p = HostPointer.new :cl_uchar, 4
 
-    should.raise(ArgumentError) { buff.write p, -1 }
     should.raise(ArgumentError) { buff.write p, 1.2 }
   end
 
