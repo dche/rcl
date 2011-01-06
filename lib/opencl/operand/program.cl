@@ -1,10 +1,16 @@
+/* Copyright (c) 2010, Che Kenan. All rights reserved.
+ *
+ * program.cl -- Common part of all OpenCL programs of Operand.
+ */
+
+/****************************************************************************/
 
 /*
  A PRNG used in each the kernel.
 
  Implemented a simplified CMWC.
 
- Borrowed from here: http://inst.cs.berkeley.edu/~ianh/proj1.html.
+ Borrowed from: http://inst.cs.berkeley.edu/~ianh/proj1.html.
 
  I have not verified if the author's smplification to CMWC is valid yet.
 
@@ -38,3 +44,6 @@ void rcl_srandom(rcl_random_state *st, ulong seed)
     st->b = 0;
     st->c = 362436;
 }
+
+/****************************************************************************/
+
