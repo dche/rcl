@@ -16,9 +16,9 @@ def test(title)
   puts "\n== #{title} #{'=' * 20}"
 end
 
-(16..19).each do |i|
+(4..6).each do |i|
 
-  sz = 2 ** i
+  sz = 10 ** i
 
   puts "-" * 20 + " #{sz} " + "-" * 20
   ra = Array.new(sz, 0)
