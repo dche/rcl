@@ -128,7 +128,7 @@ module OpenCL
       tag = self.type.tag
       if (@@programs[tag].nil? || library_outdated?)
         update_library
-        src = ERB.new(@program_source, nil, '>').result(binding)
+        src = ERB.new(@program_source).result(binding)
         @@programs[tag] = Program.new src, '-cl-mad-enable'
       end
       @@programs[tag]
