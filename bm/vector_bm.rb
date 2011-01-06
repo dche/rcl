@@ -180,7 +180,7 @@ end
       10.times do
         NMath.tan(NMath.cos(NMath.tan(NMath.sin(na))))
       end
-    end
+    end if has_narray
 
     b.report('OpenCL') do
       10.times do
