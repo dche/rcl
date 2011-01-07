@@ -1,15 +1,18 @@
 
 #
-# This file expands the CAPI classes and methods, to make CAPI more easy
-# to use. However, even this, CAPI still is *NOT* expected to be used
-# by the library user. You should use more rubyish API that defiend in
-# opencl.rb.
-#                    
+# This file expands the CAPI classes and methods defined in C extension,
+# to make CAPI more easy to use. However, even though,
+# CAPI still is *NOT* expected to be used by the library users.
+# You should use more rubyish APIs that defiend in module OpenCL, e.g.,
+# Context, Program, and Buffer.
+#
 # copyright (c) 2010, Che Kenan
 
 require File.join(File.dirname(__FILE__), 'capi')
 
+# The OpenCL enabler for ruby.
 module OpenCL
+
   module Capi
     # OpenCL version the API conforms to.
     VERSION = '1.0'
@@ -20,26 +23,32 @@ module OpenCL
         self.info(CL_PLATFORM_NAME)
       end
 
-      # Returns the string vendor name of the receiver.
+      # Returns the vendor name of the receiver.
       def vendor
         self.info(CL_PLATFORM_VENDOR)
       end
 
-      # Returns the string version of the receiver.
+      # Returns the version of the receiver.
       #
       # Example:
       #
-      #   aPlatform.version # => "Apple"
+      #   aPlatform.version # => "1.0"
       def version
         self.info(CL_PLATFORM_VERSION)
       end
 
+      # Returns an Array contains the extension strings.
+      def extensions
+        self.info(CL_PLATFORM_EXTENSIONS).split(' ')
+      end
+
       def to_s
-        "#{self.vendor} #{self.name} #{self.version}"
+        "#{self.class} #{self.name} #{self.version}"
       end
     end
 
     class Device
+
       # Returns +true+ if device is available.
       def available?
         self.info(CL_DEVICE_AVAILABLE)
@@ -66,6 +75,7 @@ module OpenCL
         self.info(CL_DEVICE_MAX_CLOCK_FREQUENCY)
       end
 
+      # The number of parallel compute cores on the OpenCL device.
       def max_compute_units
         self.info(CL_DEVICE_MAX_COMPUTE_UNITS)
       end
@@ -85,10 +95,16 @@ module OpenCL
           self.info(CL_DEVICE_IMAGE3D_MAX_DEPTH)]
       end
 
+      # Maximum number of work-items in a work-group executing a kernel
+      # using the data parallel execution model.
       def max_workgroup_size
         self.info(CL_DEVICE_MAX_WORK_GROUP_SIZE)
       end
 
+      # Maximum number of work-items that can be specified in each dimension
+      # of the work-group to clEnqueueNDRangeKernel.
+      #
+      # Returns an Array contains the number for each dimension.
       def max_work_item_sizes
         self.info(CL_DEVICE_MAX_WORK_ITEM_SIZES)
       end
@@ -183,20 +199,44 @@ module OpenCL
         Kernel.new(self, name)
       end
     end
+
+    # The OpenCL kernel object.
+    #
+    # A kernel object encapsulates the specific __kernel
+    # function declared in a program and the argument values to be used
+    # when executing this __kernel function.
+    #
     class Kernel
+      # A String contains the kernel name.
       def function_name
         @name ||= self.info(CL_KERNEL_FUNCTION_NAME).freeze
       end
       alias :name :function_name
 
+      # Number of kernel arguments.
       def argument_number
         @num_args ||= self.info(CL_KERNEL_NUM_ARGS)
       end
 
+      # The maximum work-group size that can be used to execute a kernel
+      # on a specific device given by device.
+      #
+      # The OpenCL implementation uses the resource requirements of
+      # the kernel (register usage etc.) to determine
+      # what this workgroup size should be.
       def workgroup_size_on_device(dev)
         self.workgroup_info(dev, CL_KERNEL_WORK_GROUP_SIZE)
       end
-      
+
+      # Returns the amount of local memory in bytes being used by a kernel.
+      #
+      # This includes local memory that may be needed by an implementation
+      # to execute the kernel, variables declared inside the kernel
+      # with the __local address qualifier and local memory to be allocated
+      # for arguments to the kernel declared as pointers
+      # with the __local address qualifier and whose size is specified
+      # with +set_arg()+.
+      #
       def local_memory_size
         devs = self.info(CL_KERNEL_CONTEXT).devices
         self.workgroup_info(devs.length == 1 ? nil : devs.first, CL_KERNEL_LOCAL_MEM_SIZE)
