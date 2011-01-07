@@ -1,7 +1,6 @@
+# encoding: utf-8
 
 require File.join(File.dirname(__FILE__), 'spec_helper')
-
-include OpenCL
 
 valid_src = <<-EOK
   __kernel void
@@ -65,6 +64,17 @@ describe Program do
     prog.source.should.equal multi_kernel_src
   end
 
+  the '#kernel' do
+
+    prog = OpenCL::Program.new valid_src
+
+    should.raise(OpenCL::Capi::CLError) {
+      prog.kernel('no_such_kernel')
+    }
+
+    prog.kernel(:dot_product).should.is_a OpenCL::Capi::Kernel
+  end
+
   the '#call' do
 
     prog = OpenCL::Program.new valid_src
@@ -88,6 +98,10 @@ describe Program do
     m3.read pres
     pres[0].should.equal 70
     pres[0].should.equal pres[1]
+  end
+
+  the '#call with block' do
+
   end
 
   the 'multiple kernels should work' do
@@ -114,11 +128,6 @@ describe Program do
     p1[1].should.equal 200
     p1[2].should.equal 300
     p1[3].should.equal 400
-  end
-
-  the '#max_workgroup_size' do
-    prog = OpenCL::Program.new multi_kernel_src
-    (prog.max_workgroup_size > 0).should.be.true
   end
 
   the 'method_missing' do
@@ -156,11 +165,9 @@ describe Program do
     prog.mult([4], :mem, m1, :mem, m2, :cl_float, 100)
     et = prog.execution_time
     (et > 0).should.be.true
-    prog.mult([4], :mem, m1, :mem, m2, :cl_float, 10)
-    (prog.execution_time > et).should.be.true
-    
+
     prog.profiling = false
-    prog.profiling?.should.be.false
+    prog.should.not.be.profiling
     prog.execution_time.should.equal 0
   end
 end
