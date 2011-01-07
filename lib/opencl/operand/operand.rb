@@ -117,11 +117,21 @@ module OpenCL
     end
 
     # Execute a map kernel.
-    def map(kernel_name)
-      execute_kernel kernel_name, [self.length], :mem, self, :cl_uint, self.length
+    def map(kernel_name, out = nil)
+      unless out.nil?
+        verify_output out
+      else
+        out = self
+      end
+      execute_kernel kernel_name, [self.length], :mem, self, :cl_uint, self.length, :mem, out
     end
 
     private
+
+    def verify_output(out)
+      raise ArgumentError, "expected an Operand" unless out.is_a?(Operand)
+      raise ArgumentError, "the output Operand has incompatible type." unless self.type_compatible?(out)
+    end
 
     # Build the OpenCL Program for receiver's type.
     def program

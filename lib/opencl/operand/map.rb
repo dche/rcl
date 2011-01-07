@@ -14,13 +14,13 @@ module OpenCL
       def def_map_kernel(kernel_name, method_name, &blk)
         tmpl = <<-EOT
 __kernel void
-#{kernel_name}(__global T *vec, const unsigned int length)
+#{kernel_name}(const __global T *vec, const unsigned int length, __global T *out)
 {
 #define UNI_OP(x)  (<%= uni_op %>)
 
     int gid = get_global_id(0);
     if (gid < length) {
-        vec[gid] = (T)(UNI_OP(vec[gid]));
+        out[gid] = (T)(UNI_OP(vec[gid]));
     }
 
 #undef UNI_OP
@@ -32,8 +32,8 @@ __kernel void
           ERB.new(tmpl).result(binding)
         end
 
-        def_method(method_name) do
-          self.map kernel_name
+        def_method(method_name) do |out = nil|
+          self.map kernel_name, out
         end
       end
     end
