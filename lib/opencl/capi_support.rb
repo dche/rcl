@@ -139,7 +139,7 @@ module OpenCL
       end
 
       def local_memory_size
-        self.info(CL_DEVICE_LOCAL_MEM_SIZE)
+        @lms ||= self.info(CL_DEVICE_LOCAL_MEM_SIZE)
       end
 
       def vendor
