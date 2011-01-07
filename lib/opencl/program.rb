@@ -126,21 +126,11 @@ module OpenCL
             k.set_arg i, type, value
           end
         end
-        
-        # Get the work sizes. If anything goes wrong, the OpenCL runtime will
-        # report it finally.
-        # BUG
-        gws, lws = sizes
-        unless gws.is_a? Array
-          gws = sizes
-          lws = nil
-        end
-        
-        cq = self.profiling? ? @context.profiling_command_queue_of(device) : @context.command_queue_of(device)   
-        event = cq.enqueue_NDRange_kernel(k, gws.length, gws, lws, nil)
-        cq.finish
 
-        profiling event, kernel
+        cq = self.profiling? ? @context.profiling_command_queue_of(device) : @context.command_queue_of(device)
+        # TOOD: Not wait for the execution to be completed? Find a case
+        #       defeat it!
+        profiling kernel_name, cq.enqueue_NDRange_kernel(k, gws.length, gws, lws, nil)
       rescue Capi::CLError => e
         raise CLError.new(e.message)
       ensure
@@ -178,10 +168,11 @@ module OpenCL
 
     private
 
-    def profiling(event, kernel)
+    def profiling(kernel, event)
       if self.profiling?
-        et = event.profiling_info(Capi::CL_PROFILING_COMMAND_END)
-        st = event.profiling_info(Capi::CL_PROFILING_COMMAND_START)
+        OpenCL::Capi.wait_for_events([event])
+        et = event.profiling_info Capi::CL_PROFILING_COMMAND_END
+        st = event.profiling_info Capi::CL_PROFILING_COMMAND_START
         @execution_time = (et - st) * 1e-9
       end
     end
