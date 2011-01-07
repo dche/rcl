@@ -18,7 +18,20 @@ module OpenCL
     VERSION = '1.0'
 
     class Platform
-      # Returns the string name of the receiver.
+
+      def profile
+        self.info(CL_PLATFORM_PROFILE)
+      end
+
+      def full_profile?
+        self.profile == 'FULL_PROFILE'
+      end
+
+      def embedded_profile?
+        self.profile == 'EMBEDDED_PROFILE'
+      end
+
+      # A String contains the name of the receiver.
       def name
         self.info(CL_PLATFORM_NAME)
       end
