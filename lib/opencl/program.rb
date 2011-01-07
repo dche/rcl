@@ -96,6 +96,25 @@ module OpenCL
         # The context object controls which device to use.
         device = @context.device
 
+        gws = lws = 0
+
+        if sizes.nil?
+          raise ArgumentError, "No work sizes specified." unless block_given?
+
+          max_lws = k.workgroup_size_on_device(device)
+          lmem_size = device.local_memory_size
+          gws, lws, args = yield max_lws, lmem_size
+        else
+          gws, lws = sizes
+          if Integer === gws && lws.nil?
+            gws = [gws]
+          end
+        end
+
+        if args.size.odd? || args.size / 2 != k.argument_number
+          raise ArgumentError, "Wrong number of kernel arguments, (#{args.size / 2} for #{k.argument_number})."
+        end
+
         (args.size / 2).times do |i|
           type = args[i * 2]
           value = args[i * 2 + 1]
