@@ -22,7 +22,7 @@ module OpenCL
       # built-in OpenCL types.
       def type(type_classifier = nil)
         return @type if type_classifier.nil?
-        raise RuntimeError, "Can't change type of a Library." if @type
+        raise RuntimeError, "should not change type of a Library." if @type
 
         if type_classifier.is_a?(Type) || Type.classifier?(type_classifier)
           @type = type_classifier
