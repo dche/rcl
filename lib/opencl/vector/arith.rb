@@ -9,6 +9,7 @@ module OpenCL
       def_reduction_kernel(:rcl_vector_summary, :summary) do |v1, v2|
         "#{v1} + #{v2}"
       end
+      alias_method(:sum, :summary)
 
       def_kernel(:rcl_add_vv) do
         <<-EOK
