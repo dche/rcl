@@ -308,9 +308,9 @@ module OpenCL
       self.address.nil?
     end
 
-    # Always +false+.
-    def eql?(p)
-      false
+    # Two pointer is equal if they have same address.
+    def ==(p)
+      p.address == self.address
     end
 
     def inspect
