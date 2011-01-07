@@ -85,15 +85,22 @@ module OpenCL
 
     # Recursively executes a reduction kernel.
     def reduce(kernel, n = self.length)
-      return self[0] if n == 1
+      # create a hidden buffer, the size is at most a half of self.size.
+      if @reduction_buffer.nil?
+        sz = next_gws(self.length)
+        @reduction_buffer = self.class.new sz, self.type.tag
+      end
+      out = @reduction_buffer
+      out[0] = self[0] if self.length == 1
+
+      return out[0] if n == 1
 
       groups = 1
       ts = self.type.size
 
+      in_buff = (n == self.length) ? self : out
       execute_kernel(kernel) do |max_workgroup_size, lmem_size|
-        np2 = next_pow2(n)
-        gws = np2 < 256 ? 1 : np2 / 4
-
+        gws = next_gws(n)
         lws = [max_workgroup_size, lmem_size / (2 * ts), gws].min
 
         # If n is small enough (< 256), one workgroup can reduce all items.
@@ -109,7 +116,7 @@ module OpenCL
         #++
         groups = gws < 64 ? 1 : [gws / lws, 64].min
         gws = groups * lws
-        [[gws], [lws], [:mem, self, :local, (lws * ts), :cl_uint, (np2 / gws).ceil, :cl_uint, n]]
+        [[gws], [lws], [:mem, in_buff, :mem, out, :local, (lws * ts), :cl_uint, (next_pow2(n) / gws).ceil, :cl_uint, n]]
       end
       # After execute_kernel, the first #<groups> elements contains the
       # reduced values for next pass of reduction.
@@ -171,6 +178,11 @@ module OpenCL
       end
       @library_version = @@libraries.length
       nil
+    end
+
+    def next_gws(n)
+      np2 = next_pow2(n)
+      np2 < 256 ? 1 : np2 / 4
     end
 
     def next_pow2(n)

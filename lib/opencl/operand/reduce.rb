@@ -5,7 +5,9 @@ module OpenCL
     def self.def_reduction_kernel(kernel_name, method_name, &blk)
       tmpl = <<-EOT
 __kernel void
-<%= kernel_name %>(__global T *vec, __local T *shared,
+<%= kernel_name %>(const __global T *vec,
+                   __global T *out,
+                   __local T *shared,
                    const unsigned int reduction_size,
                    const unsigned int n
                   )
@@ -101,7 +103,7 @@ __kernel void
 
     barrier(CLK_LOCAL_MEM_FENCE);
     if (lid == 0) {
-        vec[gid] = shared[0];
+        out[gid] = shared[0];
     }
 }
       EOT
@@ -112,7 +114,7 @@ __kernel void
       end
 
       def_method(method_name) do
-        self.clone.reduce(kernel_name)
+        self.reduce(kernel_name)
       end
     end
   end
