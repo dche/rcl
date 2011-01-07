@@ -1,10 +1,11 @@
 
+require 'mutex_m'
+
 module OpenCL
 
   # Compiled code that can be executed on OpenCL devices.
   #
   #--
-  # TODO: non-blocking, remove cq.finish!
   # TODO: a interface for compiler options?
   #++
   class Program
@@ -139,20 +140,9 @@ module OpenCL
       self
     end
 
-    # Used by complex program (e.g., FFT) to ensure it can work on all devices.
-    def max_workgroup_size
-      kernels = @program.create_kernels
-
-      @context.devices.map do |dev|
-        kernels.map do |k|
-          k.workgroup_size_on_device(dev)
-        end.min
-      end.min
-    end
-
     def method_missing(meth, *args, &blk)
       begin
-        self.call meth, args.first, *(args[1..-1])
+        self.call meth, *args
       rescue CLError => e
         if e.invalid_kernel_name?
           super
