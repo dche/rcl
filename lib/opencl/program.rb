@@ -26,6 +26,7 @@ module OpenCL
       @profiling = false
       @execution_time = 0
 
+      @kernels = {}
       self.compile src, compile_options unless src.empty?
     end
 
@@ -53,6 +54,20 @@ module OpenCL
       self
     end
 
+    # Returns the Capi::Kernel object with given +name+, or +nil+ if no
+    # such a kernel in the receiver.
+    #
+    # Raises Capi::CLError if a kernel with given +name+ is not found in program.
+    def kernel(name)
+      nm = name.to_s
+      k = @kernels[nm]
+      if k.nil?
+        k = @program.create_kernel(nm)
+        @kernels[nm] = k
+      end
+      return k
+    end
+
     # Enable or disable profiling.
     #
     # yesno:: +true+ or +false+.
@@ -68,18 +83,15 @@ module OpenCL
 
     # Executes a kernel.
     #
-    # kernel -- the kernel name.
-    # sizes -- global work sizes and local work sizes.
-    #          work sizes is specified in a multi-demension array.
+    # kernel_name -- the kernel name.
+    # sizes -- global and local work sizes, can be nil if the work sizes are
+    #          provided by calling back to the associated block.
+    # local_size -- local work size, i.e., how many work-items in a workgroup.
     # args -- arguments of the kernel.
-    def call(kernel, sizes, *args)
+    def call(kernel_name, sizes = nil, *args)
       @mutex.lock
       begin
-        k = @program.create_kernel(kernel.to_s)        
-        if args.size.odd? || args.size / 2 != k.argument_number
-          raise ArgumentError, "Wrong number of kernel arguments, (#{args.size / 2} for #{k.argument_number})."
-        end
-
+        k = self.kernel(kernel_name)
         # Ask the context for a device to execute the kernel.
         # The context object controls which device to use.
         device = @context.device
