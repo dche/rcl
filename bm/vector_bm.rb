@@ -61,15 +61,15 @@ end
   test "Summary"
   bm(8) do |b|
     b.report('Array') do
-      ra.reduce(:+)
+      100.times { ra.reduce(:+) }
     end
 
     b.report('NArray') do
-      na.sum
+      100.times { na.stddev }
     end if has_narray
 
     b.report('OpenCL') do
-      vec.summary
+      100.times { vec.summary }
     end
   end
 
