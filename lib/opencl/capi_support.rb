@@ -317,6 +317,14 @@ module OpenCL
       "#<#{self.class} address=#{self.address} type=#{self.type} size=#{self.size}>"
     end
 
+    def to_a
+      ary = []
+      self.size.times do |i|
+        ary.push self[i]
+      end
+      ary
+    end
+
     def to_i
       "0x%016x" % self.address
     end
