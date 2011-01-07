@@ -162,8 +162,12 @@ module OpenCL
         lib = @@libraries[i]
         next unless self.type.compatible?(lib.type)
 
+        mod = lib.interface_module
+        # the library does not provide any ruby method to call, so it's useless.
+        next if mod.nil?
+
         @program_source << lib.source.to_s
-        self.extend lib.interface_module
+        self.extend mod
       end
       @library_version = @@libraries.length
       nil
