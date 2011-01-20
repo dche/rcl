@@ -566,15 +566,15 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
     Data_Get_Struct(self, rcl_pointer_t, p);
 
     if (!SYMBOL_P(type)) {
-        rb_raise(rb_eTypeError, "Invalid type tag, Expected a Symbol.");
+        rb_raise(rb_eTypeError, "invalid type tag, expected a Symbol.");
     }
     p->type = SYM2ID(type);
     if (!Is_Type_Valid(p->type)) {
-        rb_raise(rb_eArgError, "Unrecognized type tag.");
+        rb_raise(rb_eArgError, "unrecognized type tag.");
     }
 
     if (!FIXNUM_P(size) || FIX2UINT(size) < 1) {
-        rb_raise(rb_eArgError, "Invalid size.");
+        rb_raise(rb_eArgError, "invalid size.");
     }
     p->size = FIX2UINT(size);
     p->type_size = rcl_type_size(p->type);

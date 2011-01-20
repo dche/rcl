@@ -48,14 +48,14 @@
 #define Expect_Integer(ro) \
     do { \
         if (!FIXNUM_P(ro) && TYPE(ro) != T_BIGNUM) { \
-            rb_raise(rb_eTypeError, "Expected %s is an Integer.", #ro); \
+            rb_raise(rb_eTypeError, "expected %s is an Integer.", #ro); \
         } \
     } while (0)
 
 #define Expect_Float(ro) \
     do { \
         if (TYPE(ro) != T_FLOAT && !FIXNUM_P(ro) && TYPE(ro) != T_BIGNUM) { \
-            rb_raise(rb_eTypeError, "Expected %s is of type Float.", #ro); \
+            rb_raise(rb_eTypeError, "expected %s is of type Float.", #ro); \
         } \
     } while (0)
 

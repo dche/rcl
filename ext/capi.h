@@ -14,7 +14,7 @@
     do { \
         Check_Type(o, T_DATA); \
         if (rb_class_of(o) != rcl_c##klass) { \
-            rb_raise(rb_eTypeError, "Expected %s is an instance of %s.", #o, #klass); \
+            rb_raise(rb_eTypeError, "expected %s is an instance of %s.", #o, #klass); \
         } \
     } while (0)
 
@@ -23,7 +23,7 @@
     do { \
         if (ro != Qtrue && ro != Qfalse) \
             rb_raise(rb_eTypeError, \
-                    "Expected %s is true or false.", #ro); \
+                    "expected %s is true or false.", #ro); \
             var = ro == Qtrue ? CL_TRUE : CL_FALSE; \
     } while (0)
 
@@ -31,7 +31,7 @@
     do { \
         if (!FIXNUM_P(ro)) \
             rb_raise(rb_eTypeError, \
-                     "Expected %s is a Fixnum.", #ro); \
+                     "expected %s is a Fixnum.", #ro); \
     } while (0)
 
 #define Expect_Array(ro) \

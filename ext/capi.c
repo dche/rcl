@@ -1371,12 +1371,12 @@ rcl_finish(VALUE self)
                 for (uint i = 0; i < dim; i++) { \
                     VALUE sz = rb_ary_entry(ar, i); \
                     if (TYPE(sz) != T_FIXNUM) { \
-                        rb_raise(rb_eTypeError, "Expected an Array of %u positive Integer.", dim); \
+                        rb_raise(rb_eTypeError, "expected an Array of %u positive Integer.", dim); \
                     } \
                     var[i] = FIX2UINT(sz); \
                 } \
             } else { \
-                rb_raise(rb_eTypeError, "Expected an Array of %u positive Integer.", dim); \
+                rb_raise(rb_eTypeError, "expected an Array of %u positive Integer.", dim); \
             } \
         } \
     } while (0)
@@ -2285,7 +2285,7 @@ rcl_program_create_from_source(cl_context context, VALUE sources)
     for (uint i = 0; i < num_src; i++) {
         VALUE srcstr = rb_ary_entry(sources, i);
         if (TYPE(srcstr) != T_STRING) {
-            rb_raise(rb_eTypeError, "Expected source is a String.");
+            rb_raise(rb_eTypeError, "expected source is a String.");
         }
         srcp[i] = RSTRING_PTR(srcstr);
         lenp[i] = RSTRING_LEN(srcstr);
@@ -2319,7 +2319,7 @@ rcl_program_create_from_binary(cl_context context, VALUE devices, VALUE binaries
 
         VALUE bin = rb_ary_entry(binaries, i);
         if (TYPE(bin) != T_STRING) {
-            rb_raise(rb_eTypeError, "Invalid binary. Expected a byte string.");
+            rb_raise(rb_eTypeError, "invalid binary. Expected a byte string.");
         }
         devs[i] = Device_Ptr(dev);
         len_ar[i] = RSTRING_LEN(bin);
@@ -2413,7 +2413,7 @@ static VALUE
 rcl_program_build(VALUE self, VALUE devices, VALUE options, VALUE memo)
 {
     if (TYPE(options) != T_STRING) {
-        rb_raise(rb_eTypeError, "Expected options is a String.");
+        rb_raise(rb_eTypeError, "expected options is a String.");
     }
     Expect_Array(devices);
 
