@@ -1,0 +1,102 @@
+
+module OpenCL
+    module Compiler
+        grammar RubyIdentifier
+            include RubyTokenizer
+            include RubyNumber
+
+            # Dummy rule for testing only. Not used by main grammar
+            rule identifier
+                cvar / ivar / constant / lvar / symbol / true / false / nil
+            end
+
+            rule lchar
+                [a-z]
+            end
+
+            rule uchar
+                [A-Z]
+            end
+
+            rule leading_word_char
+                [a-zA-Z_]
+            end
+
+            rule word_char
+                digit / leading_word_char
+            end
+
+            rule lword
+                (lchar / '_') word_char*
+            end
+
+            rule word
+                leading_word_char word_char*
+            end
+
+            rule cvar
+                '@@' word
+            end
+
+            rule ivar
+                '@' word
+            end
+
+            rule constant
+                !('BEGIN' / 'END') (uchar word_char*)
+                /('BEGIN' / 'END') word_char+
+            end
+
+            rule lvar
+                !keywords lword
+                / keywords word_char+
+            end
+
+            rule keywords
+                  '__LINE__'     / 'case'     / 'ensure' / 'not'    / 'then'
+                / '__ENCODING__' / 'class'    / 'false'  / 'or'     / 'true'
+                / '__FILE__'     / 'def'      / 'for'    / 'redo'   / 'undef'
+#                / 'BEGIN'
+                / 'defined?' / 'if'     / 'rescue' / 'unless'
+#                / 'END'
+                / 'do'       / 'in'     / 'retry'  / 'until'
+                / 'alias'        / 'else'     / 'module' / 'return' / 'when'
+                / 'and'          / 'elsif'    / 'next'   / 'self'   / 'while'
+                / 'begin'        / 'end'      / 'nil'    / 'super'  / 'yield'
+                / 'break'
+            end
+
+            rule symbol
+                ':' word {
+                    def clc
+                        ''
+                    end
+                }
+            end
+
+            rule true
+                'true' {
+                    def clc
+                        self.text_value
+                    end
+                }
+            end
+
+            rule false
+                'false' {
+                    def clc
+                        self.text_value
+                    end
+                }
+            end
+
+            rule nil
+                'nil' {
+                    def clc
+                        '0'
+                    end
+                }
+            end
+        end
+    end
+end

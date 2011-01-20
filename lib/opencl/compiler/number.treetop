@@ -1,0 +1,58 @@
+
+module OpenCL
+    module Compiler
+        grammar RubyNumber
+            rule number
+                '-'? num_literal {
+                    def clc
+                        self.text_value.delete '_'
+                    end
+                }
+            end
+
+            rule digit
+                [0-9]
+            end
+
+            rule octdigit
+                [0-7]
+            end
+
+            rule hexdigit
+                [0-9A-Fa-f]
+            end
+
+            rule bindigit
+                '0' / '1'
+            end
+
+            rule num_literal
+                hex_literal / oct_literal / bin_literal / float_literal / dec_literal
+            end
+
+            rule hex_literal
+                ('0x' / '0X') hexdigit ('_'? hexdigit)*
+            end
+
+            rule oct_literal
+                '0' ('o' / 'O' / '_')? octdigit ('_'? octdigit)*
+            end
+
+            rule bin_literal
+                ('0b' / '0B') bindigit ('_'? bindigit)*
+            end
+
+            rule dec_literal
+                ('0d' / '0D')? ('0' / ([1-9] ('_'? digit)*))
+            end
+
+            rule dec_literal2
+                digit ('_'? digit)*
+            end
+
+            rule float_literal
+                dec_literal '.' dec_literal2 (('e' / 'E') '-'? dec_literal2)?
+            end
+        end
+    end
+end
