@@ -49,7 +49,7 @@ task :spec => :build do
     require 'bacon'
     require File.join(dir, 'spec/spec_helper')
 
-    Bacon.extend Bacon::TestUnitOutput
+    Bacon.extend Bacon::TapOutput
     FileList[File.join(dir, 'spec/**/*_spec.rb')].each do |f|
       load f
     end
@@ -84,6 +84,9 @@ task :clean => :clobber_package do
     rm f
   end
 end
+
+desc 'Rebuild the extension.'
+task :rebuild => [:clean, :build]
 
 desc 'Run benchmark.'
 task :bm => :build do
