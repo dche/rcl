@@ -107,22 +107,19 @@ module OpenCL
         gws = next_gws(n)
         lws = [max_workgroup_size, lmem_size / (2 * ts), gws].min
 
-        # If n is small enough (< 256), one workgroup can reduce all items.
-        #--
         # NOTE: Here we limit the workgroup number can't exceed 64.
         #       The effect is that the depth of the recursion will
-        #       not larger than 3.  However, this limitation also
-        #       results that there are no more than 512 * 64 = 32768
+        #       not larger than 3 (n -> 64 -> 1).  This limitation
+        #       also results that there are no more than 512 * 64 = 32768
         #       work items. For very large n, this means each work
         #       item will do much work.
         #       Do some performance test on this limitation?
         #       Try 128, 256, or more?
-        #++
         groups = gws < 64 ? 1 : [gws / lws, 64].min
         gws = groups * lws
         [[gws], [lws], [:mem, in_buff, :mem, out, :local, (lws * ts), :cl_uint, (next_pow2(n) / gws).ceil, :cl_uint, n]]
       end
-      # After execute_kernel, the first #<groups> elements contains the
+      # after execute_kernel, the first #<groups> elements of out contains the
       # reduced values for next pass of reduction.
       return reduce(kernel, groups)
     end
@@ -130,7 +127,8 @@ module OpenCL
     # Execute a map kernel.
     def map(kernel_name, out = nil)
       unless out.nil?
-        verify_output out
+        raise ArgumentError, "expected an Operand" unless out.is_a?(Operand)
+        raise ArgumentError, "the output Operand has incompatible type." unless self.type_compatible?(out)
       else
         out = self
       end
@@ -138,11 +136,6 @@ module OpenCL
     end
 
     private
-
-    def verify_output(out)
-      raise ArgumentError, "expected an Operand" unless out.is_a?(Operand)
-      raise ArgumentError, "the output Operand has incompatible type." unless self.type_compatible?(out)
-    end
 
     # Build the OpenCL Program for receiver's type.
     def program
@@ -186,6 +179,7 @@ module OpenCL
 
     def next_gws(n)
       np2 = next_pow2(n)
+      # If n is small enough (< 256), one workgroup can reduce all items.
       np2 < 256 ? 1 : np2 / 4
     end
 
