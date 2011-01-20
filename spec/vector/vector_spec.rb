@@ -9,7 +9,6 @@ describe OpenCL::Vector do
   end
 
   the 'constructor should reject invalid length' do
-    should.raise(TypeError) { Vector.new '10' }
     should.raise(ArgumentError) { Vector.new 0.99 }
     should.raise(ArgumentError) { Vector.new -1 }
   end
