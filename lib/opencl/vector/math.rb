@@ -3,12 +3,7 @@
 module OpenCL
   class Vector
     lib = Class.new(Library) do
-
       type :inexact
-
-      def_map_kernel(:rcl_abs_v_f, :abs) do |item|
-        "fabs(#{item})"
-      end
 
       def_kernel(:rcl_mad_vv) do
         <<-EOK
@@ -77,28 +72,7 @@ rcl_power_vn(__global T *vec, uint length, T number)
         self ** 2
       end
 
-      def_map_kernel(:rcl_vector_sin, :sin) do |flt|
-        "native_sin(#{flt})"
-      end
-
-      def_map_kernel(:rcl_vector_cos, :cos) do |flt|
-        "native_cos(#{flt})"
-      end
-
-      def_map_kernel(:rcl_vector_sqrt, :sqrt) do |flt|
-        "native_sqrt(#{flt})"
-      end
-
-      def_map_kernel(:rcl_vector_tan, :tan) do |flt|
-        "native_tan(#{flt})"
-      end
-
-      def_map_kernel(:rcl_vector_log, :log) do |flt|
-        "native_log(#{flt})"
-      end
-
     end
-
     use lib
   end
 end

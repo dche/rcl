@@ -7,23 +7,6 @@ module OpenCL
     lib = Class.new(Library) do
       type :number
 
-      def_kernel(:rcl_vector_fill_value) do
-        <<-EOT
-__kernel void
-rcl_vector_fill_value(__global T *vec, uint length, float number)
-{
-    int gid = get_global_id(0);
-    if (gid < length) {
-        vec[gid] = (T)(number);
-    }
-}
-        EOT
-      end
-
-      def_method(:fill) do |number|
-        execute_kernel :rcl_vector_fill_value, [self.length], :mem, self, :cl_uint, self.length, :cl_float, number
-      end
-
       def_kernel(:rcl_vector_fill_range) do
         <<-EOT
 __kernel void
@@ -39,27 +22,6 @@ rcl_vector_fill_range(__global T *vec, uint length, float start, float step)
 
       def_method(:fill_range) do |start, step|
         execute_kernel :rcl_vector_fill_range, [self.length], :mem, self, :cl_uint, self.length, :cl_float, start, :cl_float, step
-      end
-
-      def_kernel(:rcl_vector_fill_rand) do
-        <<-EOT
-__kernel void
-rcl_vector_fill_rand(__global T *vec, unsigned int length, uint seed)
-{
-    int gid = get_global_id(0);
-    if (gid < length) {
-        rcl_random_state rst;
-        rcl_srandom(&rst, seed);
-
-        vec[gid] = (T)(rcl_randomf(&rst));
-    }
-}
-        EOT
-      end
-
-      def_method(:rand) do |seed = nil|
-        seed = Kernel.rand(Time.now.to_i) if seed.nil?
-        execute_kernel :rcl_vector_fill_rand, [self.length], :mem, self, :cl_uint, self.length, :cl_uint, seed
       end
 
     end
