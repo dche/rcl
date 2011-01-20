@@ -6,7 +6,7 @@ require File.join(File.dirname(__FILE__), '../../lib/opencl/vector')
 describe "Reduction functions of OpenCL::Vector" do
 
   min = 1
-  max = rand(16384)
+  max = 3 + rand(32)
 
   before do
     @vec = Vector.range(min..max)
