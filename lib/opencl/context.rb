@@ -1,3 +1,4 @@
+# encoding: utf-8
 
 module OpenCL
 
@@ -14,7 +15,9 @@ module OpenCL
         when :gpu
           Capi::CL_DEVICE_TYPE_GPU
         when :cpu
-          dt = Capi::CL_DEVICE_TYPE_CPU
+          Capi::CL_DEVICE_TYPE_CPU
+        when :all
+          Capi::CL_DEVICE_TYPE_ALL
         else
           raise ArgumentError, 'Invalid device type.'
         end
