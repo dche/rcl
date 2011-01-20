@@ -65,7 +65,7 @@ end
     end
 
     b.report('NArray') do
-      100.times { na.stddev }
+      100.times { na.sum }
     end if has_narray
 
     b.report('OpenCL') do
