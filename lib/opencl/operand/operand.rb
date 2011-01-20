@@ -93,7 +93,11 @@ module OpenCL
       out = @reduction_buffer
       out[0] = self[0] if self.length == 1
 
-      return out[0] if n == 1
+      if n == 1
+        res = out[0]
+        out.unmap_pointer
+        return res
+      end
 
       groups = 1
       ts = self.type.size
