@@ -1,8 +1,8 @@
 # encoding: utf-8
 
-require File.join(File.dirname(__FILE__), 'compile_spec_helper')
+require File.join(File.dirname(__FILE__), '../compile_spec_helper')
 
-ShouldPass = [
+IdShouldPass = [
     'abc',
     '@abc',
     '@@BCD',
@@ -23,14 +23,12 @@ ShouldPass = [
     'redo123',
     'BEGIN1',
     'ENDabc',
-    ':abc',
-    ':a123',
     'true',
     'false',
     'nil',
   ]
 
-ShouldFail = [
+IdShouldFail = [
     'if',
     'when',
     'while',
@@ -41,20 +39,19 @@ ShouldFail = [
     'def\n',
     'BEGIN',
     'END',
-    ':123',
   ]
 
 parser = RubyIdentifierParser.new
 
 describe RubyIdentifierParser do
   it 'should pass' do
-    ShouldPass.each do |str|
+    IdShouldPass.each do |str|
       parser.parse(str).should.not.be.nil
     end
   end
 
   it 'should fail' do
-    ShouldFail.each do |str|
+    IdShouldFail.each do |str|
       parser.parse(str).should.be.nil
     end
   end

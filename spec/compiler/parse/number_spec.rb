@@ -1,8 +1,8 @@
 # encoding: utf-8
 
-require File.join(File.dirname(__FILE__), 'compile_spec_helper')
+require File.join(File.dirname(__FILE__), '../compile_spec_helper')
 
-ShouldPass = [
+NumberShouldPass = [
     '12345',
     '-12345',
     '1_2_3_45',
@@ -27,7 +27,7 @@ ShouldPass = [
     '-0_765',
   ]
 
-ShouldFail = [
+NumberShouldFail = [
     '1_',
     '0789',
     '0b1002',
@@ -40,14 +40,14 @@ parser = RubyNumberParser.new
 
 describe RubyNumberParser do
   it 'should pass' do
-    ShouldPass.each do |str|
+    NumberShouldPass.each do |str|
       num = parser.parse str
       num.should.not.be.nil
     end
   end
 
   it 'should fail' do
-    ShouldFail.each do |str|
+    NumberShouldFail.each do |str|
       parser.parse(str).should.be.nil
     end
   end

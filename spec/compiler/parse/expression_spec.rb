@@ -1,20 +1,27 @@
 # encoding: utf-8
 
-require File.join(File.dirname(__FILE__), 'compile_spec_helper')
+require File.join(File.dirname(__FILE__), '../compile_spec_helper')
 
-ShouldPass = [
+ExprShouldPass = [
   '1',
   'a',
+  'next',
+  'break 0',
   'a = 1',
   '(abc)',
   'b = (abc)',
+  'begin a end',
+  'begin begin begin a end end end',
   'CLMath.sin(x)',
   'CLMath.cos(x);',
   'c = CLMath.tan(y)',
   'sin(x)',
   'd = sin x',
   'plus a, b, c, 1',
-  'plus (a, b, c, d)',
+  'plus (a), b, c, 1',
+  'plus ((a), b, c, d)',
+  'mul a, (b), c, ((d))',
+  'plus ((((((a), b)))))',
   'e = plus(a)',
   'e=plus a,b,   c;',
   "1\n2",
@@ -23,6 +30,7 @@ ShouldPass = [
   'a;;;;;b     ',
   'a b; c d;  ',
   'not a',
+  'not not not not a',
   'y=not(a)',
   'not BuiltIn.fmod(a)',
   'a and b',
@@ -31,6 +39,7 @@ ShouldPass = [
   'x=(a and b)',
   'a if b',
   'a if b and c',
+  'redo if true',
   'a unless b if a until c while d',
   "while a\n b end",
   "u = while a\n b end",
@@ -51,6 +60,7 @@ ShouldPass = [
   "if(a nd b) then; c; elsif d then; e; elsif f then g; else; h; end;",
   "case a\nwhen b\n c\n when d\n d\n else\n e\n end",
   "case(a);when b then; c; when(d); e end",
+  "true and if true then; false; end or true",
   "a ? b : c",
   "x = a ? b : c",
   "a and b ? c : d",
@@ -61,24 +71,42 @@ ShouldPass = [
   '- a ** b',
   'x = y + z',
   'sin(x) * cos(y)',
+  'a = x[123]',
+  "a = x [12\n]",
+  "a [x] = y",
+  "a [x\n] = y[0765]",
+  "a[y] = true",
+  "a.hi",
+  "a.xxx",
+  'a.xYZZWW',
+  "a.s123Abc = b.zz",
+  'a.SAABBCC = 1, 2, 3, 4',
+  'x =(a, b, c, d)',
   ]
 
-ShouldFail = [
+ExprShouldFail = [
   'a,',
   'y=not a',
   '1 = 1',
   'obj(x) = cos(x)',
   '! not true',
+  'not if true; a; else; b; end',
+  'return a and b',
   "a ? b and c : d",
   "a or b?c:d",
   "a = b ?c = d:e = f",
+  "a = x[y[z[1]]]",
+  'a.xy123w',
+  'a.234',
+  'a.ssee',
+  'x = [a,b,c,d]',
   ]
 
 parser = RubyExpressionParser.new
 
 describe RubyExpressionParser do
   it 'should pass' do
-    ShouldPass.each do |str|
+    ExprShouldPass.each do |str|
       pr = parser.parse(str)
       if pr.nil?
         puts '-' * 20
@@ -92,7 +120,7 @@ describe RubyExpressionParser do
   end
 
   it 'should fail' do
-    ShouldFail.each do |str|
+    ExprShouldFail.each do |str|
       parser.parse(str).should.be.nil
     end
   end

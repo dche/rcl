@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-require File.join(File.dirname(__FILE__), 'compile_spec_helper')
+require File.join(File.dirname(__FILE__), '../compile_spec_helper')
 
 bc = <<-EOC
 
@@ -13,7 +13,7 @@ We must put a new line befor =begin. FIXME?
 =end
   EOC
 
-ShouldPass = [
+SeparatorShouldPass = [
     "#abcd\r\n",
     "   # safa ## abc abc\n",
     "\n\r     \t \n \t  # comments.\n    ",
@@ -30,7 +30,7 @@ parser = RubyTokenizerParser.new
 
 describe RubyTokenizerParser do
   it 'should pass' do
-    ShouldPass.each do |str|
+    SeparatorShouldPass.each do |str|
       parser.parse(str).should.not.be.nil
     end
   end
