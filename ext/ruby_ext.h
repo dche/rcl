@@ -3,6 +3,7 @@
 
 #include <ruby.h>
 #include <assert.h>
+#include <strings.h>
 
 #define TRACE(...)     fprintf(stderr, __VA_ARGS__)
 
