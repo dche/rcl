@@ -633,6 +633,8 @@ static VALUE rb_eOpenCL;
 static void
 define_opencl_errors(void)
 {
+    // NOTE: MacRuby's GC does not allow a static Hash object.
+    // SEE: pointer.c - define_cl_types()
     VALUE rcl_errors = rb_hash_new();
 
     RCL_DEF_CL_ERROR(rcl_errors, CL_BUILD_PROGRAM_FAILURE, "Failure to build the program executable.");
@@ -689,10 +691,23 @@ check_cl_error(cl_int errcode, int warn)
 {
     if (errcode == CL_SUCCESS) return;
 
-    const char *fmt = "%d";
+    const char *fmt = "%s";
+
     if (warn) {
-        rb_warn(fmt, errcode);
+        const char *msg = "unknown OpenCL error.";
+
+        VALUE errors = rb_const_get(rcl_mCapi, rb_intern("ERROR_MESSAGES"));
+        VALUE err_msg = rb_hash_lookup(errors, INT2FIX(errcode));
+        if (!NIL_P(err_msg)) {
+            msg = RSTRING_PTR(err_msg);
+        }
+
+        rb_warn(fmt, msg);
     } else {
+        // NOTE: because rb_raise can only raise a Exception class, we have to
+        //       encode error code to a string.
+        // SEE: cl_error.rb::new
+        fmt = "%d";
         rb_raise(rb_eOpenCL, fmt, errcode);
     }
 }

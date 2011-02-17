@@ -191,13 +191,14 @@ static void define_cl_types(void)
     DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_double8);
     DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_double16);
 
-    // Prevent from change.
+    // prevent from change.
     OBJ_FREEZE(rcl_types);
     OBJ_FREEZE(rcl_vector_types);
 
     rb_define_const(rcl_mOpenCL, "SCALAR_TYPES", rcl_types);
     rb_define_const(rcl_mOpenCL, "VECTOR_TYPES", rcl_vector_types);
 
+    // for computing the ID of symbols only once.
     rcl_sym_scalar_types = rb_intern("SCALAR_TYPES");
     rcl_sym_vector_types = rb_intern("VECTOR_TYPES");
 
