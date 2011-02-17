@@ -16,13 +16,9 @@ describe CommandQueue do
   end
 
   the "info method" do
-    cq = CommandQueue.new(@context, @devs.first, 0)
-    should.not.raise(Exception) { cq.set_property(CL_QUEUE_PROFILING_ENABLE, true) }
+    cq = CommandQueue.new(@context, @devs.first, CL_QUEUE_PROFILING_ENABLE)
     props = cq.info(CL_QUEUE_PROPERTIES)
     (props & CL_QUEUE_PROFILING_ENABLE).should.equal CL_QUEUE_PROFILING_ENABLE
-    cq.set_property(CL_QUEUE_PROFILING_ENABLE, false)
-    props = cq.info(CL_QUEUE_PROPERTIES)
-    (props & CL_QUEUE_PROFILING_ENABLE).should.equal 0
   end
 
 end

@@ -1307,29 +1307,6 @@ rcl_command_queue_info(VALUE self, VALUE command_queue_info)
     return Qnil;
 }
 
-/*
- * call-seq:
- *      CommandQueue#set_property(CL_QUEUE_PROFILING_ENABLE, true)
- *
- * Wrapps +clSetCommandQueueProperty()+.
- *
- * Returns the receiver.
- */
-
-static VALUE
-rcl_command_queue_set_property(VALUE self, VALUE props, VALUE yesno)
-{
-    Extract_Boolean(yesno, yn);
-
-    cl_command_queue q = CommandQueue_Ptr(self);
-    cl_command_queue_properties pval = NUM2UINT(props);
-
-    cl_int res = clSetCommandQueueProperty(q, pval, yn, NULL);
-    Check_And_Raise(res);
-
-    return self;
-}
-
 static VALUE
 rcl_flush(VALUE self)
 {
@@ -1852,7 +1829,6 @@ define_class_command_queue(void)
     rb_define_method(rcl_cCommandQueue, "initialize", rcl_command_queue_init, 3);
     rb_define_method(rcl_cCommandQueue, "initialize_copy", rcl_command_queue_init_copy, 1);
     rb_define_method(rcl_cCommandQueue, "info", rcl_command_queue_info, 1);
-    rb_define_method(rcl_cCommandQueue, "set_property", rcl_command_queue_set_property, 2);
 
     // mem
     rb_define_method(rcl_cCommandQueue, "enqueue_read_buffer", rcl_cq_enqueue_read_buffer, 6);
