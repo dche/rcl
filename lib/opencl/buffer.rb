@@ -11,18 +11,18 @@ module OpenCL
     attr_reader :memory
 
     # Creates a Buffer object.
-    def initialize(size, io_flag = :in_out)
+    def initialize(size, io_flag = :inout)
       @context = OpenCL::Context.default_context
 
       @io = case io_flag
-      when :in_out
+      when :inout
         Capi::CL_MEM_READ_WRITE
       when :in
         @io = Capi::CL_MEM_READ_ONLY
       when :out
         @io = Capi::CL_MEM_WRITE_ONLY
       else
-        raise ArgumentError, "Invalid io flag. Expected :in, :out, :in_out, got #{io_flag}"
+        raise ArgumentError, "Invalid io flag. Expected :in, :out, :inout, got #{io_flag}"
       end
 
       begin
@@ -48,7 +48,7 @@ module OpenCL
       end
     end
 
-    # Copy the contenst of the receiver to aother buffer.
+    # Copy the content of the receiver to aother buffer.
     #
     # buffer - A +Buffer+ object. Its byte_size must be larger than
     #          the +size+.
@@ -103,7 +103,7 @@ module OpenCL
         raise ArgumentError, "Specified slice region (#{start}, #{start + size - 1}) is invalid."
       end
 
-      io = (self.in? && self.out?) ? :in_out : (self.in? ? :in : :out)
+      io = (self.in? && self.out?) ? :inout : (self.in? ? :in : :out)
       self.class.new(size, io).copy_from(self, size, 0, start)
     end
 

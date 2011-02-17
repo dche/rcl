@@ -163,7 +163,7 @@ describe Buffer do
   the '#slice' do
     sz = 8 * OpenCL.type_size(:cl_uint)
 
-    mp = Buffer.new sz, :in_out
+    mp = Buffer.new sz, :inout
     ptr = mp.map_pointer
     ptr.cast_to :cl_uint
     ptr.assign [0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef]
