@@ -4,7 +4,11 @@
 #include <ruby.h>
 #include <assert.h>
 
-#include <OpenCL/opencl.h>
+#if defined (__APPLE__) || defined(MACOSX)
+    #include <OpenCL/opencl.h>
+#else
+    #include <CL/opencl.h>
+#endif 
 
 #define TRACE(...)     fprintf(stderr, __VA_ARGS__)
 

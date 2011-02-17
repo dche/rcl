@@ -39,7 +39,9 @@ end
 dir = File.dirname(__FILE__)
 extdir = File.join(dir, 'ext')
 libdir = File.join(dir, 'lib/opencl')
-ext_target = 'capi.bundle'
+ext_name = 'capi'
+ext_ext = RUBY_PLATFORM =~ /darwin/ ? 'bundle' : 'so'
+ext_target = "#{ext_name}.#{ext_ext}"
 
 task :default => :spec
 
@@ -94,3 +96,4 @@ task :bm => :build do
     load bm
   end
 end
+
