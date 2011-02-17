@@ -40,7 +40,6 @@ extern VALUE rcl_create_mapped_pointer(void *, size_t);
 extern void rcl_invalidate_mapped_pointer(VALUE);
 extern void define_rcl_class_pointer(void);
 
-
 #define Expect_RCL_Const(ro) \
     do { \
         if (!FIXNUM_P(ro)) \
@@ -1305,7 +1304,7 @@ rcl_command_queue_info(VALUE self, VALUE command_queue_info)
 static VALUE
 rcl_command_queue_set_property(VALUE self, VALUE props, VALUE yesno)
 {
-    Expect_Boolean(yesno, yn);
+    Extract_Boolean(yesno, yn);
 
     cl_command_queue q = CommandQueue_Ptr(self);
     cl_command_queue_properties pval = NUM2UINT(props);
@@ -1399,7 +1398,7 @@ rcl_cq_enqueue_read_buffer(VALUE self, VALUE buffer, VALUE blocking_read,
                            VALUE offset, VALUE size, VALUE host_ptr, VALUE events)
 {
     Extract_Mem_Object(buffer, buf);
-    Expect_Boolean(blocking_read, br);
+    Extract_Boolean(blocking_read, br);
     Extract_Size(offset, os);
     Extract_Size(size, cb);
     Extract_Pointer(host_ptr, ptr);
@@ -1420,7 +1419,7 @@ rcl_cq_enqueue_write_buffer(VALUE self, VALUE buffer, VALUE blocking_write,
                             VALUE offset, VALUE size, VALUE host_ptr, VALUE events)
 {
     Extract_Mem_Object(buffer, buf);
-    Expect_Boolean(blocking_write, bw);
+    Extract_Boolean(blocking_write, bw);
     Extract_Size(offset, os);
     Extract_Size(size, cb);
     Extract_Pointer(host_ptr, ptr);
@@ -1462,7 +1461,7 @@ rcl_cq_enqueue_read_image(VALUE self, VALUE image, VALUE blocking_read,
                           VALUE host_ptr, VALUE events)
 {
     Extract_Mem_Object(image, img);
-    Expect_Boolean(blocking_read, br);
+    Extract_Boolean(blocking_read, br);
     Extract_Vector(origin, ovec);
     Extract_Vector(region, rvec);
     Extract_Size(row_pitch, rp);
@@ -1487,7 +1486,7 @@ rcl_cq_enqueue_write_image(VALUE self, VALUE image, VALUE blocking_write,
                            VALUE host_ptr, VALUE events)
 {
     Extract_Mem_Object(image, img);
-    Expect_Boolean(blocking_write, bw);
+    Extract_Boolean(blocking_write, bw);
     Extract_Vector(origin, ovec);
     Extract_Vector(region, rvec);
     Extract_Size(row_pitch, rp);
@@ -1579,7 +1578,7 @@ rcl_cq_enqueue_map_buffer(VALUE self, VALUE mem_obj, VALUE blocking_map,
                           VALUE events)
 {
     Extract_Mem_Object(mem_obj, mo);
-    Expect_Boolean(blocking_map, bm);
+    Extract_Boolean(blocking_map, bm);
     Expect_Fixnum(flags);
     cl_mem_flags mf = FIX2INT(flags);
     Extract_Size(offset, os);
@@ -1618,7 +1617,7 @@ rcl_cq_enqueue_map_image(VALUE self, VALUE image, VALUE blocking_map,
                          VALUE events)
 {
     Extract_Mem_Object(image, img);
-    Expect_Boolean(blocking_map, bm);
+    Extract_Boolean(blocking_map, bm);
     Expect_Fixnum(flags);
     cl_mem_flags mf = FIX2INT(flags);
 
@@ -1888,7 +1887,7 @@ rcl_sampler_init(VALUE self, VALUE context, VALUE normalized_coords,
 {
     cl_context cxt = Context_Ptr(context);
 
-    Expect_Boolean(normalized_coords, nc);
+    Extract_Boolean(normalized_coords, nc);
 
     Expect_RCL_Const(addressing_mode);
     Expect_RCL_Const(filter_mode);

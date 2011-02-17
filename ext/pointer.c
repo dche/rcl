@@ -244,7 +244,7 @@ rcl_ruby2native(ID type, void *address, VALUE value)
     assert(!(NIL_P(value) || NULL == address));
 
     if (type == id_type_cl_bool) {
-        Expect_Boolean(value, bv);
+        Extract_Boolean(value, bv);
         *(cl_bool *)address = bv;
         return;
     }

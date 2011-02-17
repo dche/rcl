@@ -45,20 +45,6 @@
 #include <math.h>
 #include "capi.h"
 
-#define Expect_Integer(ro) \
-    do { \
-        if (!FIXNUM_P(ro) && TYPE(ro) != T_BIGNUM) { \
-            rb_raise(rb_eTypeError, "expected %s is an Integer.", #ro); \
-        } \
-    } while (0)
-
-#define Expect_Float(ro) \
-    do { \
-        if (TYPE(ro) != T_FLOAT && !FIXNUM_P(ro) && TYPE(ro) != T_BIGNUM) { \
-            rb_raise(rb_eTypeError, "expected %s is of type Float.", #ro); \
-        } \
-    } while (0)
-
 // Convert a Ruby object to half precision float.
 inline cl_half Extract_Half(VALUE ro)
 {
