@@ -193,11 +193,11 @@ end
   bm(8) do |b|
 
     b.report('NArray') do
-      na.mean
+      60.times { na.mean }
     end if has_narray
 
     b.report('OpenCL') do
-      vec.mean
+      60.times { vec.mean }
     end
   end
 
