@@ -6,7 +6,7 @@ include OpenCL::Capi
 
 describe MappedPointer do
   before do
-    @cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_ALL)
+    @cxt = OpenCL::Capi::Context.new(platforms.first, CL_DEVICE_TYPE_ALL)
   end
 
   it "should not be instantiated." do

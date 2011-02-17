@@ -4,7 +4,7 @@ require File.join(File.dirname(__FILE__), '../spec_helper')
 
 include OpenCL::Capi
 
-cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_DEFAULT)
+cxt = OpenCL::Capi::Context.new(platforms.first, CL_DEVICE_TYPE_DEFAULT)
 cq = cxt.create_command_queue
 
 dot_product = <<-EOK

@@ -33,7 +33,7 @@ module OpenCL
 
     def initialize(device_type)
       begin
-        devs = Capi.devices(device_type, nil)
+        devs = Capi.devices(device_type, Capi.platforms.first)
         raise RuntimeError, "No deivce of given type found." if devs.empty?
 
         @context = Capi::Context.new nil, devs

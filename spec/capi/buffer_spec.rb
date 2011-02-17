@@ -7,7 +7,7 @@ include OpenCL::Capi
 describe Memory do
 
   before do
-    @cxt = OpenCL::Capi::Context.new(nil, CL_DEVICE_TYPE_DEFAULT)
+    @cxt = OpenCL::Capi::Context.new(platforms.first, CL_DEVICE_TYPE_DEFAULT)
   end
 
   it "should create buffer object." do
