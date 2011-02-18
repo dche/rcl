@@ -1020,7 +1020,8 @@ build_device_array(cl_device_id *devs, size_t cb)
 
 /*
  * call-seq:
- *      Context.new(platform, CL_DEVICE_TYPE_GPU)
+ *      Context.new([CL_CONTEXT_PLATFORM, platform], CL_DEVICE_TYPE_GPU)
+ *      Context.new(nil, devices(CL_DEVICE_TYPE_GPU, platform))
  *
  * Wrappes +clCreateContext()+ and +clCreateContextFromType()+
  *

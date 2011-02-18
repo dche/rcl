@@ -17,7 +17,7 @@ EOF
 
 describe Kernel do
   before do
-    @cxt = OpenCL::Capi::Context.new(platforms.first, CL_DEVICE_TYPE_DEFAULT)
+    @cxt = OpenCL::Capi::Context.new([CL_CONTEXT_PLATFORM, platforms.first], CL_DEVICE_TYPE_DEFAULT)
     @devs = @cxt.info(CL_CONTEXT_DEVICES)
     @prog = Program.new(@cxt, [src])
     @prog.build(@devs, "", nil)

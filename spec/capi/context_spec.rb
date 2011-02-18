@@ -4,22 +4,22 @@ require File.join(File.dirname(__FILE__), '../spec_helper')
 
 include OpenCL::Capi
 
+# NOTE: It seems that NVIDIA's OpenCL implementatin does not allow contexts
+#       share devices. A CL_DEVICE_NOT_AVAILABLE error is returned.
+platform = platforms.first
+cxt = OpenCL::Capi::Context.new([CL_CONTEXT_PLATFORM, platform], CL_DEVICE_TYPE_DEFAULT)
+
 describe Context do
-  before do
-    @platform = platforms.first
-  end
 
   the "constructor" do
-    OpenCL::Capi::Context.new(@platform, CL_DEVICE_TYPE_CPU).should.is_a OpenCL::Capi::Context
-    OpenCL::Capi::Context.new(@platform, devices(CL_DEVICE_TYPE_ALL, nil)).should.is_a OpenCL::Capi::Context
-    OpenCL::Capi::Context.new(platforms.first, CL_DEVICE_TYPE_CPU).should.is_a OpenCL::Capi::Context
+    cxt.should.is_a OpenCL::Capi::Context
+    OpenCL::Capi::Context.new(nil, devices(CL_DEVICE_TYPE_ALL, platform)).should.is_a OpenCL::Capi::Context
 
-    should.raise(ArgumentError) { OpenCL::Capi::Context.new(@platform, []) }
-    should.raise(ArgumentError) { OpenCL::Capi::Context.new(@platform, "string") }
+    should.raise(ArgumentError) { OpenCL::Capi::Context.new(nil, []) }
+    should.raise(ArgumentError) { OpenCL::Capi::Context.new([CL_CONTEXT_PLATFORM, platforms.first], "string") }
   end
 
   the "info() method" do
-    cxt = OpenCL::Capi::Context.new(@platform, CL_DEVICE_TYPE_DEFAULT);
     cxt.info(CL_CONTEXT_REFERENCE_COUNT).should.is_a Integer
     devs = cxt.info(CL_CONTEXT_DEVICES)
     devs.should.is_a Array
@@ -29,7 +29,6 @@ describe Context do
   end
 
   the "retainContext should performed." do
-    cxt = OpenCL::Capi::Context.new(@platform, CL_DEVICE_TYPE_DEFAULT)
     rc = cxt.info(CL_CONTEXT_REFERENCE_COUNT)
 
     cxt2 = cxt.dup

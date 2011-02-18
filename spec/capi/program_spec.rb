@@ -30,7 +30,7 @@ EOF
 
 describe Program do
   before do
-    @cxt = OpenCL::Capi::Context.new(platforms.first, CL_DEVICE_TYPE_DEFAULT)
+    @cxt = OpenCL::Capi::Context.new([CL_CONTEXT_PLATFORM, platforms.first], CL_DEVICE_TYPE_DEFAULT)
   end
 
   the 'initializer' do
@@ -59,3 +59,4 @@ describe Program do
     puts p.build_info(devs.first, CL_PROGRAM_BUILD_LOG)
   end
 end
+
