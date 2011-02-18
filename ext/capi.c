@@ -2019,6 +2019,56 @@ rcl_wait_for_events(VALUE self, VALUE events)
     return Qtrue;
 }
 
+// enable after support OpenCL 1.1
+#if 0
+
+static void
+rcl_pfn_event_callback(cl_event evt, cl_int cmd_exec_status, void *usr_data)
+{
+    if (clRetainEvent(evt) != CL_SUCCESS)
+        return;
+
+    VALUE ro = REvent(evt);
+
+    VALUE block = (VALUE)usr_data;
+    assert(!NIL_P(block));
+
+    rb_funcall(block, rb_intern("call"), 2, ro, INT2FIX(cmd_exec_status));
+}
+
+/*
+ * call-seq:
+ *      set_callback(Capi::CL_COMPLETE) do |event, command_exec_status| ...
+ *
+ */
+static VALUE
+rcl_set_event_callback(int argc, VALUE *argv, VALUE self)
+{
+    VALUE command_exec_status;
+    VALUE block;
+    cl_int cmd_exec_stat = CL_COMPLETE;
+
+    // "01&" -> 0 mandatory arg, 1 optional arg, &block must provided.
+    rb_scan_args(argc, argv, "01&", &command_exec_status, &block);
+    if (!NIL_P(command_exec_status)) {
+        Expect_RCL_Const(command_exec_status);
+        cmd_exec_stat = FIX2UINT(command_exec_status);
+    }
+
+    cl_event evt = Event_Ptr(self);
+    cl_int res = clSetEventCallback(evt, cmd_exec_stat, rcl_pfn_event_callback, (void *)block);
+    Check_And_Raise(res);
+
+    return self;
+}
+
+#endif
+
+/*
+ * call-seq:
+ *      profiling_info(Capi::CL_PROFILING_COMMAND_START)
+ *
+ */
 static VALUE
 rcl_event_profiling_info(VALUE self, VALUE profiling_info)
 {
@@ -2041,6 +2091,7 @@ define_class_event(void)
     rb_undef_alloc_func(rcl_cEvent);
     rb_define_method(rcl_cEvent, "info", rcl_event_info, 1);
     rb_define_module_function(rcl_mCapi, "wait_for_events", rcl_wait_for_events, 1);
+    // rb_define_method(rcl_cEvent, "set_callback", rcl_set_event_callback, -1);
     rb_define_method(rcl_cEvent, "profiling_info", rcl_event_profiling_info, 1);
 }
 
