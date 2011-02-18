@@ -2244,10 +2244,22 @@ rcl_mem_image_info(VALUE self, VALUE param_name)
 }
 
 static VALUE
-rcl_mem_create_from_gl_buffer(VALUE self)
+rcl_mem_create_from_gl_buffer(VALUE self, VALUE context,
+                              VALUE flags, VALUE bufobj)
 {
-    rb_notimplement();
-    return Qnil;
+    Expect_RCL_Type(context, Context);
+    Expect_Fixnum(flags);
+    Expect_Fixnum(bufobj);
+
+    cl_context cxt = Context_Ptr(context);
+    cl_mem_flags mf = FIX2INT(flags);
+    GLuint glbuf = FIX2UINT(bufobj);
+
+    cl_int res;
+    cl_mem mem = clCreateFromGLBuffer(cxt, mf, glbuf, &res);
+    Check_And_Raise(res);
+
+    return RMemory(mem);
 }
 
 static VALUE
