@@ -11,7 +11,7 @@ describe ImageFormat do
   end
 
   the "supported image formats" do
-    cxt = OpenCL::Capi::Context.new(platforms.first, CL_DEVICE_TYPE_ALL)
+    cxt = OpenCL::Capi::Context.new([CL_CONTEXT_PLATFORM, platforms.first], CL_DEVICE_TYPE_ALL)
     mem_flags = CL_MEM_WRITE_ONLY
     formats = cxt.supported_image_formats(mem_flags, CL_MEM_OBJECT_IMAGE2D)
 
