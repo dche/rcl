@@ -1,3 +1,4 @@
+# encoding: utf-8
 #
 # copyright (c) 2010, Che Kenan
 #
@@ -45,10 +46,7 @@ module OpenCL
 
         @program = OpenCL::Program.new
 
-        max_workgroup_size = @max_workgroup_size
-        begin
-          @max_workgroup_size = max_workgroup_size
-
+        while true
           @kernels = []
           generate_kernels
 
@@ -59,14 +57,23 @@ module OpenCL
           begin
             @program.compile source, '-cl-mad-enable'
           rescue OpenCL::ProgramBuildError => e
-            warn e.message
+            warn 'Builind OpenCL Program failed.'
             warn 'This might be cause by wrong settings of program options.'
             warn 'Use smaller values and try again.'
-            break
+            raise e
           end
-
-          max_workgroup_size = @program.max_workgroup_size
-        end while @max_workgroup_size > max_workgroup_size
+          # Get the real max_workgroup_size kernels use
+          max_ws = @kernels.map do |k|
+            kernel = @program.kernel k[:name]
+            Context.default_context.devices.map do |dev|
+              kernel.workgroup_size_on_device(dev)
+            end.min
+          end.min
+          # If the group size constraint used in kernel generation is
+          # less than the max accepted value, we're done.
+          break if @max_workgroup_size <= max_ws
+          @max_workgroup_size = max_ws
+        end
 
         # define methods according to data_format
         case self.data_format
@@ -132,6 +139,7 @@ module OpenCL
         end
 
         @shape = shape.dup
+        # FIXME: too support any size of signals.
         if 6 * OpenCL.type_size(:cl_float2) * shape.reduce(:*) > OpenCL::Context.default_context.max_mem_alloc_size
           raise ArgumentError, "Shape size is too large to fit the OpenCL devices in this platform."
         end
@@ -165,7 +173,7 @@ module OpenCL
         }.each do |k, v|
           val = opts[k.to_sym] || v
           if !val.is_a?(Fixnum) || val < 1
-            raise TypeError, "Invalid option value for #{k}. Expected a positive Integer."
+            raise TypeError, "invalid option value for #{k}. Expected a positive Integer."
           end
 
           self.instance_variable_set(('@' + k).to_sym, val)
@@ -217,8 +225,10 @@ module OpenCL
       end
 
       # Compute the radix array.
-      def radix_array(n, max_radix)        
-        if max_radix > 1  
+      #
+      # FIXME: to support mix-radix!
+      def radix_array(n, max_radix)
+        if max_radix > 1
           max_radix = [n, max_radix].min
           ra = []
 
