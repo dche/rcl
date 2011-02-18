@@ -9,14 +9,14 @@ describe OpenCL::Context do
   end
 
   the '::context_of' do
-    cxt = OpenCL::Context.context_of :cpu
+    cxt = OpenCL::Context.context_of :gpu
     cxt.should.is_a OpenCL::Context
 
     devs = cxt.devices
     devs.should.not.be.empty
 
     devs.first.should.is_a Capi::Device
-    devs.first.should.not.be.gpu
+    devs.first.should.be.gpu
   end
 
   the '::default_context' do

@@ -1,11 +1,9 @@
 # encoding: utf-8
 
 require File.join(File.dirname(__FILE__), '../spec_helper')
-
 include OpenCL::Capi
 
 describe CommandQueue do
-
   before do
     @devs = devices(CL_DEVICE_TYPE_ALL, platforms.first)
     @context = OpenCL::Capi::Context.new(nil, @devs)

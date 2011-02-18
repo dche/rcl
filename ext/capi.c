@@ -2,7 +2,7 @@
  *
  * More rubyish syntax is defined in ruby file. See ../opencl.rb
  *
- * TODO: add equality check for all CL objects that have GC semantics.
+ * TODO: add equality method (eql?) for all CL objects.
  * TODO: check all Array that might get an empty value.
  * TODO: check all arguments that could be +nil+.
  * TODO: check all value conversions.
@@ -1284,13 +1284,14 @@ rcl_command_queue_info(VALUE self, VALUE command_queue_info)
 {
     Expect_RCL_Const(command_queue_info);
     cl_command_queue_info info = FIX2UINT(command_queue_info);
-
-    intptr_t param_value;   // CHECK: extensibility. should get param size first.
-    size_t sz_ret;
-
     cl_command_queue cq = CommandQueue_Ptr(self);
 
-    cl_int res = clGetCommandQueueInfo(cq, info, sizeof(intptr_t), (void *)&param_value, &sz_ret);
+    size_t sz_ret = 0;
+    cl_int res = clGetCommandQueueInfo(cq, info, 0, NULL, &sz_ret);
+    Check_And_Raise(res);
+    
+    char *param_value = ALLOCA_N(char, sz_ret);
+    res = clGetCommandQueueInfo(cq, info, sz_ret, (void *)&param_value, NULL);
     Check_And_Raise(res);
 
     switch (info) {
@@ -2472,12 +2473,13 @@ rcl_program_build(VALUE self, VALUE devices, VALUE options, VALUE memo)
     Expect_Array(devices);
 
     uint num_dev = (uint)RARRAY_LEN(devices);
-    cl_device_id *devs;
+    cl_device_id *devs = NULL;
     CL_Pointers(devices, Device, cl_device_id, devs);
 
     cl_program prog = Program_Ptr(self);
     pfn_build_notify pbn = NIL_P(memo) ? NULL : build_notify;
-    cl_int res = clBuildProgram(prog, num_dev, devs, RSTRING_PTR(options), pbn, (void *)memo);
+    void *mm = NIL_P(memo) ? NULL : (void *)memo;
+    cl_int res = clBuildProgram(prog, num_dev, devs, RSTRING_PTR(options), pbn, mm);
     Check_And_Raise(res);
 
     return self;
