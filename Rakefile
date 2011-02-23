@@ -1,9 +1,7 @@
+# encoding: utf-8
 
 require 'rake'
 require 'rake/gempackagetask'
-
-require 'fileutils'
-include FileUtils
 
 spec = Gem::Specification.new do |s|
   s.name = 'rcl'
@@ -67,18 +65,21 @@ task :install => :gem do
   system "gem install pkg/#{spec.name}-#{spec.version}.gem"
 end
 
-rule File.join(extdir, ext_target) => FileList[File.join(extdir, '*.{c,h}')] do
-  cd(extdir) do
+file File.join(libdir, ext_target) => FileList[File.join(extdir, '*.{c,h}')] do
+  cd(extdir, verbose:false) do
     system "#{RUBY_ENGINE} extconf.rb && make"
   end
-end
-
-file File.join(libdir, ext_target) => File.join(extdir, ext_target) do
-  cp File.join(extdir, ext_target), libdir
+  cp File.join(extdir, ext_target), libdir, verbose:false
 end
 
 desc 'Build the extension.'
-task :build => File.join(libdir, ext_target)
+task :build => File.join(libdir, ext_target) do
+  cd(extdir, verbose:false) do
+    FileList['*.{o,bundle,so}', '*Makefile'].each do |f|
+      rm f, verbose:false
+    end
+  end
+end
 
 desc 'Clean the project directory.'
 task :clean => :clobber_package do
