@@ -5,6 +5,10 @@
 
 #if defined (__APPLE__) || defined(MACOSX)
     #include <OpenCL/opencl.h>
+    // Mirror types to GL types, until OpenCL on Mac OSX is 1.1.
+    typedef unsigned int cl_GLuint;
+    typedef int          cl_GLint;
+    typedef unsigned int cl_GLenum;
 #else
     #include <CL/opencl.h>
 #endif

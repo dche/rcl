@@ -55,7 +55,7 @@ extern void define_rcl_class_pointer(void);
             svar = NULL; \
         } else { \
             svar = ALLOCA_N(c_type, num); \
-            for (uint i = 0; i < num; i++) { \
+            for (cl_uint i = 0; i < num; i++) { \
                 VALUE ro = rb_ary_entry(ra, i); \
                 Expect_RCL_Type(ro, klass); \
                 svar[i] = klass##_Ptr(ro); \
@@ -740,7 +740,7 @@ rcl_platforms(VALUE self)
     VALUE list = rb_ary_new();
     cl_int res = clGetPlatformIDs(16, p_ids, &num_p);   // CHECK: ditto.
     if (CL_SUCCESS == res) {
-        for(uint i = 0; i < num_p; i++) {
+        for(cl_uint i = 0; i < num_p; i++) {
             VALUE o = RPlatform(p_ids[i]);
             rb_ary_push(list, o);
         }
@@ -815,7 +815,7 @@ rcl_devices(VALUE self, VALUE device_type, VALUE platform)
     if (res != CL_SUCCESS) {
         Check_And_Warn(res);
     } else {
-        for (uint i = 0; i < num_id; i++) {
+        for (cl_uint i = 0; i < num_id; i++) {
             VALUE o = RDevice(d_ids[i]);
             rb_ary_push(devs, o);
         }
@@ -921,7 +921,7 @@ rcl_device_info(VALUE self, VALUE device_info)
             if (n == 0) return Qnil;
             VALUE ary = rb_ary_new2(n);
             size_t *szp = (size_t *)param_value;
-            for (uint i = 0; i < n; i++) {
+            for (cl_uint i = 0; i < n; i++) {
                 rb_ary_push(ary, ULONG2NUM(szp[i]));
             }
             return ary;
@@ -987,7 +987,7 @@ rcl_pfn_notify(const char *errinfo, const void *private_info, size_t cb, void *u
 static void
 set_context_properties(cl_context_properties *props, VALUE arr, size_t len)
 {
-    for (uint i = 0; i < len; i += 2) {
+    for (cl_uint i = 0; i < len; i += 2) {
         VALUE pn = rb_ary_entry(arr, i);
         VALUE ptr = rb_ary_entry(arr, i + 1);
 
@@ -1010,7 +1010,7 @@ build_device_array(cl_device_id *devs, size_t cb)
     VALUE ret = rb_ary_new();
     size_t num_dev = cb / sizeof(cl_device_id);
 
-    for (uint i = 0; i < num_dev; i++) {
+    for (cl_uint i = 0; i < num_dev; i++) {
         VALUE dev = RDevice(devs[i]);
         rb_ary_push(ret, dev);
     }
@@ -1188,7 +1188,7 @@ rcl_context_supported_image_formats(VALUE self, VALUE mem_flag, VALUE mem_obj_ty
     Check_And_Raise(res);
 
     VALUE ret = rb_ary_new2(num_ret);
-    for (uint i = 0; i < num_ret; i++) {
+    for (cl_uint i = 0; i < num_ret; i++) {
         rb_ary_push(ret, RImageFormat(ifs + i));
     }
     return ret;
@@ -1278,7 +1278,6 @@ rcl_command_queue_init_copy(VALUE copy, VALUE orig)
  * call-seq:
  *   CommandQueue#info(CL_COMMAND_QUEUE_)
  */
-
 static VALUE
 rcl_command_queue_info(VALUE self, VALUE command_queue_info)
 {
@@ -1289,7 +1288,7 @@ rcl_command_queue_info(VALUE self, VALUE command_queue_info)
     size_t sz_ret = 0;
     cl_int res = clGetCommandQueueInfo(cq, info, 0, NULL, &sz_ret);
     Check_And_Raise(res);
-    
+
     char *param_value = ALLOCA_N(char, sz_ret);
     res = clGetCommandQueueInfo(cq, info, sz_ret, (void *)&param_value, NULL);
     Check_And_Raise(res);
@@ -1300,9 +1299,9 @@ rcl_command_queue_info(VALUE self, VALUE command_queue_info)
     case CL_QUEUE_DEVICE:
         return RDevice((cl_device_id)param_value);
     case CL_QUEUE_REFERENCE_COUNT:
-        return INT2NUM(param_value);
+        return INT2NUM(*(cl_int *)param_value);
     case CL_QUEUE_PROPERTIES:
-        return UINT2NUM(param_value);
+        return UINT2NUM(*(cl_uint *)param_value);
     default:
         break;
     }
@@ -1361,7 +1360,7 @@ rcl_finish(VALUE self)
         if (!NIL_P(ar)) { \
             var = ALLOCA_N(size_t, dim); \
             if (TYPE(ar) == T_ARRAY && RARRAY_LEN(ar) == dim) { \
-                for (uint i = 0; i < dim; i++) { \
+                for (cl_uint i = 0; i < dim; i++) { \
                     VALUE sz = rb_ary_entry(ar, i); \
                     if (TYPE(sz) != T_FIXNUM) { \
                         rb_raise(rb_eTypeError, "expected an Array of %u positive Integer.", dim); \
@@ -2255,7 +2254,7 @@ rcl_mem_create_from_gl_buffer(VALUE self, VALUE context,
 
     cl_context cxt = Context_Ptr(context);
     cl_mem_flags mf = FIX2INT(flags);
-    GLuint glbuf = FIX2UINT(bufobj);
+    cl_GLuint glbuf = FIX2UINT(bufobj);
 
     cl_int res;
     cl_mem mem = clCreateFromGLBuffer(cxt, mf, glbuf, &res);
@@ -2332,12 +2331,12 @@ static cl_program
 rcl_program_create_from_source(cl_context context, VALUE sources)
 {
     Expect_Array(sources);
-    uint num_src = (uint)RARRAY_LEN(sources);
+    cl_uint num_src = (cl_uint)RARRAY_LEN(sources);
 
     const char **srcp = (const char **)ALLOCA_N(intptr_t, num_src);
     size_t *lenp = ALLOCA_N(size_t, num_src);
 
-    for (uint i = 0; i < num_src; i++) {
+    for (cl_uint i = 0; i < num_src; i++) {
         VALUE srcstr = rb_ary_entry(sources, i);
         if (TYPE(srcstr) != T_STRING) {
             rb_raise(rb_eTypeError, "expected source is a String.");
@@ -2359,7 +2358,7 @@ rcl_program_create_from_binary(cl_context context, VALUE devices, VALUE binaries
     Expect_Array(devices);
     Expect_Array(binaries);
 
-    uint num_dev = (uint)RARRAY_LEN(devices);
+    cl_uint num_dev = (cl_uint)RARRAY_LEN(devices);
     if (RARRAY_LEN(binaries) != num_dev) {
         rb_raise(rb_eArgError, "Number of binaries shall equal to number of devices.");
     }
@@ -2368,7 +2367,7 @@ rcl_program_create_from_binary(cl_context context, VALUE devices, VALUE binaries
     size_t *len_ar = ALLOCA_N(size_t, num_dev);
     const unsigned char **bin_ar = (const unsigned char **)ALLOCA_N(intptr_t, num_dev);
 
-    for (uint i = 0; i < num_dev; i++) {
+    for (cl_uint i = 0; i < num_dev; i++) {
         VALUE dev = rb_ary_entry(devices, i);
         Expect_RCL_Type(dev, Device);
 
@@ -2472,7 +2471,7 @@ rcl_program_build(VALUE self, VALUE devices, VALUE options, VALUE memo)
     }
     Expect_Array(devices);
 
-    uint num_dev = (uint)RARRAY_LEN(devices);
+    cl_uint num_dev = (cl_uint)RARRAY_LEN(devices);
     cl_device_id *devs = NULL;
     CL_Pointers(devices, Device, cl_device_id, devs);
 
@@ -2555,7 +2554,7 @@ rcl_program_info(VALUE self, VALUE param_name)
     case CL_PROGRAM_BINARY_SIZES: {
         size_t num_szs = sz_ret / sizeof(size_t);
         VALUE szs = rb_ary_new2(num_szs);
-        for (uint i = 0; i < num_szs; i++) {
+        for (cl_uint i = 0; i < num_szs; i++) {
             rb_ary_push(szs, UINT2NUM(((size_t *)(param_value))[i]));
         }
         return szs;
@@ -2589,7 +2588,7 @@ rcl_program_create_kernels(VALUE self)
     Check_And_Raise(res);
 
     VALUE ary = rb_ary_new2(num_ret);
-    for (uint i = 0; i < num_ret; i++) {
+    for (cl_uint i = 0; i < num_ret; i++) {
         rb_ary_push(ary, RKernel(kernels[i]));
     }
     return ary;

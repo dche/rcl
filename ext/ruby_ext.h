@@ -4,6 +4,7 @@
 #include <ruby.h>
 #include <assert.h>
 #include <strings.h>
+#include <alloca.h>
 
 #define TRACE(...)     fprintf(stderr, __VA_ARGS__)
 
