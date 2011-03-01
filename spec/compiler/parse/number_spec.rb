@@ -4,16 +4,15 @@ require File.join(File.dirname(__FILE__), '../compile_spec_helper')
 
 NumberShouldPass = [
     '12345',
-    '-12345',
     '1_2_3_45',
     '0765',
-    '-0',
-    '-071',
+    '0',
+    '071',
     '0xabc',
-    '-0xA_B_C_def1123',
+    '0xA_B_C_def1123',
     '0b0111',
     '0B00_110_1111_000',
-    '-1.0',
+    '1.0',
     '1_2_3.0000_4_5_6',
     '1.0e-10_0',
     Math::PI.to_s,
@@ -21,10 +20,10 @@ NumberShouldPass = [
     '0.1',
     '000',
     '0d0',
-    '-0D0',
+    '0D0',
     '0d12390',
     '0o12',
-    '-0_765',
+    '0_765',
   ]
 
 NumberShouldFail = [
@@ -52,3 +51,4 @@ describe RubyNumberParser do
     end
   end
 end
+

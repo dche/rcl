@@ -1,0 +1,64 @@
+# PEG for translating Ruby block to C99 function.
+#
+# copyright (c) 2010, Che Kenan
+#
+# Can't be translated, so omitted,
+# 1. module/class definition
+# 2. method definition
+# 3. block, no yield, no return
+# 4. exception handling, redo, retry
+# 5. regexp
+# 6. string
+# 7. require/load
+# 8. super
+# 9. parallel assignments
+# 10.for loop
+#
+
+module OpenCL
+    module Compiler
+        grammar RubyBlock
+            include RubyExpression
+
+            # the grammar root - A (limited but valid) ruby block.
+            #
+            # sexp form - [:fun, [:args, ...], [:block, ...]]
+            rule block
+                al:block_arguments? (ss1 / hs0) compound_statement {
+                    def to_sexp
+                        arg_sexp = al.empty? ? [:args] : al.to_sexp
+                        [:fun, arg_sexp, compound_statement.to_sexp]
+                    end
+                }
+            end
+
+            # arguments list of block.
+            #
+            # sexp form - [:args] | [:args, arg1, ...]
+            rule block_arguments
+                '|' hs0 bal:block_arg_list? hs0 '|' {
+                    def to_sexp
+                        [:args] + (bal.empty? ? [] : bal.to_sexp)
+                    end
+                }
+            end
+
+            rule block_arg_list
+                block_arg hs0 rest_args:(',' hs0 block_arg)* {
+                    def to_sexp
+                        [block_arg.to_sexp] +
+                        rest_args.elements.map do |elm|
+                            elm.block_arg.to_sexp
+                        end
+                    end
+                }
+            end
+            
+            rule block_arg
+                message_with_close_args
+                / var
+            end
+        end
+    end
+end
+

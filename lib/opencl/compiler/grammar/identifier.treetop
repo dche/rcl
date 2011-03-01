@@ -7,7 +7,7 @@ module OpenCL
 
             # Dummy rule for testing only. Not used by main grammar
             rule identifier
-                cvar / ivar / constant / lvar / symbol / true / false / nil
+                cvar / ivar / constant / var / true / false / nil
             end
 
             rule lchar
@@ -47,9 +47,13 @@ module OpenCL
                 /('BEGIN' / 'END') word_char+
             end
 
-            rule lvar
-                !keywords lword
-                / keywords word_char+
+            rule var
+                (!keywords lword
+                / keywords word_char+) {
+                    def to_sexp
+                        [:var, self.text_value]
+                    end
+                }
             end
 
             rule keywords
@@ -66,34 +70,26 @@ module OpenCL
                 / 'break'
             end
 
-            rule symbol
-                ':' word {
-                    def clc
-                        ''
-                    end
-                }
-            end
-
             rule true
                 'true' {
-                    def clc
-                        self.text_value
+                    def to_sexp
+                        [:literal, 'true']
                     end
                 }
             end
 
             rule false
                 'false' {
-                    def clc
-                        self.text_value
+                    def to_sexp
+                        [:literal, 'false']
                     end
                 }
             end
 
             rule nil
                 'nil' {
-                    def clc
-                        '0'
+                    def to_sexp
+                        [:literal, 'NULL']
                     end
                 }
             end

@@ -3,11 +3,7 @@ module OpenCL
     module Compiler
         grammar RubyNumber
             rule number
-                '-'? num_literal {
-                    def clc
-                        self.text_value.delete '_'
-                    end
-                }
+                float_literal / int_literal
             end
 
             rule digit
@@ -26,8 +22,12 @@ module OpenCL
                 '0' / '1'
             end
 
-            rule num_literal
-                hex_literal / oct_literal / bin_literal / float_literal / dec_literal
+            rule int_literal
+                (hex_literal / oct_literal / bin_literal / dec_literal) {
+                    def to_sexp
+                        [:int, self.text_value.delete('_')]
+                    end
+                }
             end
 
             rule hex_literal
@@ -51,7 +51,11 @@ module OpenCL
             end
 
             rule float_literal
-                dec_literal '.' dec_literal2 (('e' / 'E') '-'? dec_literal2)?
+                dec_literal '.' dec_literal2 (('e' / 'E') '-'? dec_literal2)? {
+                    def to_sexp
+                        [:float, self.text_value.delete('_')]
+                    end
+                }
             end
         end
     end

@@ -6,5 +6,7 @@ require File.join(File.dirname(__FILE__), 'opencl/context')
 require File.join(File.dirname(__FILE__), 'opencl/program')
 require File.join(File.dirname(__FILE__), 'opencl/buffer')
 
+require File.join(File.dirname(__FILE__), 'opencl/compiler')
+
 require File.join(File.dirname(__FILE__), 'opencl/operand')
 require File.join(File.dirname(__FILE__), 'opencl/ndarray')

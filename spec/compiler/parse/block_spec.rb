@@ -4,18 +4,9 @@ require File.join(File.dirname(__FILE__), '../compile_spec_helper')
 
 parser = RubyBlockParser.new
 
-BlockShouldPass = [
-  '|x, y,z, u,  v, www | x;y;u;v;www',
-  '|a|; 1',
-  "|  x |\n;;x[0];",
-  '| x   |   x + y',
-  '|x|x',
-  ]
-
 BlockShouldFail = [
   '|,|',
   ]
-
 
 describe RubyBlockParser do
   it 'should pass' do
