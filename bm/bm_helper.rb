@@ -13,11 +13,14 @@ def profile(name, times, &blk)
     output = "/tmp/#{name}_profile"
     svg_output = "~/Desktop/#{name}_profile.svg"
 
+    start_time = Time.now
     PerfTools::CpuProfiler.start(output) do
       times.to_i.times &blk
     end
+    puts "Profiling #{times} times execution finished in #{Time.now - start_time} seconds."
+    puts "Processing..."
     `pprof.rb --svg #{output} >> #{svg_output}`
-    puts "Check the graphical profiling result in #{svg_output}"
+    puts "Done. Check the graphical profiling result in #{svg_output}"
   rescue LoadError
     warn 'The excellent gem "perftools.rb" is not installed.'
   end
