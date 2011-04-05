@@ -8,7 +8,7 @@ module OpenCL
       def_kernel(:rcl_mad_vv) do
         <<-EOK
 __kernel void
-rcl_mad_vv(__global T *vec, uint length,
+rcl_mad_vv(__global T *vec, int length,
            __global const T *mul_vec,
            __global const T *add_vec)
 {
@@ -23,7 +23,7 @@ rcl_mad_vv(__global T *vec, uint length,
       def_kernel(:rcl_mad_vn) do
         <<-EOK
 __kernel void
-rcl_mad_vn(__global T *vec, uint length, T mul_num, T add_num)
+rcl_mad_vn(__global T *vec, int length, T mul_num, T add_num)
 {
     int gid = get_global_id(0);
     if (gid < length) {
@@ -41,11 +41,11 @@ rcl_mad_vn(__global T *vec, uint length, T mul_num, T add_num)
           unless self.type_compatible?(mval) && self.type_compatible?(aval)
             raise ArgumentError, "incompatible Vectors"
           end
-          execute_kernel :rcl_mad_vv, [sz], :mem, self, :cl_uint, sz, :mem, mval, :mem, aval
+          execute_kernel :rcl_mad_vv, [sz], :mem, self, :cl_int, sz, :mem, mval, :mem, aval
         else
           # do not check if aval is a number, the Kernel#set_arg will spot
           # this error finally.
-          execute_kernel :rcl_mad_vn, [sz], :mem, self, :cl_uint, sz, tag, mval, tag, aval
+          execute_kernel :rcl_mad_vn, [sz], :mem, self, :cl_int, sz, tag, mval, tag, aval
         end
       end
 

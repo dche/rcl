@@ -117,7 +117,7 @@ module OpenCL
         #       Try 128, 256, or more?
         groups = gws < 64 ? 1 : [gws / lws, 64].min
         gws = groups * lws
-        [[gws], [lws], [:mem, in_buff, :mem, out, :local, (lws * ts), :cl_uint, (next_pow2(n) / gws).ceil, :cl_uint, n]]
+        [[gws], [lws], [:mem, in_buff, :mem, out, :local, (lws * ts), :cl_int, (next_pow2(n) / gws).ceil, :cl_int, n]]
       end
       # after execute_kernel, the first #<groups> elements of out contains the
       # reduced values for next pass of reduction.
@@ -132,48 +132,38 @@ module OpenCL
       else
         out = self
       end
-      execute_kernel kernel_name, [self.length], :mem, self, :cl_uint, self.length, :mem, out
+      execute_kernel kernel_name, [self.length], :mem, self, :cl_int, self.length, :mem, out
     end
 
     private
 
-    # Build the OpenCL Program for receiver's type.
     def program
-      tag = self.type.tag
-      if (@@programs[tag].nil? || library_outdated?)
-        update_library
-        src = ERB.new(@program_source).result(binding)
-        @@programs[tag] = Program.new src, '-cl-mad-enable'
-      end
-      @@programs[tag]
+      self.class.program(self.type)
     end
 
     # Execute a kernel.
     def execute_kernel(kernel_name, *args, &blk)
-      unmap_pointer
       program.call kernel_name, *args, &blk
       self
     end
 
     def library_outdated?
-      @library_version < @@libraries.length
+      @library_version < self.class.libraries.length
     end
 
     def update_library
       return nil unless library_outdated?
 
-      @library_version.upto(@@libraries.length - 1) do |i|
-        lib = @@libraries[i]
+      libs = self.class.libraries
+      @library_version.upto(libs.length - 1) do |i|
+        lib = libs[i]
         next unless self.type.compatible?(lib.type)
-
         mod = lib.interface_module
         # the library does not provide any ruby method to call, so it's useless.
         next if mod.nil?
-
-        @program_source << lib.source.to_s
         self.extend mod
       end
-      @library_version = @@libraries.length
+      @library_version = libs.length
       nil
     end
 

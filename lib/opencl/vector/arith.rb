@@ -14,7 +14,7 @@ module OpenCL
       def_kernel(:rcl_add_vv) do
         <<-EOK
 __kernel void
-rcl_add_vv(__global T *vec, uint length, __global const T *other)
+rcl_add_vv(__global T *vec, int length, __global const T *other)
 {
     int gid = get_global_id(0);
     if (gid < length) {
@@ -27,7 +27,7 @@ rcl_add_vv(__global T *vec, uint length, __global const T *other)
       def_kernel(:rcl_add_vn) do
         <<-EOK
 __kernel void
-rcl_add_vn(__global T *vec, uint length, T number)
+rcl_add_vn(__global T *vec, int length, T number)
 {
     int gid = get_global_id(0);
     if (gid < length) {
@@ -42,9 +42,9 @@ rcl_add_vn(__global T *vec, uint length, T number)
         sz = self.size
         if Vector === val
           raise ArgumentError, "incompatible Vectors" unless self.type_compatible?(val)
-          execute_kernel :rcl_add_vv, [sz], :mem, self, :cl_uint, sz, :mem, val
+          execute_kernel :rcl_add_vv, [sz], :mem, self, :cl_int, sz, :mem, val
         else
-          execute_kernel :rcl_add_vn, [sz], :mem, self, :cl_uint, sz, tag, val
+          execute_kernel :rcl_add_vn, [sz], :mem, self, :cl_int, sz, tag, val
         end
         self
       end
@@ -53,7 +53,7 @@ rcl_add_vn(__global T *vec, uint length, T number)
       def_kernel(:rcl_sub_vv) do
         <<-EOK
 __kernel void
-rcl_sub_vv(__global T *vec, const uint length, __global const T *other)
+rcl_sub_vv(__global T *vec, int length, __global const T *other)
 {
     int gid = get_global_id(0);
     if (gid < length) {
@@ -66,7 +66,7 @@ rcl_sub_vv(__global T *vec, const uint length, __global const T *other)
       def_kernel(:rcl_sub_vn) do
         <<-EOK
 __kernel void
-rcl_sub_vn(__global T *vec, const uint length, const T number)
+rcl_sub_vn(__global T *vec, int length, const T number)
 {
     int gid = get_global_id(0);
     if (gid < length) {
@@ -81,9 +81,9 @@ rcl_sub_vn(__global T *vec, const uint length, const T number)
         sz = self.size
         if Vector === val
           raise ArgumentError, "incompatible Vectors" unless self.type_compatible?(val)
-          execute_kernel :rcl_sub_vv, [sz], :mem, self, :cl_uint, sz, :mem, val
+          execute_kernel :rcl_sub_vv, [sz], :mem, self, :cl_int, sz, :mem, val
         else
-          execute_kernel :rcl_sub_vn, [sz], :mem, self, :cl_uint, sz, tag, val
+          execute_kernel :rcl_sub_vn, [sz], :mem, self, :cl_int, sz, tag, val
         end
         self
       end
@@ -92,7 +92,7 @@ rcl_sub_vn(__global T *vec, const uint length, const T number)
       def_kernel(:rcl_mul_vv) do
         <<-EOK
 __kernel void
-rcl_mul_vv(__global T *vec, uint length, __global const T *other)
+rcl_mul_vv(__global T *vec, int length, __global const T *other)
 {
     int gid = get_global_id(0);
     if (gid < length) {
@@ -105,7 +105,7 @@ rcl_mul_vv(__global T *vec, uint length, __global const T *other)
       def_kernel(:rcl_mul_vn) do
         <<-EOK
         __kernel void
-rcl_mul_vn(__global T *vec, uint length, T number)
+rcl_mul_vn(__global T *vec, int length, T number)
 {
     int gid = get_global_id(0);
     if (gid < length) {
@@ -120,9 +120,9 @@ rcl_mul_vn(__global T *vec, uint length, T number)
         sz = self.size
         if Vector === val
           raise ArgumentError, "incompatible Vectors" unless self.type_compatible?(val)
-          execute_kernel :rcl_mul_vv, [sz], :mem, self, :cl_uint, sz, :mem, val
+          execute_kernel :rcl_mul_vv, [sz], :mem, self, :cl_int, sz, :mem, val
         else
-          execute_kernel :rcl_mul_vn, [sz], :mem, self, :cl_uint, sz, tag, val
+          execute_kernel :rcl_mul_vn, [sz], :mem, self, :cl_int, sz, tag, val
         end
         self
       end
@@ -131,7 +131,7 @@ rcl_mul_vn(__global T *vec, uint length, T number)
       def_kernel(:rcl_div_vn) do
         <<-EOK
 __kernel void
-rcl_div_vn(__global T *vec, uint length, T number)
+rcl_div_vn(__global T *vec, int length, T number)
 {
     int gid = get_global_id(0);
 
@@ -147,19 +147,19 @@ rcl_div_vn(__global T *vec, uint length, T number)
 
       def_method(:div) do |number|
         sz = self.size
-        execute_kernel :rcl_div_vn, [sz], :mem, self, :cl_uint, sz, self.type.tag, number
+        execute_kernel :rcl_div_vn, [sz], :mem, self, :cl_int, sz, self.type.tag, number
       end
       alias_method :/, :div
 
       def_kernel(:rcl_mod_vn) do
         <<-EOK
 __kernel void
-rcl_mod_vn(__global T *vec, uint length, T number)
+rcl_mod_vn(__global T *vec, int length, T number)
 {
     int gid = get_global_id(0);
 
     if (gid < length) {
-      <% if self.type.exact? %>
+      <% if type.exact? %>
         vec[gid] %= number;
       <% else %>
         vec[gid] = fmod(vec[gid], number);
@@ -171,7 +171,7 @@ rcl_mod_vn(__global T *vec, uint length, T number)
 
       def_method(:mod) do |number|
         sz = self.size
-        execute_kernel :rcl_mod_vn, [sz], :mem, self, :cl_uint, sz, self.type.tag, number
+        execute_kernel :rcl_mod_vn, [sz], :mem, self, :cl_int, sz, self.type.tag, number
       end
       alias_method :%, :mod
 

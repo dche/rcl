@@ -10,7 +10,7 @@ module OpenCL
       def_kernel(:rcl_ndarray_fill_value) do
         <<-EOT
 __kernel void
-rcl_ndarray_fill_value(__global T *vec, uint length, float number)
+rcl_ndarray_fill_value(__global T *vec, int length, float number)
 {
     int gid = get_global_id(0);
     if (gid < length) {
@@ -21,13 +21,13 @@ rcl_ndarray_fill_value(__global T *vec, uint length, float number)
       end
 
       def_method(:fill) do |number|
-        execute_kernel :rcl_ndarray_fill_value, [self.length], :mem, self, :cl_uint, self.length, :cl_float, number
+        execute_kernel :rcl_ndarray_fill_value, [self.length], :mem, self, :cl_int, self.length, :cl_float, number
       end
 
       def_kernel(:rcl_ndarray_fill_rand) do
         <<-EOT
 __kernel void
-rcl_ndarray_fill_rand(__global T *vec, unsigned int length, uint seed)
+rcl_ndarray_fill_rand(__global T *vec, int length, uint seed)
 {
     int gid = get_global_id(0);
     if (gid < length) {
@@ -42,9 +42,8 @@ rcl_ndarray_fill_rand(__global T *vec, unsigned int length, uint seed)
 
       def_method(:rand) do |seed = nil|
         seed = Kernel.rand(Time.now.to_i) if seed.nil?
-        execute_kernel :rcl_ndarray_fill_rand, [self.length], :mem, self, :cl_uint, self.length, :cl_uint, seed
+        execute_kernel :rcl_ndarray_fill_rand, [self.length], :mem, self, :cl_int, self.length, :cl_uint, seed
       end
-
     end
 
     use lib
@@ -74,6 +73,5 @@ rcl_ndarray_fill_rand(__global T *vec, unsigned int length, uint seed)
         self.new(shape, type).rand
       end
     end
-
   end
 end

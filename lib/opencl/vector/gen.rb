@@ -10,20 +10,36 @@ module OpenCL
       def_kernel(:rcl_vector_fill_range) do
         <<-EOT
 __kernel void
-rcl_vector_fill_range(__global T *vec, uint length, float start, float step)
+rcl_vector_fill_range(__global T *vec, int length, float start, float step)
 {
     int gid = get_global_id(0);
     if (gid < length) {
         vec[gid] = (T)(mad((float)(gid), step, start));
     }
 }
+__kernel void
+rcl_vector_fill_range_log(__global T *vec, int length, float start, float step, float base)
+{
+    int gid = get_global_id(0);
+    if (gid < length) {
+        float pw = mad((float)(gid), step, start);
+        vec[gid] = (T)pow(base, pw);  // CHECK: native_pow is not always available.
+    }
+}
         EOT
       end
 
       def_method(:fill_range) do |start, step|
-        execute_kernel :rcl_vector_fill_range, [self.length], :mem, self, :cl_uint, self.length, :cl_float, start, :cl_float, step
+        execute_kernel :rcl_vector_fill_range, [self.length], :mem, self, :cl_int, self.length, :cl_float, start, :cl_float, step
       end
 
+      def_method(:fill_range_log) do |start, step, base|
+        raise ArgumentError, "logarithm base should be larger than 0." if base <= 0
+        execute_kernel :rcl_vector_fill_range_log,
+                       [self.length],
+                       :mem, self, :cl_int, self.length,
+                       :cl_float, start, :cl_float, step, :cl_float, base
+      end
     end
 
     use lib

@@ -8,8 +8,8 @@ __kernel void
 <%= kernel_name %>(const __global T *vec,
                    __global T *out,
                    __local T *shared,
-                   const unsigned int reduction_size,
-                   const unsigned int n
+                   int reduction_size,
+                   int n
                   )
 {
 

@@ -14,7 +14,7 @@ module OpenCL
       def def_map_kernel(kernel_name, method_name, &blk)
         tmpl = <<-EOT
 __kernel void
-#{kernel_name}(const __global T *vec, const unsigned int length, __global T *out)
+#{kernel_name}(const __global T *vec, int length, __global T *out)
 {
 #define UNI_OP(x)  (<%= uni_op %>)
 
