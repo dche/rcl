@@ -22,6 +22,7 @@ spec = Gem::Specification.new do |s|
 
   s.add_development_dependency 'bacon', '>= 1.1.0'
   s.add_development_dependency 'narray', '>= 0.5.9'
+  s.add_development_dependency 'perftools.rb', '>= 0.5.6'
 
   s.rdoc_options << '--title' << 'Ruby OpenCL' <<
                     '--main' << 'README.md' <<
