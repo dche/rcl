@@ -1290,7 +1290,7 @@ rcl_command_queue_info(VALUE self, VALUE command_queue_info)
     Check_And_Raise(res);
 
     char *param_value = ALLOCA_N(char, sz_ret);
-    res = clGetCommandQueueInfo(cq, info, sz_ret, (void *)&param_value, NULL);
+    res = clGetCommandQueueInfo(cq, info, sz_ret, param_value, NULL);
     Check_And_Raise(res);
 
     switch (info) {
@@ -1299,7 +1299,7 @@ rcl_command_queue_info(VALUE self, VALUE command_queue_info)
     case CL_QUEUE_DEVICE:
         return RDevice((cl_device_id)param_value);
     case CL_QUEUE_REFERENCE_COUNT:
-        return INT2NUM(*(cl_int *)param_value);
+        return UINT2NUM(*(cl_uint *)param_value);
     case CL_QUEUE_PROPERTIES:
         return UINT2NUM(*(cl_uint *)param_value);
     default:
