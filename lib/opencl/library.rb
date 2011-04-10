@@ -15,14 +15,17 @@ module OpenCL
       # A Module that defines methods to call kernels defined in the receiver.
       attr_reader :interface_module
 
-      # Sets the type of Operand objects that the Library intends to serve.
+      # Returns the type the receiver can serve if no argument provided, or
+      # sets the type of Operand objects that the Library intends to serve.
       #
       # type_classifier can be a Type object, a type tag, or a Symbol that
-      # represents a class of types, e.g., :all for all types, :number for
+      # represents a class of types, e.g., :any for all types, :number for
       # built-in OpenCL types.
       def type(type_classifier = nil)
+        @type ||= :any
+
         return @type if type_classifier.nil?
-        raise RuntimeError, "should not change type of a Library." if @type
+        raise RuntimeError, "should not change type of a Library." if @type != :any
 
         if type_classifier.is_a?(Type) || Type.classifier?(type_classifier)
           @type = type_classifier
@@ -36,11 +39,24 @@ module OpenCL
         @kernels ||= []
 
         if @kernels.include?(kernel_name)
-          warn "Knerel with duplicated name exists. Operation ignored."
+          warn "knerel with duplicated name '#{kernel_name}' exists. Operation ignored."
         else
           @kernels << kernel_name
           @source ||= ''
           @source << yield
+        end
+      end
+      alias :def_function :def_kernel
+
+      def def_type(type_name, &blk)
+        @types ||= []
+
+        if @types.include?(type_name)
+          warn "type with duplicated name exists. Operation ignored."
+        else
+          @types << type_name
+          @source ||= ''
+          @source = yield + @source
         end
       end
 

@@ -1,8 +1,10 @@
 # encoding: utf-8
 
 module OpenCL
-
   class NDArray
+
+    use PRNGLibrary
+
     # do not bother to name the Library.
     lib = Class.new(Library) do
       type :number
