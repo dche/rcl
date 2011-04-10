@@ -1,10 +1,10 @@
-
+# encoding: utf-8
 #
 # This file expands the CAPI classes and methods defined in C extension,
 # to make CAPI more easy to use. However, even though,
 # CAPI still is *NOT* expected to be used by the library users.
 # You should use more rubyish APIs that defiend in module OpenCL, e.g.,
-# Context, Program, and Buffer.
+# Context, Program, Buffer, Operand and NDArray
 #
 # copyright (c) 2010, Che Kenan
 
@@ -12,7 +12,6 @@ require File.join(File.dirname(__FILE__), 'capi')
 
 # The OpenCL enabler for ruby.
 module OpenCL
-
   module Capi
     # OpenCL version the API conforms to.
     VERSION = '1.0'
@@ -56,7 +55,7 @@ module OpenCL
       end
 
       def to_s
-        "#{self.class} #{self.name} #{self.version}"
+        "#<#{self.class} : name = #{self.name} : version = #{self.version}>"
       end
     end
 
@@ -164,7 +163,7 @@ module OpenCL
       end
 
       def to_s
-        "#{self.name} #{self.vendor} #{self.cl_version} #{self.driver_version}"
+        "#<#{self.name} #{self.vendor} #{self.cl_version} #{self.driver_version}>"
       end
     end
 

@@ -22,6 +22,6 @@ def profile(name, times, &blk)
     `pprof.rb --svg #{output} >> #{svg_output}`
     puts "Done. Check the graphical profiling result in #{svg_output}"
   rescue LoadError
-    warn 'The excellent gem "perftools.rb" is not installed.'
+    warn 'The excellent gem "perftools.rb" is needed but not installed.'
   end
 end

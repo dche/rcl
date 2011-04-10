@@ -1,9 +1,12 @@
 # encoding: utf-8
 
 module OpenCL
-
-  class CLError < Exception
-
+  # Errors occured when executing OpenCL functions.
+  class CLError < RuntimeError
+    # Creates a CLError object.
+    #--
+    # called in the C extension.
+    #++
     def initialize(cl_err_msg)
       cl_err_msg = cl_err_msg.message unless cl_err_msg.is_a?(String)
 

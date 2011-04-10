@@ -10,5 +10,4 @@ CLError.new "#{Capi::CL_BUILD_PROGRAM_FAILURE}"
     should.not.raise(Exception) { CLError.new "#{Capi::CL_BUILD_PROGRAM_FAILURE}" }
     should.not.raise(Exception) { CLError.new '100_0000' }
   end
-
 end
