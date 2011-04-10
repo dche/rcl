@@ -48,6 +48,14 @@ module OpenCL
     def program_source
       update_library if library_outdated?
       @program_source.clone
+    def resize(sz)
+      return self if sz <= self.size
+
+      bsz = sz * self.type.size
+      super(bsz)
+
+      @reduction_buffer = nil
+      @size = sz
     end
 
     def respond_to?(meth)

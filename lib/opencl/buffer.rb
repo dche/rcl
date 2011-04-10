@@ -91,6 +91,25 @@ module OpenCL
       self
     end
 
+    # Increases the size of OpenCL memory object.
+    def resize(sz)
+      return self if sz <= self.byte_size
+
+      self.unmap_pointer
+
+      begin
+        mo = @context.create_buffer(@io, sz, nil)
+        cq = @context.command_queue_of @context.default_device
+        cq.enqueue_copy_buffer(@memory, mo, 0, 0, self.byte_size, nil)
+
+        @memory = mo
+        @byte_size = sz
+      rescue Capi::CLError => e
+        raise CLError.new(e)
+      end
+      self
+    end
+
     # Create a new Buffer, and copy +size+ bytes of the receiver
     # start from the offset +start+.
     def slice(start = 0, size = nil)
@@ -153,7 +172,7 @@ module OpenCL
       return @mapped_pointer
     end
 
-    # Un-maps the buffer object, or does nothing is the receiver is not mapped.
+    # Un-maps the buffer object, or does nothing if the receiver is not mapped.
     #
     # Returns the receiver.
     def unmap_pointer

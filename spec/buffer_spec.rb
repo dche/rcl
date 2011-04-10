@@ -230,4 +230,34 @@ describe Buffer do
 
   end
 
+  the '#resize' do
+    buf = Buffer.new 256, :inout
+    ptr = buf.map_pointer
+    ptr.cast_to :cl_float
+    ptr[0] = 1.5
+    ptr[1] = 0.25
+    ptr[2] = 0.125
+
+    buf.resize 256
+    buf.should.be.pointer_mapped
+    should.raise(Exception) {
+      ptr[127] = 0.25
+    }
+
+    buf.resize 512
+    buf.should.not.be.pointer_mapped
+    buf.should.be.in
+    buf.should.be.out
+    buf.byte_size.should.equal 512
+    ptr = buf.map_pointer
+    ptr.cast_to :cl_float
+    ptr[0].should.equal 1.5
+    ptr[1].should.equal 0.25
+    ptr[2].should.equal 0.125
+    should.not.raise(Exception) {
+      ptr[127] = 0.25
+    }
+    ptr[127].should.equal 0.25
+  end
+
 end
