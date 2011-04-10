@@ -6,7 +6,11 @@
 #include <strings.h>
 #include <alloca.h>
 
-#define TRACE(...)     fprintf(stderr, __VA_ARGS__)
+#define TRACE(...) \
+    do { \
+        fprintf(stderr, __VA_ARGS__); \
+        fprintf(stderr, "\n"); \
+    } while(0)
 
 #define Expect_Integer(ro) \
     do { \

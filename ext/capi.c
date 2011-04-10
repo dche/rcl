@@ -981,7 +981,7 @@ rcl_context_alloc(VALUE klass)
 static void
 rcl_pfn_notify(const char *errinfo, const void *private_info, size_t cb, void *user_data)
 {
-    TRACE("%s\n", errinfo);
+    TRACE("%s", errinfo);
 }
 
 static void
