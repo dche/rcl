@@ -133,17 +133,31 @@ module OpenCL
     def map_pointer
       unless pointer_mapped?
         super
-        @mapped_pointer.cast_to(self.type.tag) unless self.type.structure?
+        tag = self.type.structure? ? :cl_uchar : self.type.tag
+        @mapped_pointer.cast_to(tag)
       end
       @mapped_pointer
     end
 
+    # Returns the ith element in the OpenCL buffer.
+    #
     def [](i)
-      map_pointer[i]
+      self.map_pointer
+      return @mapped_pointer[i] unless self.type.structure?
+      Structure.new self.type, @mapped_pointer, i * self.type.size
     end
 
     def []=(i, v)
-      map_pointer[i] = v
+      self.map_pointer
+      unless self.type.structure?
+        @mapped_pointer[i] = v
+      else
+        if !v.is_a?(Structure) && v.type != self.type
+          raise TypeError, 'type mismatch.'
+        end
+        sz = self.type.size
+        @mapped_pointer.assign_pointer v.pointer.address, sz, i * sz
+      end
       v
     end
 

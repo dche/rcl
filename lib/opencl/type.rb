@@ -23,7 +23,8 @@ module OpenCL
         @tag = tag
         @size = OpenCL.type_size(tag)
       else
-        @tag, @size = parse_structure_tag(tag.clone)
+        @tag = tag
+        @def, @size = parse_structure_tag(tag)
       end
     end
 
@@ -41,8 +42,9 @@ module OpenCL
     end
 
     def ==(other)
-      self.tag == other.tag
+      other.is_a?(Symbol) ? self.tag == other : self.tag == other.tag
     end
+    alias :eql? :==
 
     # Returns a String contains the type definition in C99 format.
     def to_cdef
@@ -93,7 +95,7 @@ module OpenCL
     # Returns true if the receiver is a number, i.e., not a structured type.
     def number?
       # all OpenCL built-in types are number
-      OpenCL.valid_type?(self.tag)
+      self.tag.is_a?(Symbol)
     end
 
     def scalar?
@@ -125,17 +127,17 @@ module OpenCL
       self.scalar? && self.exact?
     end
 
-    private
-
     # Type of field can only be built-in types.
-    def parse_structure_tag(tag)
+    def parse_structure_tag(type_tag)
       t = []
       sz = 0
+      tag = type_tag.clone
+
       until tag.empty?
         field_name, type, size = tag
-        raise ArgumentError, 'Field name must be a String.' unless field_name.is_a?(String)
-        raise ArgumentError, 'Invalid field name.' unless valid_c_name?(field_name)
-        raise ArgumentError, 'Invalid type tag.' unless type.is_a?(Symbol)
+        raise ArgumentError, 'field name must be a String.' unless field_name.is_a?(String)
+        raise ArgumentError, 'invalid field name.' unless valid_c_name?(field_name)
+        raise ArgumentError, 'invalid type tag.' unless type.is_a?(Symbol)
         type = Type.new(type)
         if size.nil? || size.is_a?(String)
           size = 1
@@ -143,13 +145,15 @@ module OpenCL
         elsif size.is_a?(Fixnum) && size > 0
           tag.shift 3
         else
-          raise ArgumentError, 'Invalid field size.'
+          raise ArgumentError, 'invalid field size.'
         end
         t += [field_name, type, size]
         sz += type.size * size
       end
       [t, sz]
     end
+
+    private
 
     # Roughly check if the field name of a Structure data type is a valid
     # identifier in C. Might be wrong if the name is a C keyword.
@@ -168,20 +172,20 @@ typedef #{c_name(self)} T;
     end
 
     def c_name(type)
-      raise ArgumentError, 'Expected a built-in data type.' unless type.number?
+      raise ArgumentError, 'expected a built-in data type.' unless type.number?
       type.tag.to_s[3..-1]
     end
 
     def c_def_structure
-      t = self.tag.dup
+      t = @def.dup
       tmpl = <<-EOT
 typedef struct {
   <% until t.empty? do %>
     <% name, type, size = t.shift(3) %>
     <% if size == 1 %>
-      <%= c_name(type) %> <%= name %>;
+    <%= c_name(type) %> <%= name %>;
     <% else %>
-      <%= c_name(type) %> <%= name %>[<%= size %>];
+    <%= c_name(type) %> <%= name %>[<%= size %>];
     <% end %>
   <% end %>
 } T;

@@ -18,12 +18,18 @@ describe Structure do
 
   it 'should be able to wrap a pointer' do
     sz = Type.new(tag).size
-    ptr = HostPointer.new :cl_uchar, sz
+    ptr = HostPointer.new :cl_uchar, sz * 2
     ptr.assign 'john smith'
     sut = Structure.new tag, ptr
     sut.name[0].should.equal 'j'.ord
     sut.name[1].should.equal 'o'.ord
     sut.name[9].should.equal 'h'.ord
+
+    sut.wrap ptr, sz
+    ptr.assign 'aiww', sz
+    sut.name[0].should.equal 'a'.ord
+    sut.name[1].should.equal 'i'.ord
+    sut.name[2].should.equal 'w'.ord
   end
 
   the 'accessor methods' do
@@ -59,6 +65,13 @@ describe Structure do
     ptr = HostPointer.new :cl_uchar, 2
     should.raise(ArgumentError) {
       Structure.new tag, ptr
+    }
+    ptr = HostPointer.new :cl_uchar, Type.new(tag).size
+    should.not.raise(ArgumentError) {
+      Structure.new tag, ptr
+    }
+    should.raise(ArgumentError) {
+      Structure.new tag, ptr, 1
     }
   end
 

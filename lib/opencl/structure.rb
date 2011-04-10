@@ -6,34 +6,51 @@ module OpenCL
   #
   class Structure < BasicObject
 
-    def initialize(type, pointer = nil)
+    def initialize(type, pointer = nil, offset = 0)
       @type = type.is_a?(Type) ? type : Type.new(type)
       ::Kernel::raise ::ArgumentError, 'invalid data type, not a structure.' unless @type.structure?
 
+      @fields = {}
       if pointer.nil?
         @pointer = HostPointer.new :cl_uchar, self.size
         wrap_address
       else
-        self.wrap(pointer)
+        self.wrap(pointer, offset)
       end
     end
 
-    def self.wrap(type, address)
-      self.new type, address
+    # Same as calling +Structure.new(type, address, offset)+
+    def self.wrap(type, address, offset = 0)
+      self.new type, address, offset
     end
 
     attr_reader :type
 
+    attr_reader :pointer
+
     # Reuse the receiver, make it the accessor to another peice of buffer.
-    def wrap(pointer)
-      ::Kernel::raise ::ArgumentError, "" if pointer.byte_size < self.size
-      @pointer = HostPointer.wrap_pointer pointer.address, :cl_uchar, self.size
+    def wrap(pointer, offset = 0)
+      if offset < 0 || pointer.byte_size - offset < self.size
+        ::Kernel::raise ::ArgumentError, "pointer size is too small."
+      end
+
+      @pointer = HostPointer.wrap_pointer pointer.address + offset, :cl_uchar, self.size
       wrap_address
     end
 
     # Returns the size of the structure in byte.
     def size
       self.type.size
+    end
+
+    def is_a?(klass)
+      klass == Structure || klass == BasicObject
+    end
+
+    def respond_to?(meth)
+      m = meth.to_s
+      m = $1 if (m =~ /(.*)=$/)
+      @fields.has_key?(meth)
     end
 
     def method_missing(meth, *args)
@@ -74,7 +91,7 @@ module OpenCL
     def wrap_address
       @fields = {}
       addr = @pointer.address
-      tag = self.type.tag.clone
+      tag, _ = @type.parse_structure_tag(@type.tag)
 
       until tag.empty?
         name, type, length = tag.shift(3)
