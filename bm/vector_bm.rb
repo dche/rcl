@@ -148,13 +148,13 @@ end
   test 'Multiple operations in sequence.'
   bm(8) do |b|
     b.report('NArray') do
-      60.times do
+      6.times do
         ((na * mul_na + add_na).random * n + mul_na) * mul_na + m
       end
     end if has_narray
 
     b.report('OpenCL') do
-      60.times do
+      6.times do
         (vec.mad(mul_vec, add_vec) * n + mul_vec) * mul_vec + m
       end
     end
@@ -163,7 +163,7 @@ end
   test 'Trigonometric functions.'
   bm(8) do |b|
     b.report('Ruby') do
-      10.times do
+      1.times do
         ra.map do |n|
           Math.sin n
         end.map do |n|
@@ -177,13 +177,13 @@ end
     end
 
     b.report('NArray') do
-      10.times do
+      1.times do
         NMath.tan(NMath.cos(NMath.tan(NMath.sin(na))))
       end
     end if has_narray
 
     b.report('OpenCL') do
-      10.times do
+      1.times do
         vec.sin.tan.cos.tan
       end
     end
