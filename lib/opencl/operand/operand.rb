@@ -5,37 +5,91 @@ module OpenCL
   # An Operand object is a typed Buffer that has a program associated with it.
   class Operand < Buffer
 
-    @@common_source = File.read File.join(File.dirname(__FILE__), 'program.cl')
-    @@libraries = []
-    @@programs = {}
+    class << self
+      def inherited(cls)
+        @libraries ||= []
+        @libraries.each do |lib|
+          cls.use lib
+        end
+      end
 
-    # Makes a Library to be usable by a class of Operand objects.
-    #
-    # Note
-    #
-    # if an Operand object (instance of subclasses of Operand,
-    # e.g., Vector, Matrix, and Set) uses a Library is depends on the type
-    # of the object.
-    #
-    def self.use(lib)
-      return if @@libraries.include?(lib)
-      raise ArgumentError, "expected a OpenCL::Library" unless lib < Library
-      @@libraries << lib
-      nil
+      # Makes a Library to be usable by a class of Operand objects.
+      #
+      # Note
+      #
+      # if an Operand object (instance of subclasses of Operand,
+      # e.g., Vector, Matrix, and Set) uses a Library is depends on the type
+      # of the object.
+      #
+      def use(lib)
+        @libraries ||= []
+        return if @libraries.include?(lib)
+        raise ArgumentError, "expected a OpenCL::Library" unless lib < Library
+        @libraries << lib
+        nil
+      end
+
+      # Returns the OpenCL Program object for give type +type+.
+      #
+      def program(type)
+        @programs ||= {}
+
+        tag = type.tag
+        version = self.libraries.length
+
+        self.cl_source(type)
+        src, ver = @program_sources[tag]
+
+        if @programs[tag].nil? || ver < version
+          @programs[tag] = Program.new src, '-cl-mad-enable'
+        end
+        @programs[tag]
+      end
+
+      # Returns the CL source code for given data type +type+.
+      def cl_source(type)
+        @program_sources ||= {}
+
+        libs = self.libraries
+        version = libs.length
+        tag = type.tag
+
+        src, ver = @program_sources[tag]
+        if src.nil? || ver < version
+          if src.nil?
+            ver = 0
+            src = type.to_cdef
+          end
+          # collect program sources.
+          ver.upto(version - 1) do |i|
+            lib = libs[i]
+            next unless type.compatible?(lib.type)
+            src << lib.source.to_s
+          end
+          cl_src = ERB.new(src).result(binding)
+          @program_sources[tag] = [cl_src, version]
+        end
+        @program_sources[tag].first
+      end
+
+      # Returns the Array of Libraries used by the receiver.
+      def libraries
+        @libraries ||= []
+      end
+
     end
 
-    # Create a new Operand (a Buffer).
+    # Create a new Operand object.
     def initialize(size, type)
       @size = size.to_i
       raise ArgumentError, 'expected size is larger than 0' if @size < 1
       @type = Type.new(type)
 
       @library_version = 0
-      @program_source = @@common_source + self.type.to_cdef
       update_library
 
-      bsz = size * @type.size
-      super bsz
+      byte_size = size * @type.size
+      super byte_size
     end
 
     # Data type of elements.
@@ -45,9 +99,11 @@ module OpenCL
     attr_reader :size
     alias :length :size
 
-    def program_source
-      update_library if library_outdated?
-      @program_source.clone
+    def initialize_copy(from)
+      super
+      @reduction_buffer = nil
+    end
+
     def resize(sz)
       return self if sz <= self.size
 
@@ -96,7 +152,7 @@ module OpenCL
       # create a hidden buffer, the size is at most a half of self.size.
       if @reduction_buffer.nil?
         sz = next_gws(self.length)
-        @reduction_buffer = self.class.new sz, self.type.tag
+        @reduction_buffer = Operand.new sz, self.type.tag
       end
       out = @reduction_buffer
       out[0] = self[0] if self.length == 1

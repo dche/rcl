@@ -122,6 +122,7 @@ module OpenCL
 
           case type
           when :mem
+            value.unmap_pointer
             k.set_arg i, type, value.memory
           else
             k.set_arg i, type, value
