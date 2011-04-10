@@ -7,10 +7,6 @@ module OpenCL
   # vector types (e.g., :cl_float 16)
   class Vector < NDArray
 
-    def initialize(length, type = :cl_float)
-      super [length], type
-    end
-
     def to_s
       s = '['
       s << [self.length, 32].min.times.map do |i|; self[i]; end.join(', ')

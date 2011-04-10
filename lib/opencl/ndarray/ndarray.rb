@@ -7,11 +7,14 @@ module OpenCL
   class NDArray < Operand
 
     def initialize(shape, type = :cl_float)
-      @shape = verify_shape(shape).clone.freeze
+      shp = shape.is_a?(Array) ? shape : [shape]
+      @shape = verify_shape(shp).clone.freeze
       super @shape.reduce(:*), type
     end
 
     attr_reader :shape
+
+    undef :resize
 
     def dimension
       @shape.length
@@ -26,7 +29,6 @@ module OpenCL
 
     def type_compatible?(nda)
       return false unless self.class == nda.class
-      return false unless nda.is_a?(self.class)
       return (self.shape == nda.shape && self.type == nda.type)
     end
 

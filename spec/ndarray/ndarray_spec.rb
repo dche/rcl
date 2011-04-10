@@ -6,9 +6,6 @@ describe NDArray do
   given 'invalid shapes' do
     it 'should raise ArgumentError' do
       should.raise(ArgumentError) {
-        NDArray.new 1, :cl_float
-      }
-      should.raise(ArgumentError) {
         NDArray.new [1, 0], :cl_float
       }
       should.raise(ArgumentError) {
@@ -24,6 +21,7 @@ describe NDArray do
     it 'should not raise any Exception' do
       should.not.raise(Exception) {
         NDArray.new [1], :cl_char
+        NDArray.new 32, :cl_char
         NDArray.new [2, 3]
         NDArray.new [1, 2, 3, 4, 5], :cl_float4
         NDArray.new ['1', '2']
