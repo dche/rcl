@@ -30,6 +30,25 @@ module OpenCL
         "native_log(#{flt})"
       end
 
+      def_kernel(:rcl_power) do
+        <<-EOK
+__kernel void
+rcl_power(__global T *vec, int length, T number)
+{
+    int gid = get_global_id(0);
+    if (gid < length) {
+        vec[gid] = pow(vec[gid], number);
+    }
+}
+        EOK
+      end
+
+      def_method(:power) do |number|
+        sz = self.size
+        execute_kernel :rcl_power, [sz], :mem, self, :cl_int, sz, self.type.tag, number
+      end
+      alias_method :**, :power
+
     end
 
     use lib

@@ -48,23 +48,6 @@ rcl_vector_fill_range_log(__global T *vec, int length, float start, float step, 
   class Vector
 
     class <<self
-      # Creates a Vector with same length and type as of the parameter.
-      def like(vector)
-        self.new(vector.length, vector.type.tag)
-      end
-
-      # Creates a Vector and fill it with all ones.
-      def ones(length, type = :cl_float)
-        raise ArgumentError, "can't initialize a Vector of structures to all ones." unless Type.new(type).number?
-        self.new(length, type).fill(1)
-      end
-
-      def ones_like(vector)
-        vec = self.like(vector)
-        raise ArgumentError, "can't initialize a Vector of structures to all ones." unless vector.type.number?
-        vec.fill(1)
-      end
-
       def range(range, step = 1, type = :cl_float)
         t = Type.new(type)
         raise ArgumentError, "expected a scalar data type" unless t.scalar?
@@ -89,10 +72,40 @@ rcl_vector_fill_range_log(__global T *vec, int length, float start, float step, 
         self.new(len, type).fill_range(start, step)
       end
 
-      def rand(length, type = :cl_float)
-        self.new(length, type).rand
+      # Creates a Vecotr of type :cl_float which contains numbers that are
+      # evenly spaced.
+      def linspace(start, stop, n)
+        vec = self.new n, :cl_float
+        case n
+        when 1
+          vec[0] = start
+        when 2
+          vec[0] = start
+          vec[1] = stop
+        else
+          step = (stop - start).fdiv(n - 1)
+          vec.fill_range start, step
+        end
+        vec
       end
-    end
 
+      # Create a Vector of type :cl_float which contains numbers that are
+      # spaced evenly on a log scale.
+      def logspace(start, stop, n, base = 10.0)
+        vec = self.new n, :cl_float
+        case n
+        when 1
+          vec[0] = start
+        when 2
+          vec[0] = start
+          vec[1] = stop
+        else
+          step = (stop - start).fdiv(n - 1)
+          vec.fill_range_log start, step, base
+        end
+        vec
+      end
+
+    end
   end
 end

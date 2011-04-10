@@ -93,4 +93,29 @@ describe "Generators of OpenCL::Vector" do
     end
   end
 
+  the '::linspace' do
+    v = Vector.linspace(0, 100, 1)
+    v[0].should.equal 0
+    v = Vector.linspace(0, 100, 2)
+    v[0].should.equal 0
+    v[1].should.equal 100
+    v = Vector.linspace(2.0, 3.0, 5)
+    v.length.should.equal 5
+    v[0].should.equal 2.0
+    v[1].should.equal 2.25
+    v[2].should.equal 2.5
+    v[3].should.equal 2.75
+    v[4].should.equal 3.0
+  end
+
+  the '::logspace' do
+    should.raise(ArgumentError) {
+      Vector.new(20, :cl_float).fill_range_log(2, 1, 0)
+    }
+    v = Vector.logspace(2, 3, 4)
+    v[0].should.close 100, 1e-4
+    v[1].should.close 215.443469, 1e-4
+    v[3].should.close 1000, 1e-4
+  end
+
 end
