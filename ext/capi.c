@@ -1350,7 +1350,12 @@ rcl_finish(VALUE self)
 #define Extract_Pointer(ptr, var) \
     void *var; \
     do { \
-        if (!NIL_P(ptr)) Expect_RCL_Type(ptr, Pointer); \
+        if (!NIL_P(ptr)) { \
+            Check_Type(ptr, T_DATA); \
+            if (rb_class_of(ptr) != rcl_cPointer && rb_class_of(ptr) != rcl_cMappedPointer) { \
+                rb_raise(rb_eTypeError, "expected %s is an instance of Pointer or MappedPointer.", #ptr); \
+            } \
+        } \
         var = NIL_P(ptr) ? NULL : Pointer_Address(ptr); \
     } while (0)
 
@@ -2115,13 +2120,7 @@ rcl_mem_create_buffer(VALUE mod, VALUE context, VALUE flags, VALUE size, VALUE h
     cl_mem_flags mf = FIX2INT(flags);
 
     Extract_Size(size, sz);
-
-    void *hp = NULL;
-    if (!NIL_P(host_ptr)) {
-        // BUG
-        sz = Pointer_Size(host_ptr);
-        hp = Pointer_Address(host_ptr);
-    }
+    Extract_Pointer(host_ptr, hp);
 
     cl_int res;
     cl_mem mem = clCreateBuffer(cxt, mf, sz, hp, &res);
