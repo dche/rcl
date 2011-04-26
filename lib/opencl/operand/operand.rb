@@ -165,11 +165,10 @@ module OpenCL
     def reduce(kernel, n = self.length)
       return self[0] if self.length == 1
 
-      # create a hidden buffer, the size is at most a half of self.size.
+      # create a hidden buffer, the size is a half of self.size at most.
       if @reduction_buffer.nil?
         sz = next_gws(self.length)
         @reduction_buffer = Operand.new sz, self.type.tag
-        @reduction_buffer.pin
       end
       out = @reduction_buffer
       return out[0] if n == 1
@@ -194,8 +193,9 @@ module OpenCL
         gws = groups * lws
         [[gws], [lws], [:mem, in_buff, :mem, out, :local, (lws * ts), :cl_int, (next_pow2(n) / gws).ceil, :cl_int, n]]
       end
-      # after execute_kernel, the first #<groups> elements of out contains the
-      # reduced values for next pass of reduction.
+      # after execute_kernel, the first #<groups> elements of +out+ contains the
+      # reduced values for next pass of reduction. The recursive terminates
+      # when <groups> is 1.
       return reduce(kernel, groups)
     end
 
