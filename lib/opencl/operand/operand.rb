@@ -163,19 +163,16 @@ module OpenCL
 
     # Recursively executes a reduction kernel.
     def reduce(kernel, n = self.length)
+      return self[0] if self.length == 1
+
       # create a hidden buffer, the size is at most a half of self.size.
       if @reduction_buffer.nil?
         sz = next_gws(self.length)
         @reduction_buffer = Operand.new sz, self.type.tag
+        @reduction_buffer.pin
       end
       out = @reduction_buffer
-      out[0] = self[0] if self.length == 1
-
-      if n == 1
-        res = out[0]
-        out.unmap_pointer
-        return res
-      end
+      return out[0] if n == 1
 
       groups = 1
       ts = self.type.size
