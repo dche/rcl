@@ -38,6 +38,23 @@ describe Buffer do
     should.raise(ArgumentError) { buff.write p, 0, 3 }
   end
 
+  the '#pinned' do
+    buf = Buffer.new 1024, :inout
+    buf.should.not.be.pinned
+    buf.pin
+    buf.should.be.pinned
+    buf.should.not.be.pointer_mapped
+  end
+
+  the 'pointer should not be keeping mapped after a pin' do
+    buf = Buffer.new 1024, :inout
+    buf.should.not.be.pinned
+    buf.map_pointer
+    buf.should.be.pointer_mapped
+    buf.pin
+    buf.should.not.be.pointer_mapped
+  end
+
   the '#dup' do
     ptr = HostPointer.new :cl_float, 4
     ptr.assign [1, 2, 3, 4].pack('f4')
@@ -245,6 +262,32 @@ describe Buffer do
     }
 
     buf.resize 512
+    buf.should.not.be.pointer_mapped
+    buf.should.be.in
+    buf.should.be.out
+    buf.byte_size.should.equal 512
+    ptr = buf.map_pointer
+    ptr.cast_to :cl_float
+    ptr[0].should.equal 1.5
+    ptr[1].should.equal 0.25
+    ptr[2].should.equal 0.125
+    should.not.raise(Exception) {
+      ptr[127] = 0.25
+    }
+    ptr[127].should.equal 0.25
+  end
+
+  the 'resize a pinned buffer' do
+    buf = Buffer.new 256, :inout
+    buf.pin
+    ptr = buf.map_pointer
+    ptr.cast_to :cl_float
+    ptr[0] = 1.5
+    ptr[1] = 0.25
+    ptr[2] = 0.125
+
+    buf.resize 512
+    buf.should.be.pinned
     buf.should.not.be.pointer_mapped
     buf.should.be.in
     buf.should.be.out

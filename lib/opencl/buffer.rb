@@ -7,7 +7,7 @@ module OpenCL
   class Buffer
     # Buffer size in byte.
     attr_reader :byte_size
-    # Capi::Memory object. You should not use it.
+    # Capi::Memory object. Used by the Program object, and you should not use it.
     attr_reader :memory
 
     # Creates a Buffer object.
@@ -26,8 +26,10 @@ module OpenCL
       end
 
       begin
-        @memory = @context.create_buffer(@io, size, nil)
         @byte_size = size
+        @memory = @context.create_buffer(@io, size, nil)
+        @pinned_memory = @memory
+        @pinned_pointer = nil
         @mapped_pointer = nil
       rescue Capi::CLError => e
         raise CLError.new(e)
@@ -42,13 +44,36 @@ module OpenCL
         cq = @context.command_queue_of @context.default_device
         cq.enqueue_copy_buffer(orig.memory, @memory, 0, 0, self.byte_size, nil)
 
+        @pinned_memory = @memory
+        @pinned_pointer = nil
         @mapped_pointer = nil
       rescue Capi::CLError => e
         raise CLError.new(e.message)
       end
     end
 
-    # Copy the content of the receiver to aother buffer.
+    # Attaches a pinned memory object to the receiver.
+    # This pinned memory object is always mapped to a host pointer.
+    def pin
+      return self if self.pinned?
+
+      self.unmap_pointer
+      begin
+        @pinned_memory = @context.create_buffer(@io | Capi::CL_MEM_ALLOC_HOST_PTR, @byte_size, nil)
+        cq = @context.command_queue_of @context.default_device
+        @pinned_pointer, _ = cq.enqueue_map_buffer @pinned_memory, true, map_flag, 0, self.byte_size, nil
+      rescue Capi::CLError => e
+        raise CLError.new(e)
+      end
+      self
+    end
+
+    # Returns +true+ if there is pinned memory attached.
+    def pinned?
+      !@pinned_pointer.nil?
+    end
+
+    # Copies the content of the receiver to aother Buffer object.
     #
     # buffer - A +Buffer+ object. Its byte_size must be larger than
     #          the +size+.
@@ -85,7 +110,7 @@ module OpenCL
       self
     end
 
-    # Copy contents from another Buffer to the receiver.
+    # Copies contents from another Buffer to the receiver.
     def copy_from(buffer, size = nil, start = 0, source_start = 0)
       buffer.copy_to self, size, source_start, start
       self
@@ -96,21 +121,30 @@ module OpenCL
       return self if sz <= self.byte_size
 
       self.unmap_pointer
-
+      pinned = self.pinned?
       begin
-        mo = @context.create_buffer(@io, sz, nil)
         cq = @context.command_queue_of @context.default_device
+
+        if pinned
+          cq.enqueue_unmap_mem_object @pinned_memory, @pinned_pointer, nil
+          @pinned_pointer = nil
+        end
+        mo = @context.create_buffer(@io, sz, nil)
         cq.enqueue_copy_buffer(@memory, mo, 0, 0, self.byte_size, nil)
 
         @memory = mo
+        @pinned_memory = mo
+        @pinned_pointer = nil
         @byte_size = sz
+
+        self.pin if pinned
       rescue Capi::CLError => e
         raise CLError.new(e)
       end
       self
     end
 
-    # Create a new Buffer, and copy +size+ bytes of the receiver
+    # Creates a new Buffer, and copy +size+ bytes of the receiver
     # start from the offset +start+.
     def slice(start = 0, size = nil)
       size = self.byte_size if size.nil?
@@ -126,7 +160,7 @@ module OpenCL
       self.class.new(size, io).copy_from(self, size, 0, start)
     end
 
-    # Read data from the device memory, and store the data to a HostPointer.
+    # Reads data from the device memory, and stores the data to a HostPointer.
     #
     # Does nothing if the buffer's IO flag is :in, or the byte size of the
     # HostPointer is less than the size of memory.
@@ -142,7 +176,7 @@ module OpenCL
     end
     alias :read :store_data_to
 
-    # Write the data pointed by a HostPointer to the device memroy.
+    # Writes the data pointed by a HostPointer to the device memroy.
     #
     # (HostPointer) pointer -
     # (Integer) offset -
@@ -156,15 +190,18 @@ module OpenCL
 
     # Returns a MappedPointer object.
     #
-    # Because the behavior that kernel executes on mapped Memory objects
-    # is undefined, we restrict that there is only one
-    #
     def map_pointer
-      return @mapped_pointer unless @mapped_pointer.nil?
+      return @mapped_pointer if self.pointer_mapped?
 
       begin
         cq = @context.command_queue_of @context.default_device
-        @mapped_pointer, _ = cq.enqueue_map_buffer self.memory, true, map_flag, 0, self.byte_size, nil
+        if self.pinned?
+          cq.enqueue_read_buffer(self.memory, true, 0, self.byte_size, @pinned_pointer, nil);
+          @pinned_pointer.clear_dirty
+          @mapped_pointer = @pinned_pointer
+        else
+          @mapped_pointer, _ = cq.enqueue_map_buffer self.memory, true, map_flag, 0, self.byte_size, nil
+        end
       rescue Capi::CLError => e
         warn self.inspect + ".map(), " + CLError.new(e.message).to_s
         raise CLError.new(e.message)
@@ -175,13 +212,22 @@ module OpenCL
     # Un-maps the buffer object, or does nothing if the receiver is not mapped.
     #
     # Returns the receiver.
+    #
+    #--
+    # FIXME: possible memory leak if the receiver is not unmapped.
+    #++
     def unmap_pointer
-      return self if @mapped_pointer.nil?
+      return self unless self.pointer_mapped?
 
       begin
         cq = @context.command_queue_of @context.default_device
-        cq.enqueue_unmap_mem_object self.memory, @mapped_pointer, nil
-
+        if self.pinned?
+          if @pinned_pointer.dirty?
+            cq.enqueue_write_buffer self.memory, true, 0, self.byte_size, @pinned_pointer, nil;
+          end
+        else
+          cq.enqueue_unmap_mem_object self.memory, @mapped_pointer, nil
+        end
         @mapped_pointer = nil
       rescue Capi::CLError => e
         warn self.inspect + ".unmap_pointer(), " + CLError.new(e.message).to_s
