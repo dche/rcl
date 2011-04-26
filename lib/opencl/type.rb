@@ -131,7 +131,7 @@ module OpenCL
     def parse_structure_tag(type_tag)
       t = []
       sz = 0
-      tag = type_tag.clone
+      tag = type_tag.dup
 
       until tag.empty?
         field_name, type, size = tag
