@@ -46,7 +46,8 @@
 #include "capi.h"
 
 // Convert a Ruby object to half precision float.
-inline cl_half Extract_Half(VALUE ro)
+static inline cl_half
+Extract_Half(VALUE ro)
 {
     Expect_Float(ro);
 
@@ -105,7 +106,8 @@ inline cl_half Extract_Half(VALUE ro)
     return h;
 }
 
-inline VALUE rcl_half_float_new(cl_half h)
+static inline VALUE
+rcl_half_float_new(cl_half h)
 {
     double v = 0;
     uint32_t *f = ((uint32_t *)&v);
