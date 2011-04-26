@@ -389,13 +389,13 @@ Native2Ruby(ID type, void *address)
  */
 
 typedef struct {
-
     int8_t  *alloc_address;
     void    *address;
     size_t   size;              // in number of elements, not in byte.
     size_t   type_size;
     ID       type;
     int      is_wrapper;
+    int      is_dirty;
 } rcl_pointer_t;
 
 #define BytesOf(p)      (p->size * p->type_size)
@@ -579,6 +579,7 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
     }
     p->size = FIX2UINT(size);
     p->type_size = rcl_type_size(p->type);
+    p->is_dirty = Qfalse;
 
     if (Need_Alloc(p)) {
         Alloc_Memory(p);
@@ -603,6 +604,7 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
     copy_p->type = orig_p->type;
     copy_p->size = orig_p->size;
     copy_p->type_size = orig_p->type_size;
+    copy_p->is_dirty = Qfalse;
 
     if (!Is_Pointer(orig_p)) {
         assert(!Need_Alloc(copy_p));
@@ -646,13 +648,14 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
     rcl_pointer_t *p = Pointer_Ptr(self);
     Extract_Size(index, i);
     if (NIL_P(value)) {
-        rb_raise(rb_eArgError, "Value can't be nil.");
+        rb_raise(rb_eArgError, "value can't be nil.");
     }
 
     if (i >= p->size) {
-        rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
+        rb_raise(rb_eRuntimeError, "subscriber exceeds the boundary.");
     }
     rcl_ruby2native(p->type, Element_Address(p, i), value);
+    p->is_dirty = Qtrue;
     return self;
 }
 
@@ -680,6 +683,7 @@ rcl_pointer_assign(VALUE self, VALUE address, VALUE size, VALUE offset)
 
     size_t cpysz = sz * p->type_size;
     memcpy(Element_Address(p, os), addr, cpysz);
+    p->is_dirty = Qtrue;
 
     return self;
 }
@@ -708,6 +712,35 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
     size_t bos = os * p->type_size;
     size_t cpysz = (BytesOf(p) - bos) > sz ? sz : (BytesOf(p) - bos);
     memcpy(Element_Address(p, os), (void *)ptr, cpysz);
+    p->is_dirty = Qtrue;
+
+    return self;
+}
+
+/*
+ * Returns +true+ if the receiver has been changed on host side.
+ *
+ * call-seq:
+ *      HostPointer#dirty?
+ */
+static VALUE
+rcl_pointer_is_dirty(VALUE self)
+{
+    rcl_pointer_t *p = Pointer_Ptr(self);
+    return p->is_dirty;
+}
+
+/*
+ * Clears the dirty flag of the receiver.
+ *
+ * call-seq:
+ *      HostPointer#clear_dirty
+ */
+static VALUE
+rcl_pointer_clear_dirty(VALUE self)
+{
+    rcl_pointer_t *p = Pointer_Ptr(self);
+    p->is_dirty = Qfalse;
     return self;
 }
 
@@ -956,6 +989,8 @@ define_rcl_class_pointer(void)
     rb_undef_alloc_func(rcl_cMappedPointer);
     rb_define_method(rcl_cMappedPointer, "[]", rcl_pointer_aref, 1);
     rb_define_method(rcl_cMappedPointer, "[]=", rcl_pointer_aset, 2);
+    rb_define_method(rcl_cMappedPointer, "dirty?", rcl_pointer_is_dirty, 0);
+    rb_define_method(rcl_cMappedPointer, "clear_dirty", rcl_pointer_clear_dirty, 0);
     rb_define_method(rcl_cMappedPointer, "assign_pointer", rcl_pointer_assign, 3);
     rb_define_method(rcl_cMappedPointer, "assign_byte_string", rcl_pointer_assign_byte_string, 2);
     rb_define_method(rcl_cMappedPointer, "address", rcl_pointer_address, 0);

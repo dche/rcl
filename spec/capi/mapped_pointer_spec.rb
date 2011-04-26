@@ -114,4 +114,21 @@ describe MappedPointer do
     mp[4].should.equal 0
     mp[5].should.equal 0
   end
+
+  the '#dirty? and #clear_dirty' do
+    mem = @cxt.create_buffer(CL_MEM_READ_WRITE, 16, nil)
+
+    cq = @cxt.create_command_queue
+    mp = cq.enqueue_map_buffer(mem, true, CL_MAP_READ, 0, 16, nil).first
+    mp.should.not.be.dirty
+    mp.assign [1, 3, 4]
+    mp.should.be.dirty
+    mp.clear_dirty
+    mp.should.not.be.dirty
+    mp[0] = 0
+    mp.should.be.dirty
+    mp.clear_dirty
+    mp.assign "abc"
+    mp.should.be.dirty
+  end
 end
