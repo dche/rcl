@@ -192,7 +192,8 @@ typedef struct {
 #define LOAD
 #define STORE
       EOT
-      ERB.new(tmpl, nil, '>').result(binding)
+      # ERB.new(tmpl, nil, '>').result(binding)   # do not work on MacRuby.
+      ERB.new(tmpl).result(binding)
     end
   end
 end
