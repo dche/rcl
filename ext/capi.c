@@ -44,7 +44,7 @@ extern void define_rcl_class_pointer(void);
     do { \
         if (!FIXNUM_P(ro)) \
             rb_raise(rb_eTypeError, \
-                    "Expected %s an OpenCL enumerated constant. ", #ro); \
+                    "expected %s an OpenCL enumerated constant. ", #ro); \
     } while (0)
 
 #define CL_Pointers(ra, klass, c_type, svar) \
@@ -999,7 +999,7 @@ set_context_properties(cl_context_properties *props, VALUE arr, size_t len)
                 props[i+1] = (cl_context_properties)DATA_PTR(ptr);
                 break;
             default:
-                rb_raise(rb_eArgError, "Invalid context property.");
+                rb_raise(rb_eArgError, "invalid context property.");
         }
     }
 }
@@ -1033,7 +1033,7 @@ rcl_context_init(VALUE self, VALUE parg, VALUE darg)
     if (TYPE(parg) == T_ARRAY) {
         size_t ar_len = RARRAY_LEN(parg);
         if ((ar_len  % 2) != 0) {
-            rb_raise(rb_eArgError, "Invalid context properties list.");
+            rb_raise(rb_eArgError, "invalid context properties list.");
         }
 
         props = ALLOCA_N(cl_context_properties, ar_len + 1);
@@ -1049,7 +1049,7 @@ rcl_context_init(VALUE self, VALUE parg, VALUE darg)
     } else if(FIXNUM_P(darg)) {
         dev_type = FIX2UINT(darg);
     } else {
-        rb_raise(rb_eArgError, "Invalid argument. Expected device type or device array.");
+        rb_raise(rb_eArgError, "invalid argument. Expected device type or device array.");
     }
 
     cl_int res;
@@ -1182,7 +1182,7 @@ rcl_context_supported_image_formats(VALUE self, VALUE mem_flag, VALUE mem_obj_ty
 
     cl_image_format *ifs = ALLOCA_N(cl_image_format, num_ret);
     if (NULL == ifs) {
-        rb_raise(rb_eRuntimeError, "Out of memory.");
+        rb_raise(rb_eRuntimeError, "out of memory.");
     }
     res = clGetSupportedImageFormats(cxt, mf, mt, num_ret, ifs, NULL);
     Check_And_Raise(res);
@@ -1652,7 +1652,7 @@ rcl_cq_enqueue_unmap_mem_obj(VALUE self, VALUE mem_obj, VALUE mapped_ptr,
 {
     Extract_Mem_Object(mem_obj, mo);
     if (CLASS_OF(mapped_ptr) != rcl_cMappedPointer) {
-        rb_raise(rb_eArgError, "Expected argument 2 is a MappedPointer.");
+        rb_raise(rb_eArgError, "expected argument 2 is a MappedPointer.");
     }
     void *mp = Pointer_Address(mapped_ptr);
     Extract_Wait_For_Events(events, num_evt, pevts);
@@ -1684,7 +1684,7 @@ rcl_cq_enqueue_ndrange_kernel(VALUE self, VALUE kernel, VALUE work_dim,
 
     Extract_Size_Array(wd, global_work_size, gws);
     if (gws == NULL) {
-        rb_raise(rb_eArgError, "Global work sizes can't be nil.");
+        rb_raise(rb_eArgError, "global work sizes can't be nil.");
     }
     Extract_Size_Array(wd, local_work_size, lws);
 
@@ -2359,7 +2359,7 @@ rcl_program_create_from_binary(cl_context context, VALUE devices, VALUE binaries
 
     cl_uint num_dev = (cl_uint)RARRAY_LEN(devices);
     if (RARRAY_LEN(binaries) != num_dev) {
-        rb_raise(rb_eArgError, "Number of binaries shall equal to number of devices.");
+        rb_raise(rb_eArgError, "number of binaries shall equal to number of devices.");
     }
 
     cl_device_id *devs = ALLOCA_N(cl_device_id, num_dev);
@@ -2398,7 +2398,7 @@ static VALUE
 rcl_program_init(int argc, VALUE *argv, VALUE self)
 {
     if (argc != 2 && argc != 3) {
-        rb_raise(rb_eArgError, "Wrong number of arguments.");
+        rb_raise(rb_eArgError, "wrong number of arguments.");
     }
 
     Expect_RCL_Type(argv[0], Context);

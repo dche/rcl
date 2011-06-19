@@ -2,7 +2,7 @@
 
 module OpenCL
   class Library
-    class <<self
+    class << self
       # Defines an Operator by providing the source code of a unary operation
       # which takes a single element of the Vecotr as argument.
       #

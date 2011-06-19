@@ -16,9 +16,6 @@ module OpenCL
     # If profiling is disabled, returns 0.
     attr_accessor :execution_time
 
-    #--
-    # FIXME: disallow empty kernel string.
-    #++
     def initialize(src = '', compile_options = '')
       @context = OpenCL::Context.default_context
       # Lock to prevent compiling while executing call()
@@ -99,8 +96,12 @@ module OpenCL
 
         gws = lws = 0
 
+        # if sizes is nil, then we know the caller wants to query the program
+        # object for max local workgroup size and local memory size.
+        #
+        # A block with arity 2 must be given to accept these values.
         if sizes.nil?
-          raise ArgumentError, "No work sizes specified." unless block_given?
+          raise ArgumentError, "no work sizes specified." unless block_given?
 
           max_lws = k.workgroup_size_on_device(device)
           lmem_size = device.local_memory_size
@@ -113,7 +114,7 @@ module OpenCL
         end
 
         if args.size.odd? || args.size / 2 != k.argument_number
-          raise ArgumentError, "Wrong number of kernel arguments, (#{args.size / 2} for #{k.argument_number})."
+          raise ArgumentError, "wrong number of kernel arguments, (#{args.size / 2} for #{k.argument_number})."
         end
 
         (args.size / 2).times do |i|

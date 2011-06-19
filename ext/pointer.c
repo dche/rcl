@@ -227,7 +227,7 @@ rcl_type_size(ID id)
     if (type == id_type_##base_c_type##n) { \
         Expect_NonEmpty_Array(value); \
         if (n > RARRAY_LEN(value)) { \
-            rb_raise(rb_eArgError, "Expected number of elements is %d, but got %ld", n, RARRAY_LEN(value)); \
+            rb_raise(rb_eArgError, "expected number of elements is %d, but got %ld", n, RARRAY_LEN(value)); \
         } \
         base_c_type *ptr = (base_c_type *)address; \
         for (int i = 0; i < n; i++) { \
@@ -302,7 +302,7 @@ rcl_ruby2native(ID type, void *address, VALUE value)
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 8,  Expect_Float,   NUM2DBL);
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 16, Expect_Float,   NUM2DBL);
 
-    rb_raise(rb_eArgError, "Invalid type tag.");
+    rb_raise(rb_eArgError, "invalid type tag.");
 }
 
 #define IF_TYPE_TO_RUBY(c_type, convertor) \
@@ -413,7 +413,7 @@ Alloc_Memory(rcl_pointer_t *p)
     bzero(p->alloc_address, alloc_sz);
 
     if (p->alloc_address == NULL) {
-        rb_raise(rb_eRuntimeError, "Out of host memory.");
+        rb_raise(rb_eRuntimeError, "out of host memory.");
     }
     p->address = (void *)(((intptr_t)(p->alloc_address) + 0x80) & ~0x7F);
 }
@@ -514,7 +514,7 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
     Check_Type(type, T_SYMBOL);
     ID clt = SYM2ID(type);
     if (!Is_Type_Valid(clt)) {
-        rb_raise(rb_eArgError, "Invalid type tag.");
+        rb_raise(rb_eArgError, "invalid type tag.");
     }
 
     Extract_Size(size, sz);
@@ -597,7 +597,7 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
 
     if (orig_p->size == 0) {
         assert(orig_p->alloc_address == NULL && orig_p->address == NULL);
-        rb_raise(rb_eRuntimeError, "Can't clone a null pointer.");
+        rb_raise(rb_eRuntimeError, "can't clone a null pointer.");
     }
 
     assert(copy_p->alloc_address == NULL);
@@ -630,7 +630,7 @@ rcl_pointer_aref(VALUE self, VALUE index)
     Extract_Size(index, i);
 
     if (p->size == 0 || i > p->size - 1) {
-        rb_raise(rb_eRuntimeError, "Subscriber exceeds the boundary.");
+        rb_raise(rb_eRuntimeError, "subscriber exceeds the boundary.");
     }
     return Native2Ruby(p->type, Element_Address(p, i));
 }
@@ -700,13 +700,13 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
     rcl_pointer_t *p = Pointer_Ptr(self);
     Extract_Size(offset, os);
     if (os >= p->size) {
-        rb_raise(rb_eArgError, "Offset exceeds the boundary.");
+        rb_raise(rb_eArgError, "offset exceeds the boundary.");
     }
 
     const char *ptr = RSTRING_PTR(value);
     size_t sz = RSTRING_LEN(value);
     if (sz % p->type_size != 0) {
-        rb_raise(rb_eArgError, "Size of byte string does not match the data type of receiver.");
+        rb_raise(rb_eArgError, "size of byte string does not match the data type of receiver.");
     }
 
     size_t bos = os * p->type_size;
@@ -845,7 +845,7 @@ rcl_pointer_copy_from(VALUE self, VALUE src)
     rcl_pointer_t *sp = Pointer_Ptr(src);
 
     if (p->type != sp->type || p->size != sp->size) {
-        rb_raise(rb_eRuntimeError, "Size or type of source and target mismatch.");
+        rb_raise(rb_eRuntimeError, "size or type of source and target mismatch.");
     }
     if (!Is_Pointer(p)) {
         p->address = sp->address;
@@ -928,18 +928,18 @@ static VALUE
 rcl_mapped_pointer_coerce(VALUE self, VALUE type)
 {
     if (!SYMBOL_P(type)) {
-        rb_raise(rb_eArgError, "Expected argument 2 is a Symbol.");
+        rb_raise(rb_eArgError, "expected argument 2 is a Symbol.");
     }
 
     ID tid = SYM2ID(type);
     if (!Is_Type_Valid(tid)) {
-        rb_raise(rb_eArgError, "Unrecognized type name.");
+        rb_raise(rb_eArgError, "unrecognized type name.");
     }
 
     rcl_pointer_t *p = Pointer_Ptr(self);
     if (p->type == tid) return self;
     if (p->size == 0) {
-        rb_warn("Receiver is a null pointer.");
+        rb_warn("receiver is a null pointer.");
         return self;
     }
 
@@ -947,7 +947,7 @@ rcl_mapped_pointer_coerce(VALUE self, VALUE type)
     size_t sz = BytesOf(p);
 
     if (sz % tsz != 0) {
-        rb_raise(rb_eRuntimeError, "Casting to incompatible pointer type.");
+        rb_raise(rb_eRuntimeError, "casting to incompatible pointer type.");
     }
     size_t csz = sz / tsz;
 

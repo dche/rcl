@@ -47,7 +47,7 @@ rcl_vector_fill_range_log(__global T *vec, int length, float start, float step, 
 
   class Vector
 
-    class <<self
+    class << self
       def range(range, step = 1, type = :cl_float)
         t = Type.new(type)
         raise ArgumentError, "expected a scalar data type" unless t.scalar?

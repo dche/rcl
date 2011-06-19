@@ -1,6 +1,6 @@
 # encoding: utf-8
 #
-# copyright (c) 2010, Che Kenan
+# Copyright (c) 2010-2011, Che Kenan. All rights reserved.
 #
 #--
 # The FFT class is adapted from Apple's FFT OpenCL_FFT sample code.
@@ -78,7 +78,7 @@ module OpenCL
         # define methods according to data_format
         case self.data_format
         when :interleaved_complex
-          class <<self
+          class << self
             def forward(in_buffer, out_buffer)
               execute_interleaved(in_buffer, out_buffer, :forward)
             end
@@ -96,7 +96,7 @@ module OpenCL
             end
           end
         when :split_complex
-          class <<self
+          class << self
             def forward(in_real, in_image, out_real, out_image)
               execute_split(in_real, in_image, out_real, out_image, :forward)
             end
@@ -127,21 +127,21 @@ module OpenCL
         x, y, z = shape.map do |v|; v.nil? ? 1 : v; end
 
         if shape.length > 3 || x == 1 || (y == 1 && shape.length != 1) || (y != 1 && z == 1 && shape.length != 2)
-          raise ArgumentError, 'Invalid shape.'
+          raise ArgumentError, 'invalid shape.'
         end
 
         shape.each do |val|
           break if val.nil?
 
           if !val.is_a?(Fixnum) || val < 1
-            raise ArgumentError, 'Size must be a positive Integer.'
+            raise ArgumentError, 'size must be a positive Integer.'
           end
         end
 
         @shape = shape.dup
         # FIXME: too support any size of signals.
         if 6 * OpenCL.type_size(:cl_float2) * shape.reduce(:*) > OpenCL::Context.default_context.max_mem_alloc_size
-          raise ArgumentError, "Shape size is too large to fit the OpenCL devices in this platform."
+          raise ArgumentError, "shape size is too large to fit the OpenCL devices in this platform."
         end
 
         def @shape.x; self[0]; end
@@ -157,7 +157,7 @@ module OpenCL
         when :interleaved_complex, :split_complex
           @data_format = format
         else
-          raise ArgumentError, "Invalid data format: #{format}"
+          raise ArgumentError, "invalid data format: #{format}"
         end
         self
       end
@@ -274,7 +274,7 @@ module OpenCL
 
         # sanity checks
         if in_buff.byte_size != out_buff.byte_size
-          raise ArgumentError, "Sizes of input and output buffers mismatch (#{in_buff.byte_size} and #{out_buff.byte_size})."
+          raise ArgumentError, "sizes of input and output buffers mismatch (#{in_buff.byte_size} and #{out_buff.byte_size})."
         end
 
         in_place = (in_buff == out_buff)
@@ -284,7 +284,7 @@ module OpenCL
         batch_size = in_buff.byte_size / unit_size
         if batch_size < 1
           raise ArgumentError,
-                "Buffer sizes are too small, at least #{unit_size} bytes are needed."
+                "buffer sizes are too small, at least #{unit_size} bytes are needed."
         end
 
         alloc_interleaved_temp_buffer in_buff.byte_size
@@ -340,11 +340,11 @@ module OpenCL
         return self unless self.data_format == :split_complex
 
         if (in_real.byte_size != in_image.byte_size) || (out_real.byte_size != out_image.byte_size) || (in_real.byte_size != out_real.byte_size)
-          raise ArgumentError, "Sizes of buffers mismatch."
+          raise ArgumentError, "sizes of buffers mismatch."
         end
 
         if (in_real == out_real) != (in_image == out_image)
-          raise ArgumentError, "Buffers are overlapped."
+          raise ArgumentError, "buffers are overlapped."
         end
 
         in_place = (in_real == out_real)
@@ -355,7 +355,7 @@ module OpenCL
         batch_size = size / unit_size
         if batch_size < 1
           raise ArgumentError,
-                "Buffer sizes are too small to fit the shape, at least #{unit_size} bytes are needed."
+                "buffer sizes are too small to fit the shape, at least #{unit_size} bytes are needed."
         end
 
         alloc_split_temp_buffer(size)

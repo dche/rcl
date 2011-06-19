@@ -45,7 +45,7 @@
     do { \
         if (TYPE(ro) != T_ARRAY) \
             rb_raise(rb_eTypeError, \
-                    "Expected %s is an Array.", #ro); \
+                    "expected %s is an Array.", #ro); \
     } while (0)
 
 #define Expect_NonEmpty_Array(ro) \
@@ -53,7 +53,7 @@
         Expect_Array(ro); \
         if (RARRAY_LEN(ro) == 0) \
             rb_raise(rb_eArgError, \
-                    "Expected %s is not empty.", #ro); \
+                    "expected %s is not empty.", #ro); \
     } while (0)
 
 #define Extract_Size(sizet, var) \

@@ -1,4 +1,4 @@
-// copyright (c) 2010, Che Kenan
+// Copyright (c) 2010, Che Kenan
 //
 #ifndef M_PI
 #define M_PI 0x1.921fb54442d18p+1

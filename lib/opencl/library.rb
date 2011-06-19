@@ -9,7 +9,7 @@ module OpenCL
   #
   class Library
 
-    class <<self
+    class << self
       # The OpenCL kernel source.
       attr_reader :source
       # A Module that defines methods to call kernels defined in the receiver.

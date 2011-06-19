@@ -6,7 +6,7 @@
 # You should use more rubyish APIs that defiend in module OpenCL, e.g.,
 # Context, Program, Buffer, Operand and NDArray
 #
-# copyright (c) 2010, Che Kenan
+# Copyright (c) 2010-2011, Che Kenan. All rights reserved.
 
 require File.join(File.dirname(__FILE__), 'capi')
 
@@ -265,7 +265,7 @@ module OpenCL
         when :image_3d
           self.create_image_3d(*args)
         else
-          raise ArgumentError, "Invalid memory object type."
+          raise ArgumentError, "invalid memory object type."
         end
       end
     end
@@ -293,7 +293,7 @@ module OpenCL
       when String
         self.assign_byte_string ary, offset
       else
-        raise ArgumentError, "Expected Array or String, but got #{ary.class}."
+        raise ArgumentError, "expected Array or String, but got #{ary.class}."
       end
       return self
     end

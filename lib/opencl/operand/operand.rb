@@ -76,7 +76,6 @@ module OpenCL
       def libraries
         @libraries ||= []
       end
-
     end
 
     # Create a new Operand object.

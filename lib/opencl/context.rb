@@ -4,7 +4,7 @@ module OpenCL
 
   class Context
 
-    class <<self
+    class << self
       #--
       # Reduce the number of creation of OpenCL context and Device objects.
       #++
@@ -19,13 +19,17 @@ module OpenCL
         when :all
           Capi::CL_DEVICE_TYPE_ALL
         else
-          raise ArgumentError, 'Invalid device type.'
+          raise ArgumentError, 'invalid device type.'
         end
         @contexts[device_type] ||= new(dt)
       end
 
+      def cpu_context
+        context_of :cpu
+      end
+
       def default_context
-        context_of(:gpu) || context_of(:cpu)
+        context_of(:gpu) ||context_of(:cpu)
       end
 
       private :new
@@ -34,7 +38,7 @@ module OpenCL
     def initialize(device_type)
       begin
         devs = Capi.devices(device_type, Capi.platforms.first)
-        raise RuntimeError, "No deivce of given type found." if devs.empty?
+        raise RuntimeError, "no deivce of given type found." if devs.empty?
 
         @context = Capi::Context.new nil, devs
         @queues = {}

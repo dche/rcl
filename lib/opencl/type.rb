@@ -19,7 +19,7 @@ module OpenCL
     #   Type.new ['code', :cl_uchar, 5, 'age', :cl_uchar, 'revenue', :cl_float]
     def initialize(tag)
       unless Array === tag
-        raise ArgumentError, "Unrecognized type: #{tag.to_s}." unless OpenCL.valid_type?(tag)
+        raise ArgumentError, "unrecognized type: #{tag.to_s}." unless OpenCL.valid_type?(tag)
         @tag = tag
         @size = OpenCL.type_size(tag)
       else

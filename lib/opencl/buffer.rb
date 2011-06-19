@@ -22,7 +22,7 @@ module OpenCL
       when :out
         @io = Capi::CL_MEM_WRITE_ONLY
       else
-        raise ArgumentError, "Invalid io flag. Expected :in, :out, :inout, got #{io_flag}"
+        raise ArgumentError, "invalid io flag. Expected :in, :out, :inout, got #{io_flag}"
       end
 
       begin
@@ -88,11 +88,11 @@ module OpenCL
       target_start = 0 if target_start < 0
 
       if start + size > self.byte_size
-        raise ArgumentError, "Specified buffer region (#{start}, #{start + size - 1}) is invalid."
+        raise ArgumentError, "specified buffer region (#{start}, #{start + size - 1}) is invalid."
       end
 
       if target_start + size > buffer.byte_size
-        raise ArgumentError, "Specified buffer region (#{target_start}, #{target_start + size - 1}) is invalid."
+        raise ArgumentError, "specified buffer region (#{target_start}, #{target_start + size - 1}) is invalid."
       end
 
       self.unmap_pointer
@@ -153,7 +153,7 @@ module OpenCL
       start = 0 if start < 0
 
       if (start + size) > self.byte_size
-        raise ArgumentError, "Specified slice region (#{start}, #{start + size - 1}) is invalid."
+        raise ArgumentError, "specified slice region (#{start}, #{start + size - 1}) is invalid."
       end
 
       io = (self.in? && self.out?) ? :inout : (self.in? ? :in : :out)
@@ -294,11 +294,11 @@ module OpenCL
       end
 
       if size < 1 || size > self.byte_size
-        raise ArgumentError, "Size must be larger than 0 and less than #{self.byte_size}."
+        raise ArgumentError, "size must be larger than 0 and less than #{self.byte_size}."
       end
 
       if self.byte_size < (offset + size) || pointer.byte_size < size
-        raise ArgumentError, "Size is too large."
+        raise ArgumentError, "size is too large."
       end
 
       begin

@@ -11,7 +11,7 @@ module OpenCL
       cl_err_msg = cl_err_msg.message unless cl_err_msg.is_a?(String)
 
       code = cl_err_msg.to_i
-      raise ArgumentError, "Invalid CL error code." if code == 0
+      raise ArgumentError, "invalid CL error code." if code == 0
 
       @code = code
       msg = Capi::ERROR_MESSAGES[code] || "Unrecognized CLError."

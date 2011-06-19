@@ -53,7 +53,7 @@ rcl_ndarray_fill_rand(__global T *vec, int length, uint seed)
 
   class NDArray
 
-    class <<self
+    class << self
       # Creates a NDArray with same length and type as of the parameter.
       def like(na)
         self.new(na.shape, na.type.tag)
