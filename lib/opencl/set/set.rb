@@ -80,8 +80,9 @@ module OpenCL
     def resize
       return self if self.count < (self.length * 0.811105)
 
-      super(self.size * 2)
-      @bitmap.resize
+      sz = self.size * 2
+      super(sz)
+      @bitmap.resize(sz)
       self
     end
   end

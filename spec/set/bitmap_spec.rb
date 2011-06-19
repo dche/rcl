@@ -17,8 +17,6 @@ describe Bitmap do
 
   the 'Bitmap object should not respond to NDArray\'s methods' do
     bm = Bitmap.new 2
-    bm.should.respond_to :sum
-    bm.should.respond_to :bits
     bm.should.not.respond_to :fill
   end
 
@@ -77,4 +75,13 @@ describe Bitmap do
     end
   end
 
+  the '#recount' do
+    bm = Bitmap.new 1024
+    981.times do
+      bm.mark_cell bm.next_cell
+    end
+    bm.count.should.equal 981
+    bm.recount.should.equal 981
+    bm.count.should.equal 981
+  end
 end

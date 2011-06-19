@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 module OpenCL
+  # Bitmap is a "map" operation friendly data structure.
   class Bitmap < Operand
     def initialize(size)
       super((size - 1 >> 5) + 1, :cl_uint)
@@ -9,13 +10,18 @@ module OpenCL
     end
 
     # How many cells have been marked in the bitmap.
-    def count
-      return @count if @count >= 0
-      @count = self.bits.sum
-    end
+    attr_reader :count
 
     def recount
-      @count = -1
+      @count = 0
+      self.length.times do |n|
+        u32 = self[n]
+        32.times do |nb|
+          bit = u32 & (1 << nb)
+          @count += 1 if bit > 0
+        end
+      end
+      @count
     end
 
     # Find next available cell in the bit map, randomly.
@@ -34,12 +40,11 @@ module OpenCL
       n > 31 ? next_cell : i * 32 + n
     end
 
-    def resize
-      newcap = @capacity * 2
-      return self if newcap < self.byte_size * 8
+    def resize(sz)
+      @capacity = sz if sz > 0
+      return self if sz < self.byte_size * 8
 
-      super(self.size * 2)
-      @capacity = newcap
+      super (sz - 1 >> 5) + 1
       self
     end
 
@@ -47,10 +52,10 @@ module OpenCL
     #
     def mark_cell(i)
       return self if self.set?(i)
+
       self[i / 32] |= (1 << (i % 32))
-      # ensure the count is updated.
-      self.count
       @count += 1
+
       self
     end
 
@@ -61,35 +66,6 @@ module OpenCL
     lib = Class.new(Library) do
       type :cl_uint
 
-      # TODO: duplicated with vector/arith.rb.
-      #       reanme or generalize it (move to Operand).
-      def_reduction_kernel(:rcl_vector_summary, :summary) do |v1, v2|
-        "#{v1} + #{v2}"
-      end
-      alias_method(:sum, :summary)
-
-      def_kernel(:rcl_bitmap_bits) do
-        <<-EOK
-__kernel void
-rcl_bitmap_bits(__global uint *bitmap, int length)
-{
-    int gid = get_global_id(0);
-    if (gid < length) {
-        uint bits = bitmap[gid];
-        uint n = 0;
-        while (bits > 0) {
-            if ((bits & 0x1) > 0) n++;
-            bits = bits >> 1;
-        }
-        bitmap[gid] = n;
-    }
-}
-        EOK
-      end
-
-      def_method(:bits) do
-        execute_kernel :rcl_bitmap_bits, [self.length], :mem, self, :cl_int, self.length
-      end
     end
 
     use lib
