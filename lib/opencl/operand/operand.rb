@@ -151,7 +151,7 @@ module OpenCL
       unless self.type.structure?
         @mapped_pointer[i] = v
       else
-        if !v.is_a?(Structure) && v.type != self.type
+        if !v.is_a?(Structure) || v.type != self.type
           raise TypeError, 'type mismatch.'
         end
         sz = self.type.size
