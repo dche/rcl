@@ -321,7 +321,7 @@ rcl_ruby2native(ID type, void *address, VALUE value)
     }
 
 static inline VALUE
-Native2Ruby(ID type, void *address)
+rcl_native2ruby(ID type, void *address)
 {
     assert(NULL != address);
 
@@ -629,10 +629,10 @@ rcl_pointer_aref(VALUE self, VALUE index)
     rcl_pointer_t *p = Pointer_Ptr(self);
     Extract_Size(index, i);
 
-    if (p->size == 0 || i > p->size - 1) {
+    if (p->size == 0 || i >= p->size) {
         rb_raise(rb_eRuntimeError, "subscriber exceeds the boundary.");
     }
-    return Native2Ruby(p->type, Element_Address(p, i));
+    return rcl_native2ruby(p->type, Element_Address(p, i));
 }
 
 /*
