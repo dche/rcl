@@ -3,12 +3,15 @@
 module OpenCL
   # Set is a pool of comparable elements.
   class Set < Operand
+    # Creates a Set.
+    def initialize(type, options = {})
+      cap = options[:capacity] || 1024
+      alloc = options[:allocation] || :random
 
-    def initialize(type, size_hint = 1024)
-      sz = size_hint < 1024 ? 1024 : next_pow2(size_hint.to_i)
+      sz = cap < 1024 ? 1024 : next_pow2(cap.to_i)
       super sz, type
 
-      @bitmap = Bitmap.new sz
+      @bitmap = Bitmap.new sz, alloc
     end
 
     def initialize_copy(other)

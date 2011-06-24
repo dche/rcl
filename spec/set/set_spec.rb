@@ -24,13 +24,13 @@ describe Set do
     end
 
     the '#length' do
-      sut = Set.new :cl_float, 2
+      sut = Set.new :cl_float, capacity:2
       sut.length.should.equal 1024
       sut.byte_size.should.equal 1024 * sut.type.size
     end
 
     the '#put a scalar' do
-      sut = Set.new :cl_uint, 4
+      sut = Set.new :cl_uint, capacity:4
       i = sut.put 2
       sut.count.should.equal 1
       sut[i].should.equal 2
@@ -45,7 +45,7 @@ describe Set do
     end
 
     the '#put a vector' do
-      sut = Set.new :cl_float4, 16
+      sut = Set.new :cl_float4, capacity:16
       i = sut.put [2, 3, 4, 5]
       sut.count.should.equal 1
       sut[i].should.equal [2.0, 3.0, 4.0, 5.0]
@@ -53,7 +53,7 @@ describe Set do
 
     the '#put a structure' do
       tag = ["id", :cl_uint, "value", :cl_float]
-      sut = Set.new tag, 32
+      sut = Set.new tag, capacity:32
 
       sut[0].should.be.nil
       st = Structure.new tag
@@ -75,7 +75,7 @@ describe Set do
     end
 
     the '#[] should return nil if a cell is not occupied.' do
-      sut = Set.new :cl_uint, 4
+      sut = Set.new :cl_uint, capacity:4
       sut[0].should.be.nil
     end
   end

@@ -84,4 +84,21 @@ describe Bitmap do
     bm.recount.should.equal 981
     bm.count.should.equal 981
   end
+
+  the 'linear allocation' do
+    bm = Bitmap.new 2048, :linear
+    2016.times do
+      bm.mark_cell bm.next_cell
+    end
+    bm.count.should.equal 2016
+    bm.recount.should.equal 2016
+    10.times { bm.next_cell.should.equal 2016 }
+    bm[63] = 0xf0f0f0f3
+    10.times { bm.next_cell.should.equal 2018 }
+    bm[0] = 0xf0f0f0f2
+    bm[63] = 0xFFFFFFFF
+    10.times { bm.next_cell.should.equal 0 }
+    bm.mark_cell bm.next_cell
+    bm.next_cell.should.equal 2
+  end
 end
