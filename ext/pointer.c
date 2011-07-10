@@ -734,6 +734,20 @@ rcl_pointer_is_dirty(VALUE self)
  * Clears the dirty flag of the receiver.
  *
  * call-seq:
+ *      mark_dirty
+ */
+static VALUE
+rcl_pointer_mark_dirty(VALUE self)
+{
+    rcl_pointer_t *p = Pointer_Ptr(self);
+    p->is_dirty = Qtrue;
+    return self;
+}
+
+/*
+ * Clears the dirty flag of the receiver.
+ *
+ * call-seq:
  *      HostPointer#clear_dirty
  */
 static VALUE
@@ -990,6 +1004,7 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cMappedPointer, "[]", rcl_pointer_aref, 1);
     rb_define_method(rcl_cMappedPointer, "[]=", rcl_pointer_aset, 2);
     rb_define_method(rcl_cMappedPointer, "dirty?", rcl_pointer_is_dirty, 0);
+    rb_define_method(rcl_cMappedPointer, "mark_dirty", rcl_pointer_mark_dirty, 0);
     rb_define_method(rcl_cMappedPointer, "clear_dirty", rcl_pointer_clear_dirty, 0);
     rb_define_method(rcl_cMappedPointer, "assign_pointer", rcl_pointer_assign, 3);
     rb_define_method(rcl_cMappedPointer, "assign_byte_string", rcl_pointer_assign_byte_string, 2);

@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 module OpenCL
-
   # An Operand object is a typed Buffer that has a program associated with it.
   class Operand < Buffer
 
@@ -143,7 +142,7 @@ module OpenCL
     def [](i)
       self.map_pointer
       return @mapped_pointer[i] unless self.type.structure?
-      Structure.new self.type, @mapped_pointer, i * self.type.size
+      Structure.new self.type, @mapped_pointer, i
     end
 
     def []=(i, v)
@@ -155,7 +154,7 @@ module OpenCL
           raise TypeError, 'type mismatch.'
         end
         sz = self.type.size
-        @mapped_pointer.assign_pointer v.pointer.address, sz, i * sz
+        @mapped_pointer.assign_pointer v.pointer, sz, i * sz
       end
       v
     end

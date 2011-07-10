@@ -13,6 +13,7 @@ module OpenCL
       @fields = {}
       if pointer.nil?
         @pointer = HostPointer.new :cl_uchar, self.size
+        @address = @pointer.address
         wrap_address
       else
         self.wrap(pointer, offset)
@@ -26,25 +27,23 @@ module OpenCL
 
     attr_reader :type
 
-    attr_reader :pointer
+    def pointer
+      @address
+    end
 
-    # Reuse the receiver, make it the accessor to another peice of buffer.
+    # Reuse the receiver, make it the accessor to another piece of memory.
     def wrap(pointer, offset = 0)
-      if offset < 0 || pointer.byte_size - offset < self.size
+      if offset < 0 || pointer.byte_size - offset * self.size < self.size
         ::Kernel::raise ::ArgumentError, "pointer size is too small."
       end
-
-      @pointer = HostPointer.wrap_pointer pointer.address + offset, :cl_uchar, self.size
+      @pointer = pointer
+      @address = @pointer.address + offset * self.size
       wrap_address
     end
 
     # Returns the size of the structure in byte.
     def size
-      self.type.size
-    end
-
-    def is_a?(klass)
-      klass == Structure || klass == BasicObject
+      @type.size
     end
 
     def respond_to?(meth)
@@ -55,13 +54,13 @@ module OpenCL
 
     def method_missing(meth, *args)
       m = meth.to_s
-      lv = (m =~ /(.*)=$/)
-      m = $1 if lv
+      lval = (m =~ /(.*)=$/)
+      m = $1 if lval
 
       type, ptr = @fields[m]
       return super if ptr.nil?
 
-      if lv
+      if lval
         narg = args.length
         val = args
         if args.length == 1 && args[0].is_a?(::String)
@@ -72,6 +71,7 @@ module OpenCL
           ::Kernel::raise ::ArgumentError, "wrong number of arguments (#{narg} for #{ptr.size})"
         end
         ptr.assign val
+        @pointer.mark_dirty if MappedPointer === @pointer
       else
         if ptr.size > 1
           ptr.to_a
@@ -90,7 +90,7 @@ module OpenCL
     # Interpretes a piece of buffer, creates access pointers for each field.
     def wrap_address
       @fields = {}
-      addr = @pointer.address
+      addr = @address
       tag, _ = @type.parse_structure_tag(@type.tag)
 
       until tag.empty?
