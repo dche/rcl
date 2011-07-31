@@ -131,4 +131,34 @@ describe MappedPointer do
     mp.assign "abc"
     mp.should.be.dirty
   end
+
+  the '#mark_dirty' do
+    mem = @cxt.create_buffer(CL_MEM_READ_WRITE, 16, nil)
+    cq = @cxt.create_command_queue
+    mp = cq.enqueue_map_buffer(mem, true, CL_MAP_READ, 0, 16, nil).first
+    mp.should.not.be.dirty
+    mp.mark_dirty
+    mp.should.be.dirty
+  end
+
+  the '#read_as_type and #write_as_type' do
+    mem = @cxt.create_buffer(CL_MEM_READ_WRITE, 16, nil)
+    cq = @cxt.create_command_queue
+    mp = cq.enqueue_map_buffer(mem, true, CL_MAP_READ, 0, 16, nil).first
+    mp.cast_to :cl_uint4
+    mp[0] = [2, 3, 5, 7]
+    mp.read_as_type(4, :cl_uint).should.equal 3
+    mp.write_as_type(8, :cl_uint, 6)
+    mp[0].should.equal [2, 3, 6, 7]
+    should.raise(ArgumentError) {
+      mp.read_as_type(13, :cl_uint)
+    }
+    should.raise(ArgumentError) {
+      mp.write_as_type(12, :cl_float2)
+    }
+    should.not.raise(ArgumentError) {
+      mp.read_as_type(13, :cl_ushort)
+      mp.write_as_type(15, :cl_char, 5)
+    }
+  end
 end

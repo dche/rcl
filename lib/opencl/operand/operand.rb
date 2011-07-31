@@ -24,6 +24,7 @@ module OpenCL
         @libraries ||= []
         return if @libraries.include?(lib)
         raise ArgumentError, "expected a OpenCL::Library" unless lib < Library
+        # FIXME: duplicated kernel names in different libraries.
         @libraries << lib
         nil
       end
@@ -145,6 +146,9 @@ module OpenCL
       Structure.new self.type, @mapped_pointer, i
     end
 
+    # Set the +i+th element in the buffer to a new value.
+    #
+    # Returns the value.
     def []=(i, v)
       self.map_pointer
       unless self.type.structure?
@@ -157,6 +161,23 @@ module OpenCL
         @mapped_pointer.assign_pointer v.pointer, sz, i * sz
       end
       v
+    end
+
+    # This method is used to access the contents of the receiver without
+    # creating a +Structure+ object as a accessor.
+    #
+    # See: OpenCL::MappedPointer#read_as_type
+    def read_as_type(byte_addr, type)
+      self.map_pointer
+      @mapped_pointer.read_as_type byte_addr, type
+    end
+
+    # Write a value to a position in the receiver directly.
+    #
+    # See: OpenCL::MappedPointer#write_as_type
+    def write_as_type(byte_addr, type, value)
+      self.map_pointer
+      @mapped_pointer.write_as_type byte_addr, type, value
     end
 
     # Recursively executes a reduction kernel.
