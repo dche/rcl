@@ -2,13 +2,15 @@
 
 module OpenCL
   # Bitmap is a "map" operation friendly data structure.
+  #
   class Bitmap < Operand
     def initialize(size, allocation_strategy = :random)
-      super((size - 1 >> 5) + 1, :cl_uint)
+      super(size_for_cap(size), :cl_uint)
 
       @capacity = size
       @count = 0
-      @alloc = allocation_strategy
+      @alloc_meth = allocation_strategy == :random ? :next_random_cell : :next_linear_cell
+      # used by :linear allocation to know whare to start scan next free cell.
       @next_cell = 0
     end
 
@@ -20,7 +22,7 @@ module OpenCL
     # Re-calculate the count.
     def recount
       @count = 0
-      self.length.times do |n|
+      (self.length - 1).times do |n|
         u32 = self[n]
         32.times do |nb|
           bit = u32 & (1 << nb)
@@ -35,41 +37,73 @@ module OpenCL
     # Returns the index of hte cell.
     def next_cell
       raise RuntimeError, 'bitmap is full. An resize is expected.' if self.count == @capacity
-      @alloc == :rancom ? next_random_cell : next_linear_cell
+      self.send(@alloc_meth)
     end
 
     # Increases the capacity.
     def resize(sz)
-      @capacity = sz if sz > 0
-      return self if sz < self.byte_size * 8
+      return self if sz <= @capacity
 
-      super (sz - 1 >> 5) + 1
+      @capacity = sz
+      super size_for_cap(@capacity)
       self
     end
 
     # Marks a bit in the bit map.
     def mark_cell(i)
+      return self unless in_range?(i)
       return self if self.set?(i)
 
-      self[i / 32] |= (1 << (i % 32))
+      d, m = i.divmod 32
+      self[d] = self[d] | (1 << m)
       @count += 1
 
       if @alloc != :random
-        # i == @next_cell
+        # pi == @next_cell
+        # new @next_cell needs not to be available.
         @next_cell = (i == @capacity - 1) ? 0 : i + 1
       end
       self
     end
 
+    # Clear a bit in the receiver.
+    def clear_cell(i)
+      return self unless self.set?(i)
+
+      d, m = i.divmod 32
+      self[d] = self[d] & ~(1 << m)
+      @count -= 1
+      self
+    end
+
     # Returns +true+ if a bit is set in the receiver.
     def set?(i)
-      self[i >> 5] & (1 << (i % 32)) != 0
+      return false unless in_range?(i)
+
+      d, m = i.divmod 32
+      self[d] & (1 << m) != 0
     end
 
     private
 
+    def size_for_cap(cap)
+      (cap - 1 >> 5) + 2
+    end
+
+    def in_range?(i)
+      i >= 0 && i < @capacity
+    end
+
+    def [](i)
+      super i + 1
+    end
+
+    def []=(i, v)
+      super i + 1, v
+    end
+
     def next_random_cell
-      i = ::Kernel.rand(self.length)
+      i = ::Kernel.rand(self.length - 1)
       return next_random_cell if i * 32 > @capacity
 
       n = 0
@@ -82,8 +116,7 @@ module OpenCL
     end
 
     def next_linear_cell
-      i = @next_cell >> 5
-      n = @next_cell % 32
+      i, n = @next_cell.divmod 32
 
       bits = (self[i] >> n)
       b = n

@@ -14,13 +14,7 @@ describe Set do
       sut = Set.new(:cl_uchar)
       sut.count.should.equal 0
       sut[0].should.be.nil
-    end
-
-    the '#[]= should not be able to add element.' do
-      sut = Set.new(:cl_uchar)
-      sut[0].should.be.nil
-      sut[0] = 1
-      sut[0].should.be.nil
+      sut[1].should.be.nil
     end
 
     the '#length' do
@@ -77,6 +71,15 @@ describe Set do
     the '#[] should return nil if a cell is not occupied.' do
       sut = Set.new :cl_uint, capacity:4
       sut[0].should.be.nil
+    end
+
+    the '0 should not be a valid index.' do
+      sut = Set.new :cl_uint, capacity:32, :allocation => :linear
+      sut.put(0).should.equal 1
+      should.not.raise(Exception) {
+        30.times { sut.put 0 }
+      }
+      sut.put(0).should.equal 32
     end
   end
 end

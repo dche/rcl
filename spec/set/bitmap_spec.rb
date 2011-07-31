@@ -6,13 +6,12 @@ require File.join(File.dirname(__FILE__), '../../lib/opencl/set')
 describe Bitmap do
   the '::new' do
     bm = Bitmap.new 2
-    bm.length.should.equal 1
+    bm.length.should.equal 2
     bm.type.tag.should.equal :cl_uint
-    bm.byte_size.should.equal OpenCL.type_size(:cl_uint)
     bm.count.should.equal 0
 
     bm = Bitmap.new 33
-    bm.length.should.equal 2
+    bm.length.should.equal 3
   end
 
   the 'Bitmap object should not respond to NDArray\'s methods' do
@@ -34,6 +33,31 @@ describe Bitmap do
     bm.set?(i).should.not.be.true
     bm.mark_cell i
     bm.set?(i).should.be.true
+  end
+
+  the '#clear_cell' do
+    bm = Bitmap.new 4
+    i = bm.next_cell
+    bm.mark_cell i
+    bm.should.be.set i
+    bm.count.should.equal 1
+    bm.clear_cell i
+    bm.count.should.equal 0
+    bm.should.not.be.set i
+  end
+
+  the 'clear free bit should be harmless.' do
+    bm = Bitmap.new 32, :linear
+    i = bm.next_cell
+    bm.mark_cell i
+    bm.count.should.equal 1
+    10.times { bm.clear_cell i + 1 }
+    bm.count.should.equal 1
+    bm.clear_cell i
+    bm.count.should.equal 0
+    bm.should.not.be.set i
+    bm.mark_cell bm.next_cell
+    bm.count.should.equal 1
   end
 
   the '#next_cell should not allocate marked cell.' do
@@ -93,10 +117,10 @@ describe Bitmap do
     bm.count.should.equal 2016
     bm.recount.should.equal 2016
     10.times { bm.next_cell.should.equal 2016 }
-    bm[63] = 0xf0f0f0f3
+    bm.send :[]=, 63, 0xf0f0f0f3
     10.times { bm.next_cell.should.equal 2018 }
-    bm[0] = 0xf0f0f0f2
-    bm[63] = 0xFFFFFFFF
+    bm.send :[]=, 0, 0xf0f0f0f2
+    bm.send :[]=, 63, 0xFFFFFFFF
     10.times { bm.next_cell.should.equal 0 }
     bm.mark_cell bm.next_cell
     bm.next_cell.should.equal 2

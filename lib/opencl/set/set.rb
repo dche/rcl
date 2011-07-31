@@ -5,12 +5,13 @@ module OpenCL
   class Set < Operand
     # Creates a Set.
     def initialize(type, options = {})
-      cap = options[:capacity] || 1024
+      cap = options[:capacity] || 1023
       alloc = options[:allocation] || :random
 
-      sz = cap < 1024 ? 1024 : next_pow2(cap.to_i)
-      super sz, type
+      sz = next_pow2(cap.to_i + 1)
+      sz = 1024 if sz < 1024
 
+      super sz, type
       @bitmap = Bitmap.new sz, alloc
     end
 
@@ -27,23 +28,28 @@ module OpenCL
     # Put an element to the receiver.
     #
     # Returns the index.
+    #
+    # Note: The index +0+ is never used.
     def put(elm)
       resize
 
-      i = @bitmap.next_cell
+      i = @bitmap.next_cell + 1
       begin
         self[i] = elm
-        @bitmap.mark_cell(i)
+        @bitmap.mark_cell(i - 1)
       rescue Exception => e
+        # TODO: what about ignoring the operation?
         raise e
       end
       i
     end
 
     def [](idx)
-      return nil unless @bitmap.set?(idx)
+      return nil unless @bitmap.set?(idx - 1)
       super
     end
+
+    private :[]=
 
     # Returns true if the receiver fully contains the given object, which can
     # be an element or another Set.
@@ -82,6 +88,8 @@ module OpenCL
     # Enlarge the size of buffer.
     def resize
       return self if self.count < (self.length * 0.811105)
+      # garbage collecting
+      self.gc if self.respond_to? :gc
 
       sz = self.size * 2
       super(sz)

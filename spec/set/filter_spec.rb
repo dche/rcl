@@ -11,22 +11,38 @@ class TestSet < OpenCL::Set
   lib = Class.new(SetLibrary) do
     type ['id', :cl_uint, 'value', :cl_float]
 
-    def_map_kernel(:rcl_set_spec_map, :zero_to_zero) do |elm, keep|
+    def_map_kernel(:rcl_set_spec_map, :zero_to_zero) do |elm, keep, dirty|
       <<-EOM
-if (elm.id == 0) {
-   elm.value = 0;
+if (#{elm}.id == 0) {
+   #{elm}.value = 0;
 } else {
-   elm.value = 2.125;
+   #{elm}.value = 2.125;
 }
+#{dirty} = true;
       EOM
     end
 
-    def_map_kernel(:rcl_set_spec_filter, :nonzero_to_go) do |elm, keep|
+    def_map_kernel(:rcl_set_spec_filter, :nonzero_to_go) do |elm, keep, dirty|
       <<-EOM
-if (elm.id != 0) {
-    keep = false;
+if (#{elm}.id != 0) {
+    #{keep} = false;
 }
       EOM
+    end
+  end
+  use lib
+end
+
+class GCSet < OpenCL::Set
+  def initialize
+    super :cl_uint
+  end
+
+  lib = Class.new(OpenCL::SetLibrary) do
+    type :cl_uint
+
+    def_gc_kernel do |elm|
+      "#{elm} == 0"
     end
   end
   use lib
@@ -73,4 +89,16 @@ describe Set do
     set.count.should.equal 1
   end
 
+  the "#gc" do
+    set = GCSet.new
+    set.should.be.respond_to :gc
+
+    ct = set.length
+    # force trigger gc.
+    set.length.times do |n|
+      set.put(n % 2)
+    end
+    # elements that equal 0 are collected.
+    (set.count < ct).should.be.true
+  end
 end
