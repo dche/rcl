@@ -47,9 +47,9 @@
 
 // Convert a Ruby object to half precision float.
 static inline cl_half
-Extract_Half(VALUE ro)
+ExtractHalf(VALUE ro)
 {
-    Expect_Float(ro);
+    EXPECT_FLOAT(ro);
 
     double v = NUM2DBL(ro);
     uint32_t *xp = (uint32_t *)&v;

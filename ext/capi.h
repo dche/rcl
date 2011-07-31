@@ -15,7 +15,7 @@
 
 // NOTE: this macro needs local defined class variables
 //       using a special pattern for name, /rcl_c\w+/
-#define Expect_RCL_Type(o, klass) \
+#define EXPECT_RCL_TYPE(o, klass) \
     do { \
         Check_Type(o, T_DATA); \
         if (rb_class_of(o) != rcl_c##klass) { \
@@ -23,10 +23,10 @@
         } \
     } while (0)
 
-#define Extract_Boolean(ro, var) \
+#define EXTRACT_BOOLEAN(ro, var) \
     cl_bool var; \
     do { \
-        Expect_Boolean(ro); \
+        EXPECT_BOOLEAN(ro); \
         var = ro == Qtrue ? CL_TRUE : CL_FALSE; \
     } while (0)
 

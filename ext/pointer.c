@@ -207,8 +207,8 @@ static void define_cl_types(void)
     rb_define_module_function(rcl_mOpenCL, "valid_vector?", rcl_is_type_vector, 1);
 }
 
-#define Is_Type_Valid(id)  (rcl_is_type_valid(rcl_mOpenCL, ID2SYM(id)) == Qtrue)
-#define Is_Type_Vector(id) (rcl_is_type_vector(rcl_mOpenCL, ID2SYM(id)) == Qtrue)
+#define IS_TYPE_VALID(id)  (rcl_is_type_valid(rcl_mOpenCL, ID2SYM(id)) == Qtrue)
+#define IS_TYPE_VECTOR(id) (rcl_is_type_vector(rcl_mOpenCL, ID2SYM(id)) == Qtrue)
 
 size_t
 rcl_type_size(ID id)
@@ -225,7 +225,7 @@ rcl_type_size(ID id)
 
 #define IF_VECTOR_TYPE_TO_NATIVE(base_c_type, n, expector, convertor) \
     if (type == id_type_##base_c_type##n) { \
-        Expect_NonEmpty_Array(value); \
+        EXPECT_NON_EMPTY_ARRAY(value); \
         if (n > RARRAY_LEN(value)) { \
             rb_raise(rb_eArgError, "expected number of elements is %d, but got %ld", n, RARRAY_LEN(value)); \
         } \
@@ -245,62 +245,62 @@ rcl_ruby2native(ID type, void *address, VALUE value)
     assert(!(NIL_P(value) || NULL == address));
 
     if (type == id_type_cl_bool) {
-        Extract_Boolean(value, bv);
+        EXTRACT_BOOLEAN(value, bv);
         *(cl_bool *)address = bv;
         return;
     }
-    IF_TYPE_TO_NATIVE(cl_char,   Expect_Fixnum,  FIX2INT);
-    IF_TYPE_TO_NATIVE(cl_uchar,  Expect_Fixnum,  FIX2UINT);
-    IF_TYPE_TO_NATIVE(cl_short,  Expect_Fixnum,  FIX2INT);
-    IF_TYPE_TO_NATIVE(cl_ushort, Expect_Fixnum,  FIX2UINT);
-    IF_TYPE_TO_NATIVE(cl_int,    Expect_Integer, NUM2INT);
-    IF_TYPE_TO_NATIVE(cl_uint,   Expect_Integer, NUM2UINT);
-    IF_TYPE_TO_NATIVE(cl_long,   Expect_Integer, NUM2LONG);
-    IF_TYPE_TO_NATIVE(cl_ulong,  Expect_Integer, NUM2ULONG);
-    IF_TYPE_TO_NATIVE(cl_half,   Expect_Float,   Extract_Half);
-    IF_TYPE_TO_NATIVE(cl_float,  Expect_Float,   NUM2DBL);
-    IF_TYPE_TO_NATIVE(cl_double, Expect_Float,   NUM2DBL);
+    IF_TYPE_TO_NATIVE(cl_float,  EXPECT_FLOAT,   NUM2DBL);
+    IF_TYPE_TO_NATIVE(cl_ushort, EXPECT_FIXNUM,  FIX2UINT);
+    IF_TYPE_TO_NATIVE(cl_uint,   EXPECT_INTEGER, NUM2UINT);
+    IF_TYPE_TO_NATIVE(cl_char,   EXPECT_FIXNUM,  FIX2INT);
+    IF_TYPE_TO_NATIVE(cl_uchar,  EXPECT_FIXNUM,  FIX2UINT);
+    IF_TYPE_TO_NATIVE(cl_short,  EXPECT_FIXNUM,  FIX2INT);
+    IF_TYPE_TO_NATIVE(cl_int,    EXPECT_INTEGER, NUM2INT);
+    IF_TYPE_TO_NATIVE(cl_long,   EXPECT_INTEGER, NUM2LONG);
+    IF_TYPE_TO_NATIVE(cl_ulong,  EXPECT_INTEGER, NUM2ULONG);
+    IF_TYPE_TO_NATIVE(cl_half,   EXPECT_FLOAT,   ExtractHalf);
+    IF_TYPE_TO_NATIVE(cl_double, EXPECT_FLOAT,   NUM2DBL);
 
-    IF_VECTOR_TYPE_TO_NATIVE(cl_char,   2,  Expect_Fixnum,  FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_char,   4,  Expect_Fixnum,  FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_char,   8,  Expect_Fixnum,  FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_char,   16, Expect_Fixnum,  FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uchar,  2,  Expect_Fixnum,  FIX2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uchar,  4,  Expect_Fixnum,  FIX2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uchar,  8,  Expect_Fixnum,  FIX2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uchar,  16, Expect_Fixnum,  FIX2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_short,  2,  Expect_Fixnum,  FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_short,  4,  Expect_Fixnum,  FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_short,  8,  Expect_Fixnum,  FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_short,  16, Expect_Fixnum,  FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 2,  Expect_Fixnum,  FIX2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 4,  Expect_Fixnum,  FIX2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 8,  Expect_Fixnum,  FIX2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 16, Expect_Fixnum,  FIX2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_int,    2,  Expect_Integer, NUM2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_int,    4,  Expect_Integer, NUM2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_int,    8,  Expect_Integer, NUM2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_int,    16, Expect_Integer, NUM2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   2,  Expect_Integer, NUM2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   4,  Expect_Integer, NUM2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   8,  Expect_Integer, NUM2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   16, Expect_Integer, NUM2UINT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_long,   2,  Expect_Integer, NUM2LONG);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_long,   4,  Expect_Integer, NUM2LONG);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_long,   8,  Expect_Integer, NUM2LONG);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_long,   16, Expect_Integer, NUM2LONG);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_ulong,  2,  Expect_Integer, NUM2ULONG);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_ulong,  4,  Expect_Integer, NUM2ULONG);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_ulong,  8,  Expect_Integer, NUM2ULONG);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_ulong,  16, Expect_Integer, NUM2ULONG);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_float,  2,  Expect_Float,   NUM2DBL);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_float,  4,  Expect_Float,   NUM2DBL);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_float,  8,  Expect_Float,   NUM2DBL);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_float,  16, Expect_Float,   NUM2DBL);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_double, 2,  Expect_Float,   NUM2DBL);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_double, 4,  Expect_Float,   NUM2DBL);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_double, 8,  Expect_Float,   NUM2DBL);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_double, 16, Expect_Float,   NUM2DBL);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_char,   2,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_char,   4,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_char,   8,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_char,   16, EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uchar,  2,  EXPECT_FIXNUM,  FIX2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uchar,  4,  EXPECT_FIXNUM,  FIX2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uchar,  8,  EXPECT_FIXNUM,  FIX2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uchar,  16, EXPECT_FIXNUM,  FIX2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_short,  2,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_short,  4,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_short,  8,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_short,  16, EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 2,  EXPECT_FIXNUM,  FIX2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 4,  EXPECT_FIXNUM,  FIX2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 8,  EXPECT_FIXNUM,  FIX2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 16, EXPECT_FIXNUM,  FIX2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_int,    2,  EXPECT_INTEGER, NUM2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_int,    4,  EXPECT_INTEGER, NUM2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_int,    8,  EXPECT_INTEGER, NUM2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_int,    16, EXPECT_INTEGER, NUM2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   2,  EXPECT_INTEGER, NUM2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   4,  EXPECT_INTEGER, NUM2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   8,  EXPECT_INTEGER, NUM2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   16, EXPECT_INTEGER, NUM2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_long,   2,  EXPECT_INTEGER, NUM2LONG);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_long,   4,  EXPECT_INTEGER, NUM2LONG);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_long,   8,  EXPECT_INTEGER, NUM2LONG);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_long,   16, EXPECT_INTEGER, NUM2LONG);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ulong,  2,  EXPECT_INTEGER, NUM2ULONG);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ulong,  4,  EXPECT_INTEGER, NUM2ULONG);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ulong,  8,  EXPECT_INTEGER, NUM2ULONG);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ulong,  16, EXPECT_INTEGER, NUM2ULONG);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_float,  2,  EXPECT_FLOAT,   NUM2DBL);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_float,  4,  EXPECT_FLOAT,   NUM2DBL);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_float,  8,  EXPECT_FLOAT,   NUM2DBL);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_float,  16, EXPECT_FLOAT,   NUM2DBL);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_double, 2,  EXPECT_FLOAT,   NUM2DBL);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_double, 4,  EXPECT_FLOAT,   NUM2DBL);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_double, 8,  EXPECT_FLOAT,   NUM2DBL);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_double, 16, EXPECT_FLOAT,   NUM2DBL);
 
     rb_raise(rb_eArgError, "invalid type tag.");
 }
@@ -328,16 +328,16 @@ rcl_native2ruby(ID type, void *address)
     if (type == id_type_cl_bool) {
         return (*(cl_bool *)address) ? Qtrue : Qfalse;
     }
+    IF_TYPE_TO_RUBY(cl_float,   rb_float_new);
+    IF_TYPE_TO_RUBY(cl_ushort,  UINT2NUM);
+    IF_TYPE_TO_RUBY(cl_uint,    UINT2NUM);
     IF_TYPE_TO_RUBY(cl_char,    INT2FIX);
     IF_TYPE_TO_RUBY(cl_uchar,   UINT2NUM);
     IF_TYPE_TO_RUBY(cl_short,   INT2FIX);
-    IF_TYPE_TO_RUBY(cl_ushort,  UINT2NUM);
     IF_TYPE_TO_RUBY(cl_int,     INT2NUM);
-    IF_TYPE_TO_RUBY(cl_uint,    UINT2NUM);
     IF_TYPE_TO_RUBY(cl_long,    LONG2NUM);
     IF_TYPE_TO_RUBY(cl_ulong,   ULONG2NUM);
     IF_TYPE_TO_RUBY(cl_half,    rcl_half_float_new);
-    IF_TYPE_TO_RUBY(cl_float,   rb_float_new);
     IF_TYPE_TO_RUBY(cl_double,  rb_float_new);
 
     IF_VECTOR_TYPE_TO_RUBY(cl_char,   2,  INT2FIX);
@@ -398,17 +398,22 @@ typedef struct {
     int      is_dirty;
 } rcl_pointer_t;
 
-#define BytesOf(p)      (p->size * p->type_size)
-#define Need_Alloc(p)   (BytesOf(p) > sizeof(intptr_t) && !(p->is_wrapper))
-#define Is_Pointer(p)   (p->alloc_address != NULL || p->is_wrapper)
-#define AllocSizeOf(p)  (BytesOf(p) + 0x80)
+static inline size_t
+BytesOf(rcl_pointer_t *p)
+{
+    return p->size * p->type_size;
+}
+
+#define NEED_ALLOC(p)   (BytesOf(p) > sizeof(intptr_t) && !(p->is_wrapper))
+#define IS_POINTER(p)   (p->alloc_address != NULL || p->is_wrapper)
+#define ALLOC_SIZE_OF(p)  (BytesOf(p) + 0x80)
 
 static inline void
-Alloc_Memory(rcl_pointer_t *p)
+AllocMemory(rcl_pointer_t *p)
 {
     assert(p->size > 0 && p->type_size > 0);
 
-    size_t alloc_sz = AllocSizeOf(p);     // align in 128bytes.
+    size_t alloc_sz = ALLOC_SIZE_OF(p);     // align in 128bytes.
     p->alloc_address = (int8_t *)ALLOC_N(int8_t, alloc_sz);
     bzero(p->alloc_address, alloc_sz);
 
@@ -419,7 +424,7 @@ Alloc_Memory(rcl_pointer_t *p)
 }
 
 static inline rcl_pointer_t *
-Pointer_Ptr(VALUE ptr)
+PointerPtr(VALUE ptr)
 {
     rcl_pointer_t *p;
     Data_Get_Struct(ptr, rcl_pointer_t, p);
@@ -427,13 +432,20 @@ Pointer_Ptr(VALUE ptr)
     return p;
 }
 
+size_t
+PointerSize(VALUE ptr)
+{
+    rcl_pointer_t *p = PointerPtr(ptr);
+    return BytesOf(p);
+}
+
 // Used by Kernel#set_arg, so not local.
 void *
-Pointer_Address(VALUE ptr)
+PointerAddress(VALUE ptr)
 {
-    rcl_pointer_t *p = Pointer_Ptr(ptr);
+    rcl_pointer_t *p = PointerPtr(ptr);
 
-    if (!Is_Pointer(p)) {
+    if (!IS_POINTER(p)) {
         return p->size == 0 ? NULL : &(p->address);
     } else {
         return p->address;
@@ -441,21 +453,14 @@ Pointer_Address(VALUE ptr)
 }
 
 static inline void *
-Element_Address(rcl_pointer_t *ptr, size_t index)
+ElementAddress(rcl_pointer_t *ptr, size_t index)
 {
     assert(index < ptr->size);
-    if (!Is_Pointer(ptr)) {
+    if (!IS_POINTER(ptr)) {
         return (void *)((int8_t *)&(ptr->address) + index * ptr->type_size);
     } else {
         return (void *)((int8_t *)(ptr->address) + index * ptr->type_size);
     }
-}
-
-size_t
-Pointer_Size(VALUE ptr)
-{
-    rcl_pointer_t *p = Pointer_Ptr(ptr);
-    return BytesOf(p);
 }
 
 static void
@@ -513,11 +518,11 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
 
     Check_Type(type, T_SYMBOL);
     ID clt = SYM2ID(type);
-    if (!Is_Type_Valid(clt)) {
+    if (!IS_TYPE_VALID(clt)) {
         rb_raise(rb_eArgError, "invalid type tag.");
     }
 
-    Extract_Size(size, sz);
+    EXTRACT_SIZE(size, sz);
 
     rcl_pointer_t *p;
     VALUE ro = Data_Make_Struct(klass, rcl_pointer_t, 0, rcl_pointer_free_func, p);
@@ -529,7 +534,7 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
     p->type_size = rcl_type_size(clt);
     p->is_wrapper = 1;
 
-    assert(Is_Pointer(p));
+    assert(IS_POINTER(p));
 
     return ro;
 }
@@ -543,12 +548,12 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
 static VALUE
 rcl_pointer_clear(VALUE self)
 {
-    rcl_pointer_t *p = Pointer_Ptr(self);
+    rcl_pointer_t *p = PointerPtr(self);
     if (p->size > 0) {
-        if (!Is_Pointer(p)) {
+        if (!IS_POINTER(p)) {
             p->address = 0;
         } else {
-            bzero(p->alloc_address, AllocSizeOf(p));
+            bzero(p->alloc_address, ALLOC_SIZE_OF(p));
         }
     }
     return self;
@@ -570,7 +575,7 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
         rb_raise(rb_eTypeError, "invalid type tag, expected a Symbol.");
     }
     p->type = SYM2ID(type);
-    if (!Is_Type_Valid(p->type)) {
+    if (!IS_TYPE_VALID(p->type)) {
         rb_raise(rb_eArgError, "unrecognized type tag.");
     }
 
@@ -581,8 +586,8 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
     p->type_size = rcl_type_size(p->type);
     p->is_dirty = Qfalse;
 
-    if (Need_Alloc(p)) {
-        Alloc_Memory(p);
+    if (NEED_ALLOC(p)) {
+        AllocMemory(p);
     }
     return rcl_pointer_clear(self);
 }
@@ -590,10 +595,10 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
 static VALUE
 rcl_pointer_init_copy(VALUE copy, VALUE orig)
 {
-    Expect_RCL_Type(orig, Pointer);
+    EXPECT_RCL_TYPE(orig, Pointer);
 
-    rcl_pointer_t *copy_p = Pointer_Ptr(copy);
-    rcl_pointer_t *orig_p = Pointer_Ptr(orig);
+    rcl_pointer_t *copy_p = PointerPtr(copy);
+    rcl_pointer_t *orig_p = PointerPtr(orig);
 
     if (orig_p->size == 0) {
         assert(orig_p->alloc_address == NULL && orig_p->address == NULL);
@@ -606,11 +611,11 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
     copy_p->type_size = orig_p->type_size;
     copy_p->is_dirty = Qfalse;
 
-    if (!Is_Pointer(orig_p)) {
-        assert(!Need_Alloc(copy_p));
+    if (!IS_POINTER(orig_p)) {
+        assert(!NEED_ALLOC(copy_p));
         copy_p->address = orig_p->address;
     } else {
-        Alloc_Memory(copy_p);
+        AllocMemory(copy_p);
         memcpy(copy_p->address, orig_p->address, BytesOf(copy_p));
     }
     return copy;
@@ -626,13 +631,13 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
 static VALUE
 rcl_pointer_aref(VALUE self, VALUE index)
 {
-    rcl_pointer_t *p = Pointer_Ptr(self);
-    Extract_Size(index, i);
+    rcl_pointer_t *p = PointerPtr(self);
+    EXTRACT_SIZE(index, i);
 
     if (p->size == 0 || i >= p->size) {
         rb_raise(rb_eRuntimeError, "subscriber exceeds the boundary.");
     }
-    return rcl_native2ruby(p->type, Element_Address(p, i));
+    return rcl_native2ruby(p->type, ElementAddress(p, i));
 }
 
 /*
@@ -645,8 +650,8 @@ rcl_pointer_aref(VALUE self, VALUE index)
 static VALUE
 rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
 {
-    rcl_pointer_t *p = Pointer_Ptr(self);
-    Extract_Size(index, i);
+    rcl_pointer_t *p = PointerPtr(self);
+    EXTRACT_SIZE(index, i);
     if (NIL_P(value)) {
         rb_raise(rb_eArgError, "value can't be nil.");
     }
@@ -654,7 +659,7 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
     if (i >= p->size) {
         rb_raise(rb_eRuntimeError, "subscriber exceeds the boundary.");
     }
-    rcl_ruby2native(p->type, Element_Address(p, i), value);
+    rcl_ruby2native(p->type, ElementAddress(p, i), value);
     p->is_dirty = Qtrue;
     return self;
 }
@@ -673,16 +678,16 @@ rcl_pointer_assign(VALUE self, VALUE address, VALUE size, VALUE offset)
     Check_Type(address, T_FIXNUM);
     void *addr = (void *)NUM2ULONG(address);
 
-    rcl_pointer_t *p = Pointer_Ptr(self);
+    rcl_pointer_t *p = PointerPtr(self);
 
-    Extract_Size(size, sz);
-    Extract_Size(offset, os);
+    EXTRACT_SIZE(size, sz);
+    EXTRACT_SIZE(offset, os);
     if (sz + os > p->size) {
         rb_raise(rb_eArgError, "size or offset is too large.");
     }
 
     size_t cpysz = sz * p->type_size;
-    memcpy(Element_Address(p, os), addr, cpysz);
+    memcpy(ElementAddress(p, os), addr, cpysz);
     p->is_dirty = Qtrue;
 
     return self;
@@ -697,8 +702,8 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
 {
     Check_Type(value, T_STRING);
 
-    rcl_pointer_t *p = Pointer_Ptr(self);
-    Extract_Size(offset, os);
+    rcl_pointer_t *p = PointerPtr(self);
+    EXTRACT_SIZE(offset, os);
     if (os >= p->size) {
         rb_raise(rb_eArgError, "offset exceeds the boundary.");
     }
@@ -711,7 +716,7 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
 
     size_t bos = os * p->type_size;
     size_t cpysz = (BytesOf(p) - bos) > sz ? sz : (BytesOf(p) - bos);
-    memcpy(Element_Address(p, os), (void *)ptr, cpysz);
+    memcpy(ElementAddress(p, os), (void *)ptr, cpysz);
     p->is_dirty = Qtrue;
 
     return self;
@@ -726,7 +731,7 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
 static VALUE
 rcl_pointer_is_dirty(VALUE self)
 {
-    rcl_pointer_t *p = Pointer_Ptr(self);
+    rcl_pointer_t *p = PointerPtr(self);
     return p->is_dirty;
 }
 
@@ -739,7 +744,7 @@ rcl_pointer_is_dirty(VALUE self)
 static VALUE
 rcl_pointer_mark_dirty(VALUE self)
 {
-    rcl_pointer_t *p = Pointer_Ptr(self);
+    rcl_pointer_t *p = PointerPtr(self);
     p->is_dirty = Qtrue;
     return self;
 }
@@ -753,7 +758,7 @@ rcl_pointer_mark_dirty(VALUE self)
 static VALUE
 rcl_pointer_clear_dirty(VALUE self)
 {
-    rcl_pointer_t *p = Pointer_Ptr(self);
+    rcl_pointer_t *p = PointerPtr(self);
     p->is_dirty = Qfalse;
     return self;
 }
@@ -768,7 +773,7 @@ rcl_pointer_clear_dirty(VALUE self)
 static VALUE
 rcl_pointer_address(VALUE self)
 {
-    intptr_t addr = (intptr_t)Pointer_Address(self);
+    intptr_t addr = (intptr_t)PointerAddress(self);
     return addr == 0 ? Qnil : LONG2FIX(addr);
 }
 
@@ -781,7 +786,7 @@ rcl_pointer_address(VALUE self)
 static VALUE
 rcl_pointer_type(VALUE self)
 {
-    return ID2SYM(Pointer_Ptr(self)->type);
+    return ID2SYM(PointerPtr(self)->type);
 }
 
 /*
@@ -793,7 +798,7 @@ rcl_pointer_type(VALUE self)
 static VALUE
 rcl_pointer_size(VALUE self)
 {
-    return LONG2FIX(Pointer_Ptr(self)->size);
+    return LONG2FIX(PointerPtr(self)->size);
 }
 
 /*
@@ -805,7 +810,7 @@ rcl_pointer_size(VALUE self)
 static VALUE
 rcl_pointer_byte_size(VALUE self)
 {
-    return ULONG2NUM(Pointer_Size(self));
+    return ULONG2NUM(PointerSize(self));
 }
 
 /*
@@ -823,8 +828,8 @@ rcl_pointer_byte_size(VALUE self)
 static VALUE
 rcl_pointer_free(VALUE self)
 {
-    rcl_pointer_t *ptr = Pointer_Ptr(self);
-    if (!Is_Pointer(ptr)) {
+    rcl_pointer_t *ptr = PointerPtr(self);
+    if (!IS_POINTER(ptr)) {
         ptr->address = NULL;
         ptr->size = 0;
         return self;
@@ -853,15 +858,15 @@ rcl_pointer_free(VALUE self)
 static VALUE
 rcl_pointer_copy_from(VALUE self, VALUE src)
 {
-    Expect_RCL_Type(src, Pointer);
+    EXPECT_RCL_TYPE(src, Pointer);
 
-    rcl_pointer_t *p = Pointer_Ptr(self);
-    rcl_pointer_t *sp = Pointer_Ptr(src);
+    rcl_pointer_t *p = PointerPtr(self);
+    rcl_pointer_t *sp = PointerPtr(src);
 
     if (p->type != sp->type || p->size != sp->size) {
         rb_raise(rb_eRuntimeError, "size or type of source and target mismatch.");
     }
-    if (!Is_Pointer(p)) {
+    if (!IS_POINTER(p)) {
         p->address = sp->address;
     } else {
         memcpy(p->address, sp->address, BytesOf(p));
@@ -881,27 +886,27 @@ rcl_pointer_copy_from(VALUE self, VALUE src)
 static VALUE
 rcl_pointer_slice(VALUE self, VALUE start, VALUE size)
 {
-    Extract_Size(start, st);
-    Extract_Size(size, sz);
+    EXTRACT_SIZE(start, st);
+    EXTRACT_SIZE(size, sz);
 
-    rcl_pointer_t *p = Pointer_Ptr(self);
+    rcl_pointer_t *p = PointerPtr(self);
 
     if (p->size == 0) return Qnil;
     if (st + sz > p->size) return Qnil;
 
     VALUE ro = rcl_pointer_alloc(rcl_cPointer);
     assert(CLASS_OF(ro) == rcl_cPointer);
-    rcl_pointer_t *hp = Pointer_Ptr(ro);
+    rcl_pointer_t *hp = PointerPtr(ro);
     assert(hp->alloc_address == NULL);
 
     hp->type = p->type;
     hp->size = sz;
     hp->type_size = p->type_size;
 
-    if (Need_Alloc(hp)) {
-        Alloc_Memory(hp);
+    if (NEED_ALLOC(hp)) {
+        AllocMemory(hp);
     }
-    memcpy(Element_Address(hp, 0), Element_Address(p, st), BytesOf(hp));
+    memcpy(ElementAddress(hp, 0), ElementAddress(p, st), BytesOf(hp));
 
     return ro;
 }
@@ -929,14 +934,14 @@ rcl_create_mapped_pointer(void *address, size_t size)
 void
 rcl_invalidate_mapped_pointer(VALUE ptr)
 {
-    rcl_pointer_t *p = Pointer_Ptr(ptr);
+    rcl_pointer_t *p = PointerPtr(ptr);
     p->alloc_address = p->address = NULL;
     p->size = 0;
 }
 
 /*
  * call-seq:
- *      MappedPointer#cast_to(:cl_uint4)    -> receiver
+ *      cast_to(type)
  */
 static VALUE
 rcl_mapped_pointer_coerce(VALUE self, VALUE type)
@@ -946,11 +951,11 @@ rcl_mapped_pointer_coerce(VALUE self, VALUE type)
     }
 
     ID tid = SYM2ID(type);
-    if (!Is_Type_Valid(tid)) {
+    if (!IS_TYPE_VALID(tid)) {
         rb_raise(rb_eArgError, "unrecognized type name.");
     }
 
-    rcl_pointer_t *p = Pointer_Ptr(self);
+    rcl_pointer_t *p = PointerPtr(self);
     if (p->type == tid) return self;
     if (p->size == 0) {
         rb_warn("receiver is a null pointer.");
@@ -969,6 +974,54 @@ rcl_mapped_pointer_coerce(VALUE self, VALUE type)
     p->size = csz;
     p->type_size = tsz;
 
+    return self;
+}
+
+/*
+ * call-seq:
+ *      read_as_type(address, type)
+ */
+static VALUE
+rcl_mapped_pointer_read_as_type(VALUE self, VALUE address, VALUE type)
+{
+    if (!SYMBOL_P(type)) {
+        rb_raise(rb_eArgError, "expected argument 2 is a Symbol.");
+    }
+
+    ID tid = SYM2ID(type);
+    if (!IS_TYPE_VALID(tid)) {
+        rb_raise(rb_eArgError, "unrecognized type name.");
+    }
+
+    rcl_pointer_t *p = PointerPtr(self);
+
+    EXTRACT_SIZE(address, addr);
+    if (addr + rcl_type_size(tid) > BytesOf(p)) {
+        rb_raise(rb_eArgError, "byte index is too large.");
+    }
+    return rcl_native2ruby(tid, (void *)((int8_t *)p->address + addr));
+}
+
+static VALUE
+rcl_mapped_pointer_write_as_type(VALUE self, VALUE address, VALUE type, VALUE value)
+{
+    if (!SYMBOL_P(type)) {
+        rb_raise(rb_eArgError, "expected argument 2 is a Symbol.");
+    }
+
+    ID tid = SYM2ID(type);
+    if (!IS_TYPE_VALID(tid)) {
+        rb_raise(rb_eArgError, "unrecognized type name.");
+    }
+
+    rcl_pointer_t *p = PointerPtr(self);
+
+    EXTRACT_SIZE(address, addr);
+    if (addr + rcl_type_size(tid) > BytesOf(p)) {
+        rb_raise(rb_eArgError, "byte index is too large.");
+    }
+    rcl_ruby2native(tid, (void *)((int8_t *)p->address + addr), value);
+    p->is_dirty = Qtrue;
     return self;
 }
 
@@ -1014,4 +1067,6 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cMappedPointer, "byte_size", rcl_pointer_byte_size, 0);
     rb_define_method(rcl_cMappedPointer, "clear", rcl_pointer_clear, 0);
     rb_define_method(rcl_cMappedPointer, "cast_to", rcl_mapped_pointer_coerce, 1);
+    rb_define_method(rcl_cMappedPointer, "read_as_type", rcl_mapped_pointer_read_as_type, 2);
+    rb_define_method(rcl_cMappedPointer, "write_as_type", rcl_mapped_pointer_write_as_type, 3);
 }
