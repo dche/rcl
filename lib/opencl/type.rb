@@ -33,6 +33,12 @@ module OpenCL
     # Byte size of the data type
     attr_reader :size
 
+    # Returns the definition of Structure type. The definition is a triple of
+    # field name, type, and byte size.
+    def structure_definition
+      @def && @def.dup
+    end
+
     def to_s
       @tag.to_s
     end

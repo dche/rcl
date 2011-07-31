@@ -91,7 +91,7 @@ module OpenCL
     def wrap_address
       @fields = {}
       addr = @address
-      tag, _ = @type.parse_structure_tag(@type.tag)
+      tag = @type.structure_definition
 
       until tag.empty?
         name, type, length = tag.shift(3)
