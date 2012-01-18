@@ -63,8 +63,8 @@
             var = 0; \
         } else { \
             EXPECT_FIXNUM(sizet); \
-            var = FIX2UINT(sizet); \
+            var = FIX2INT(sizet); \
         } \
     } while (0)
 
-#endif  // RCL_CAPI_H__
+#endif  // RUBY_EXT_H__
