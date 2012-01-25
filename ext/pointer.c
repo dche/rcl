@@ -1,6 +1,7 @@
 // Copyright (c) 2010, Che Kenan
 
 #include "ieee_half_float.h"
+#include "uthash.h"     // store rcl_type_t structures. Ruby Hash is heavy.
 
 extern VALUE rcl_mOpenCL;
 
@@ -11,76 +12,100 @@ VALUE rcl_cMappedPointer;
  * CL types.
  */
 
-static ID id_type_cl_bool;
-static ID id_type_cl_char;
-static ID id_type_cl_uchar;
-static ID id_type_cl_short;
-static ID id_type_cl_ushort;
-static ID id_type_cl_int;
-static ID id_type_cl_uint;
-static ID id_type_cl_long;
-static ID id_type_cl_ulong;
-static ID id_type_cl_half;
-static ID id_type_cl_float;
-static ID id_type_cl_double;
+static VALUE type_cl_bool;
+static VALUE type_cl_char;
+static VALUE type_cl_uchar;
+static VALUE type_cl_short;
+static VALUE type_cl_ushort;
+static VALUE type_cl_int;
+static VALUE type_cl_uint;
+static VALUE type_cl_long;
+static VALUE type_cl_ulong;
+static VALUE type_cl_half;
+static VALUE type_cl_float;
+static VALUE type_cl_double;
 
-static ID id_type_cl_char2;
-static ID id_type_cl_char4;
-static ID id_type_cl_char8;
-static ID id_type_cl_char16;
-static ID id_type_cl_uchar2;
-static ID id_type_cl_uchar4;
-static ID id_type_cl_uchar8;
-static ID id_type_cl_uchar16;
-static ID id_type_cl_short2;
-static ID id_type_cl_short4;
-static ID id_type_cl_short8;
-static ID id_type_cl_short16;
-static ID id_type_cl_ushort2;
-static ID id_type_cl_ushort4;
-static ID id_type_cl_ushort8;
-static ID id_type_cl_ushort16;
-static ID id_type_cl_int2;
-static ID id_type_cl_int4;
-static ID id_type_cl_int8;
-static ID id_type_cl_int16;
-static ID id_type_cl_uint2;
-static ID id_type_cl_uint4;
-static ID id_type_cl_uint8;
-static ID id_type_cl_uint16;
-static ID id_type_cl_long2;
-static ID id_type_cl_long4;
-static ID id_type_cl_long8;
-static ID id_type_cl_long16;
-static ID id_type_cl_ulong2;
-static ID id_type_cl_ulong4;
-static ID id_type_cl_ulong8;
-static ID id_type_cl_ulong16;
-static ID id_type_cl_float2;
-static ID id_type_cl_float4;
-static ID id_type_cl_float8;
-static ID id_type_cl_float16;
-static ID id_type_cl_double2;
-static ID id_type_cl_double4;
-static ID id_type_cl_double8;
-static ID id_type_cl_double16;
+static VALUE type_cl_char2;
+static VALUE type_cl_char4;
+static VALUE type_cl_char8;
+static VALUE type_cl_char16;
+static VALUE type_cl_uchar2;
+static VALUE type_cl_uchar4;
+static VALUE type_cl_uchar8;
+static VALUE type_cl_uchar16;
+static VALUE type_cl_short2;
+static VALUE type_cl_short4;
+static VALUE type_cl_short8;
+static VALUE type_cl_short16;
+static VALUE type_cl_ushort2;
+static VALUE type_cl_ushort4;
+static VALUE type_cl_ushort8;
+static VALUE type_cl_ushort16;
+static VALUE type_cl_int2;
+static VALUE type_cl_int4;
+static VALUE type_cl_int8;
+static VALUE type_cl_int16;
+static VALUE type_cl_uint2;
+static VALUE type_cl_uint4;
+static VALUE type_cl_uint8;
+static VALUE type_cl_uint16;
+static VALUE type_cl_long2;
+static VALUE type_cl_long4;
+static VALUE type_cl_long8;
+static VALUE type_cl_long16;
+static VALUE type_cl_ulong2;
+static VALUE type_cl_ulong4;
+static VALUE type_cl_ulong8;
+static VALUE type_cl_ulong16;
+static VALUE type_cl_float2;
+static VALUE type_cl_float4;
+static VALUE type_cl_float8;
+static VALUE type_cl_float16;
+static VALUE type_cl_double2;
+static VALUE type_cl_double4;
+static VALUE type_cl_double8;
+static VALUE type_cl_double16;
 
-#define DEF_CL_TYPE(hash, type) \
+typedef struct {
+    VALUE           id;
+    int             size;
+    int             length;
+    UT_hash_handle  hh;
+} rcl_type_t;
+
+static rcl_type_t *rcl_types = NULL;
+
+#define DEF_CL_TYPE(tp) \
     do { \
-        id_type_##type = rb_intern( #type ); \
-        size_t sz = sizeof(type); \
-        rb_hash_aset(hash, ID2SYM(id_type_##type), LONG2FIX(sz)); \
+        rcl_type_t *ty = malloc(sizeof(rcl_type_t)); \
+        type_##tp = ID2SYM(rb_intern( #tp )); \
+        ty->id = type_##tp; \
+        ty->size = sizeof(tp); \
+        ty->length = 1; \
+        HASH_ADD_PTR(rcl_types, id, ty); \
     } while (0)
 
-#define DEF_CL_VECTOR_TYPE(hash, type) \
+#define DEF_CL_VECTOR_TYPE(tp, len) \
     do { \
-        id_type_##type = rb_intern( #type ); \
-        size_t sz = sizeof(type); \
-        rb_hash_aset(hash, ID2SYM(id_type_##type), LONG2FIX(sz)); \
+        rcl_type_t *ty = malloc(sizeof(rcl_type_t)); \
+        type_##tp##len = ID2SYM(rb_intern( #tp #len )); \
+        ty->id = type_##tp##len; \
+        ty->size = sizeof( tp##len ); \
+        ty->length = len; \
+        HASH_ADD_PTR(rcl_types, id, ty); \
     } while (0)
 
-static VALUE rcl_sym_vector_types;
-static VALUE rcl_sym_scalar_types;
+
+// referenced by kernel_set_arg in capi.c
+size_t
+rcl_type_size(VALUE type)
+{
+    rcl_type_t *ty = NULL;
+    if (SYMBOL_P(type)) {
+        HASH_FIND_PTR(rcl_types, &type, ty);
+    }
+    return NULL == ty ? 0 : ty->size;
+}
 
 /*
  * call-seq:
@@ -91,17 +116,7 @@ static VALUE rcl_sym_scalar_types;
  */
 static VALUE rcl_sizeof(VALUE self, VALUE id)
 {
-    VALUE sz = Qnil;
-    if (SYMBOL_P(id)) {
-        VALUE scalars = rb_const_get(self, rcl_sym_scalar_types);
-        assert(!NIL_P(scalars));
-        sz = rb_hash_lookup(scalars, id);
-        if (NIL_P(sz)) {
-            VALUE vectors = rb_const_get(self, rcl_sym_vector_types);
-            sz = rb_hash_lookup(vectors, id);
-        }
-    }
-    return NIL_P(sz) ? INT2FIX(0) : sz;
+    return INT2FIX(rcl_type_size(id));
 }
 
 /*
@@ -114,9 +129,11 @@ static VALUE rcl_sizeof(VALUE self, VALUE id)
 static VALUE rcl_is_type_vector(VALUE self, VALUE id)
 {
     if (SYMBOL_P(id)) {
-        VALUE vectors = rb_const_get(self, rcl_sym_vector_types);
-        assert(!NIL_P(vectors));
-        return NIL_P(rb_hash_lookup(vectors, id)) ? Qfalse : Qtrue;
+        rcl_type_t *ty = NULL;
+        HASH_FIND_PTR(rcl_types, &id, ty);
+        if (NULL != ty && ty->length > 1) {
+            return Qtrue;
+        }
     }
     return Qfalse;
 }
@@ -129,102 +146,87 @@ static VALUE rcl_is_type_vector(VALUE self, VALUE id)
  */
 static VALUE rcl_is_type_valid(VALUE self, VALUE id)
 {
-    return rcl_sizeof(self, id) != INT2FIX(0) ? Qtrue : Qfalse;
+    if (SYMBOL_P(id)) {
+        rcl_type_t *ty = NULL;
+        HASH_FIND_PTR(rcl_types, &id, ty);
+        if (NULL != ty) {
+            return Qtrue;
+        }
+    }
+    return Qfalse;
 }
 
 static void define_cl_types(void)
 {
-    VALUE rcl_types = rb_hash_new();
-    VALUE rcl_vector_types = rb_hash_new();
+    DEF_CL_TYPE(cl_bool);
+    DEF_CL_TYPE(cl_char);
+    DEF_CL_TYPE(cl_uchar);
+    DEF_CL_TYPE(cl_short);
+    DEF_CL_TYPE(cl_ushort);
+    DEF_CL_TYPE(cl_int);
+    DEF_CL_TYPE(cl_uint);
+    DEF_CL_TYPE(cl_long);
+    DEF_CL_TYPE(cl_ulong);
+    DEF_CL_TYPE(cl_half);
+    DEF_CL_TYPE(cl_float);
+    DEF_CL_TYPE(cl_double);
 
-    DEF_CL_TYPE(rcl_types, cl_bool);
-    DEF_CL_TYPE(rcl_types, cl_char);
-    DEF_CL_TYPE(rcl_types, cl_uchar);
-    DEF_CL_TYPE(rcl_types, cl_short);
-    DEF_CL_TYPE(rcl_types, cl_ushort);
-    DEF_CL_TYPE(rcl_types, cl_int);
-    DEF_CL_TYPE(rcl_types, cl_uint);
-    DEF_CL_TYPE(rcl_types, cl_long);
-    DEF_CL_TYPE(rcl_types, cl_ulong);
-    DEF_CL_TYPE(rcl_types, cl_half);
-    DEF_CL_TYPE(rcl_types, cl_float);
-    DEF_CL_TYPE(rcl_types, cl_double);
-
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_char2);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_char4);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_char8);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_char16);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uchar2);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uchar4);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uchar8);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uchar16);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_short2);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_short4);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_short8);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_short16);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ushort2);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ushort4);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ushort8);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ushort16);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_int2);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_int4);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_int8);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_int16);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uint2);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uint4);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uint8);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_uint16);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_long2);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_long4);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_long8);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_long16);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ulong2);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ulong4);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ulong8);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_ulong16);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_float2);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_float4);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_float8);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_float16);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_double2);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_double4);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_double8);
-    DEF_CL_VECTOR_TYPE(rcl_vector_types, cl_double16);
-
-    // prevent from change.
-    OBJ_FREEZE(rcl_types);
-    OBJ_FREEZE(rcl_vector_types);
-
-    rb_define_const(rcl_mOpenCL, "SCALAR_TYPES", rcl_types);
-    rb_define_const(rcl_mOpenCL, "VECTOR_TYPES", rcl_vector_types);
-
-    // for computing the ID of symbols only once.
-    rcl_sym_scalar_types = rb_intern("SCALAR_TYPES");
-    rcl_sym_vector_types = rb_intern("VECTOR_TYPES");
+    DEF_CL_VECTOR_TYPE(cl_char,     2);
+    DEF_CL_VECTOR_TYPE(cl_char,     4);
+    DEF_CL_VECTOR_TYPE(cl_char,     8);
+    DEF_CL_VECTOR_TYPE(cl_char,     16);
+    DEF_CL_VECTOR_TYPE(cl_uchar,    2);
+    DEF_CL_VECTOR_TYPE(cl_uchar,    4);
+    DEF_CL_VECTOR_TYPE(cl_uchar,    8);
+    DEF_CL_VECTOR_TYPE(cl_uchar,    16);
+    DEF_CL_VECTOR_TYPE(cl_short,    2);
+    DEF_CL_VECTOR_TYPE(cl_short,    4);
+    DEF_CL_VECTOR_TYPE(cl_short,    8);
+    DEF_CL_VECTOR_TYPE(cl_short,    16);
+    DEF_CL_VECTOR_TYPE(cl_ushort,   2);
+    DEF_CL_VECTOR_TYPE(cl_ushort,   4);
+    DEF_CL_VECTOR_TYPE(cl_ushort,   8);
+    DEF_CL_VECTOR_TYPE(cl_ushort,   16);
+    DEF_CL_VECTOR_TYPE(cl_int,      2);
+    DEF_CL_VECTOR_TYPE(cl_int,      4);
+    DEF_CL_VECTOR_TYPE(cl_int,      8);
+    DEF_CL_VECTOR_TYPE(cl_int,      16);
+    DEF_CL_VECTOR_TYPE(cl_uint,     2);
+    DEF_CL_VECTOR_TYPE(cl_uint,     4);
+    DEF_CL_VECTOR_TYPE(cl_uint,     8);
+    DEF_CL_VECTOR_TYPE(cl_uint,     16);
+    DEF_CL_VECTOR_TYPE(cl_long,     2);
+    DEF_CL_VECTOR_TYPE(cl_long,     4);
+    DEF_CL_VECTOR_TYPE(cl_long,     8);
+    DEF_CL_VECTOR_TYPE(cl_long,     16);
+    DEF_CL_VECTOR_TYPE(cl_ulong,    2);
+    DEF_CL_VECTOR_TYPE(cl_ulong,    4);
+    DEF_CL_VECTOR_TYPE(cl_ulong,    8);
+    DEF_CL_VECTOR_TYPE(cl_ulong,    16);
+    DEF_CL_VECTOR_TYPE(cl_float,    2);
+    DEF_CL_VECTOR_TYPE(cl_float,    4);
+    DEF_CL_VECTOR_TYPE(cl_float,    8);
+    DEF_CL_VECTOR_TYPE(cl_float,    16);
+    DEF_CL_VECTOR_TYPE(cl_double,   2);
+    DEF_CL_VECTOR_TYPE(cl_double,   4);
+    DEF_CL_VECTOR_TYPE(cl_double,   8);
+    DEF_CL_VECTOR_TYPE(cl_double,   16);
 
     rb_define_module_function(rcl_mOpenCL, "type_size", rcl_sizeof, 1);
     rb_define_module_function(rcl_mOpenCL, "valid_type?", rcl_is_type_valid, 1);
     rb_define_module_function(rcl_mOpenCL, "valid_vector?", rcl_is_type_vector, 1);
 }
 
-#define IS_TYPE_VALID(id)  (rcl_is_type_valid(rcl_mOpenCL, ID2SYM(id)) == Qtrue)
-#define IS_TYPE_VECTOR(id) (rcl_is_type_vector(rcl_mOpenCL, ID2SYM(id)) == Qtrue)
-
-size_t
-rcl_type_size(ID id)
-{
-    return FIX2INT(rcl_sizeof(rcl_mOpenCL, ID2SYM(id)));
-}
-
 #define IF_TYPE_TO_NATIVE(c_type, expector, convertor) \
-    if (type == id_type_##c_type) { \
+    if (type == type_##c_type) { \
         expector(value); \
-        *(c_type *)address = (c_type)convertor(value); \
+        c_type *ptr = (c_type *)address; \
+        ptr[0] = (c_type)convertor(value); \
         return; \
     }
 
 #define IF_VECTOR_TYPE_TO_NATIVE(base_c_type, n, expector, convertor) \
-    if (type == id_type_##base_c_type##n) { \
+    if (type == type_##base_c_type##n) { \
         EXPECT_NON_EMPTY_ARRAY(value); \
         if (n > RARRAY_LEN(value)) { \
             rb_raise(rb_eArgError, "expected number of elements is %d, but got %ld", n, RARRAY_LEN(value)); \
@@ -244,14 +246,9 @@ rcl_ruby2native(ID type, void *address, VALUE value)
 {
     assert(!(NIL_P(value) || NULL == address));
 
-    if (type == id_type_cl_bool) {
-        EXTRACT_BOOLEAN(value, bv);
-        *(cl_bool *)address = bv;
-        return;
-    }
     IF_TYPE_TO_NATIVE(cl_float,  EXPECT_FLOAT,   NUM2DBL);
     IF_TYPE_TO_NATIVE(cl_ushort, EXPECT_FIXNUM,  FIX2INT);
-    IF_TYPE_TO_NATIVE(cl_uint,   EXPECT_INTEGER, FIX2INT);
+    IF_TYPE_TO_NATIVE(cl_uint,   EXPECT_INTEGER, NUM2UINT);
     IF_TYPE_TO_NATIVE(cl_char,   EXPECT_FIXNUM,  FIX2INT);
     IF_TYPE_TO_NATIVE(cl_uchar,  EXPECT_FIXNUM,  FIX2INT);
     IF_TYPE_TO_NATIVE(cl_short,  EXPECT_FIXNUM,  FIX2INT);
@@ -276,14 +273,15 @@ rcl_ruby2native(ID type, void *address, VALUE value)
     IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 2,  EXPECT_FIXNUM,  FIX2INT);
     IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 4,  EXPECT_FIXNUM,  FIX2INT);
     IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 8,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 16, EXPECT_FIXNUM,  FIX2INT);
     IF_VECTOR_TYPE_TO_NATIVE(cl_int,    2,  EXPECT_INTEGER, FIX2INT);
     IF_VECTOR_TYPE_TO_NATIVE(cl_int,    4,  EXPECT_INTEGER, FIX2INT);
     IF_VECTOR_TYPE_TO_NATIVE(cl_int,    8,  EXPECT_INTEGER, FIX2INT);
     IF_VECTOR_TYPE_TO_NATIVE(cl_int,    16, EXPECT_INTEGER, FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   2,  EXPECT_INTEGER, FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   4,  EXPECT_INTEGER, FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   8,  EXPECT_INTEGER, FIX2INT);
-    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   16, EXPECT_INTEGER, FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   2,  EXPECT_INTEGER, NUM2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   4,  EXPECT_INTEGER, NUM2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   8,  EXPECT_INTEGER, NUM2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   16, EXPECT_INTEGER, NUM2UINT);
     IF_VECTOR_TYPE_TO_NATIVE(cl_long,   2,  EXPECT_INTEGER, NUM2LONG);
     IF_VECTOR_TYPE_TO_NATIVE(cl_long,   4,  EXPECT_INTEGER, NUM2LONG);
     IF_VECTOR_TYPE_TO_NATIVE(cl_long,   8,  EXPECT_INTEGER, NUM2LONG);
@@ -301,16 +299,23 @@ rcl_ruby2native(ID type, void *address, VALUE value)
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 8,  EXPECT_FLOAT,   NUM2DBL);
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 16, EXPECT_FLOAT,   NUM2DBL);
 
+    if (type == ID2SYM(rb_intern("cl_bool"))) {
+        EXTRACT_BOOLEAN(value, bv);
+        *(cl_bool *)address = bv;
+        return;
+    }
+
     rb_raise(rb_eArgError, "invalid type tag.");
 }
 
 #define IF_TYPE_TO_RUBY(c_type, convertor) \
-    if (type == id_type_##c_type) { \
-        return convertor(*(c_type *)address); \
+    if (type == type_##c_type) { \
+        c_type *ptr = (c_type *)address; \
+        return convertor(ptr[0]); \
     }
 
 #define IF_VECTOR_TYPE_TO_RUBY(base_c_type, n, convertor) \
-    if (type == id_type_##base_c_type##n) { \
+    if (type == type_##base_c_type##n) { \
         VALUE ret = rb_ary_new2(n); \
         base_c_type *ptr = (base_c_type *)address; \
         for (int i = 0; i < n; i++) { \
@@ -324,9 +329,6 @@ rcl_native2ruby(ID type, void *address)
 {
     assert(NULL != address);
 
-    if (type == id_type_cl_bool) {
-        return (*(cl_bool *)address) ? Qtrue : Qfalse;
-    }
     IF_TYPE_TO_RUBY(cl_float,   rb_float_new);
     IF_TYPE_TO_RUBY(cl_ushort,  UINT2NUM);
     IF_TYPE_TO_RUBY(cl_uint,    UINT2NUM);
@@ -380,6 +382,10 @@ rcl_native2ruby(ID type, void *address)
     IF_VECTOR_TYPE_TO_RUBY(cl_double, 8,  rb_float_new);
     IF_VECTOR_TYPE_TO_RUBY(cl_double, 16, rb_float_new);
 
+    if (type == ID2SYM(rb_intern("cl_bool"))) {
+        return (*(cl_bool *)address) ? Qtrue : Qfalse;
+    }
+
     return Qnil;
 }
 
@@ -392,7 +398,7 @@ typedef struct {
     void    *address;
     size_t   size;              // in number of elements, not in byte.
     size_t   type_size;
-    ID       type;
+    VALUE    type;
     int      is_wrapper;
     int      is_dirty;
 } rcl_pointer_t;
@@ -403,8 +409,8 @@ BytesOf(rcl_pointer_t *p)
     return p->size * p->type_size;
 }
 
-#define NEED_ALLOC(p)   (BytesOf(p) > sizeof(intptr_t) && !(p->is_wrapper))
-#define IS_POINTER(p)   (p->alloc_address != NULL || p->is_wrapper)
+#define NEED_ALLOC(p)     (BytesOf(p) > sizeof(intptr_t) && !(p->is_wrapper))
+#define IS_POINTER(p)     (p->alloc_address != NULL || p->is_wrapper)
 #define ALLOC_SIZE_OF(p)  (BytesOf(p) + 0x80)
 
 static inline void
@@ -485,7 +491,7 @@ rcl_pointer_alloc(VALUE klass)
 
     p->alloc_address = p->address = NULL;
     p->size = 0;
-    p->type = id_type_cl_uint;
+    p->type = Qnil;
     p->type_size = sizeof(cl_uint);
     p->is_wrapper = 0;
 
@@ -516,8 +522,8 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
     void *addr = (void *)NUM2ULONG(address);
 
     Check_Type(type, T_SYMBOL);
-    ID clt = SYM2ID(type);
-    if (!IS_TYPE_VALID(clt)) {
+    int tsz = rcl_type_size(type);
+    if (tsz == 0) {
         rb_raise(rb_eArgError, "invalid type tag.");
     }
 
@@ -529,8 +535,8 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
     p->alloc_address = NULL;
     p->address = addr;
     p->size = sz;
-    p->type = clt;
-    p->type_size = rcl_type_size(clt);
+    p->type = type;
+    p->type_size = tsz;
     p->is_wrapper = 1;
 
     assert(IS_POINTER(p));
@@ -570,19 +576,20 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
     rcl_pointer_t *p;
     Data_Get_Struct(self, rcl_pointer_t, p);
 
-    if (!SYMBOL_P(type)) {
-        rb_raise(rb_eTypeError, "invalid type tag, expected a Symbol.");
-    }
-    p->type = SYM2ID(type);
-    if (!IS_TYPE_VALID(p->type)) {
+    Check_Type(type, T_SYMBOL);
+    int tsz = rcl_type_size(type);
+    if (tsz == 0) {
         rb_raise(rb_eArgError, "unrecognized type tag.");
     }
 
-    if (!FIXNUM_P(size) || FIX2UINT(size) < 1) {
+    EXTRACT_SIZE(size, lsz);
+    if (lsz < 1) {
         rb_raise(rb_eArgError, "invalid size.");
     }
-    p->size = FIX2UINT(size);
-    p->type_size = rcl_type_size(p->type);
+
+    p->type = type;
+    p->type_size = tsz;
+    p->size = lsz;
     p->is_dirty = Qfalse;
 
     if (NEED_ALLOC(p)) {
@@ -622,7 +629,7 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
 
 /*
  * call-seq:
- *      HostPointer#[0] ->  1.234
+ *      aHostPointer[0]     # =>  1.234
  *
  * Returns the n-th element stored in the memory region managed by
  * the receiver.
@@ -641,7 +648,7 @@ rcl_pointer_aref(VALUE self, VALUE index)
 
 /*
  * call-seq:
- *      HostPointer#[0]= 1234 ->  receiver
+ *      aHostPointer[0] = 1234  # =>  receiver
  *
  * Sets the n-th element stored to the given value.
  * The value must match with the receiver's type.
@@ -651,6 +658,7 @@ rcl_pointer_aset(VALUE self, VALUE index, VALUE value)
 {
     rcl_pointer_t *p = PointerPtr(self);
     EXTRACT_SIZE(index, i);
+
     if (NIL_P(value)) {
         rb_raise(rb_eArgError, "value can't be nil.");
     }
@@ -735,7 +743,7 @@ rcl_pointer_is_dirty(VALUE self)
 }
 
 /*
- * Clears the dirty flag of the receiver.
+ * Sets the dirty flag of the receiver.
  *
  * call-seq:
  *      mark_dirty
@@ -785,7 +793,7 @@ rcl_pointer_address(VALUE self)
 static VALUE
 rcl_pointer_type(VALUE self)
 {
-    return ID2SYM(PointerPtr(self)->type);
+    return PointerPtr(self)->type;
 }
 
 /*
@@ -802,7 +810,7 @@ rcl_pointer_size(VALUE self)
 
 /*
  * call-seq:
- *      HostPointer#byte_size   -> aInteger
+ *      aHostPointer.byte_size   # => 1024
  *
  * Returns the size of the receiver in byte.
  */
@@ -814,7 +822,7 @@ rcl_pointer_byte_size(VALUE self)
 
 /*
  * call-seq:
- *      HostPointer#free
+ *      aHostPointer.free   # => the receiver.
  *
  * Frees the memory the receiver manages, or stops wrapping a C pointer
  * if the receiver is a wrapper.
@@ -920,7 +928,7 @@ rcl_create_mapped_pointer(void *address, size_t size)
     rcl_pointer_t *p;
     VALUE mp = Data_Make_Struct(rcl_cMappedPointer, rcl_pointer_t, 0, 0, p);
 
-    p->type = id_type_cl_uchar;
+    p->type = ID2SYM(rb_intern("cl_uchar"));
     p->type_size = sizeof(cl_uchar);
     p->alloc_address = p->address = address;
     p->size = size;
@@ -929,7 +937,7 @@ rcl_create_mapped_pointer(void *address, size_t size)
     return mp;
 }
 
-// references by rcl_cq_enqueu_unmap_mem_object
+// referenced by rcl_cq_enqueu_unmap_mem_object
 void
 rcl_invalidate_mapped_pointer(VALUE ptr)
 {
@@ -945,23 +953,19 @@ rcl_invalidate_mapped_pointer(VALUE ptr)
 static VALUE
 rcl_mapped_pointer_coerce(VALUE self, VALUE type)
 {
-    if (!SYMBOL_P(type)) {
-        rb_raise(rb_eArgError, "expected argument 2 is a Symbol.");
-    }
-
-    ID tid = SYM2ID(type);
-    if (!IS_TYPE_VALID(tid)) {
-        rb_raise(rb_eArgError, "unrecognized type name.");
-    }
+    Check_Type(type, T_SYMBOL);
 
     rcl_pointer_t *p = PointerPtr(self);
-    if (p->type == tid) return self;
+    if (p->type == type) return self;
     if (p->size == 0) {
         rb_warn("receiver is a null pointer.");
         return self;
     }
 
-    size_t tsz = rcl_type_size(tid);
+    int tsz = rcl_type_size(type);
+    if (tsz == 0) {
+        rb_raise(rb_eArgError, "unrecognized type name.");
+    }
     size_t sz = BytesOf(p);
 
     if (sz % tsz != 0) {
@@ -969,7 +973,7 @@ rcl_mapped_pointer_coerce(VALUE self, VALUE type)
     }
     size_t csz = sz / tsz;
 
-    p->type = tid;
+    p->type = type;
     p->size = csz;
     p->type_size = tsz;
 
@@ -983,43 +987,37 @@ rcl_mapped_pointer_coerce(VALUE self, VALUE type)
 static VALUE
 rcl_mapped_pointer_read_as_type(VALUE self, VALUE address, VALUE type)
 {
-    if (!SYMBOL_P(type)) {
-        rb_raise(rb_eArgError, "expected argument 2 is a Symbol.");
-    }
-
-    ID tid = SYM2ID(type);
-    if (!IS_TYPE_VALID(tid)) {
+    Check_Type(type, T_SYMBOL);
+    int tsz = rcl_type_size(type);
+    if (tsz == 0) {
         rb_raise(rb_eArgError, "unrecognized type name.");
     }
 
     rcl_pointer_t *p = PointerPtr(self);
 
     EXTRACT_SIZE(address, addr);
-    if (addr + rcl_type_size(tid) > BytesOf(p)) {
+    if (addr + tsz > BytesOf(p)) {
         rb_raise(rb_eArgError, "byte index is too large.");
     }
-    return rcl_native2ruby(tid, (void *)((int8_t *)p->address + addr));
+    return rcl_native2ruby(type, (void *)((int8_t *)p->address + addr));
 }
 
 static VALUE
 rcl_mapped_pointer_write_as_type(VALUE self, VALUE address, VALUE type, VALUE value)
 {
-    if (!SYMBOL_P(type)) {
-        rb_raise(rb_eArgError, "expected argument 2 is a Symbol.");
-    }
-
-    ID tid = SYM2ID(type);
-    if (!IS_TYPE_VALID(tid)) {
+    Check_Type(type, T_SYMBOL);
+    int tsz = rcl_type_size(type);
+    if (tsz == 0) {
         rb_raise(rb_eArgError, "unrecognized type name.");
     }
 
     rcl_pointer_t *p = PointerPtr(self);
 
     EXTRACT_SIZE(address, addr);
-    if (addr + rcl_type_size(tid) > BytesOf(p)) {
+    if (addr + tsz > BytesOf(p)) {
         rb_raise(rb_eArgError, "byte index is too large.");
     }
-    rcl_ruby2native(tid, (void *)((int8_t *)p->address + addr), value);
+    rcl_ruby2native(type, (void *)((int8_t *)p->address + addr), value);
     p->is_dirty = Qtrue;
     return self;
 }

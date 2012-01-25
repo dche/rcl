@@ -18,7 +18,7 @@ describe HostPointer do
 
   it "should reject 0 size" do
     should.raise(ArgumentError) { HostPointer.new :cl_ulong, 0 }
-    should.raise(ArgumentError) { HostPointer.new :cl_ulong, 1.5 }
+    should.raise(TypeError) { HostPointer.new :cl_ulong, 1.5 }
     should.not.raise(Exception) { HostPointer.new :cl_ulong, 1 }
   end
 
@@ -43,10 +43,10 @@ describe HostPointer do
 
   the '#type_size' do
     p = HostPointer.new :cl_uchar, 1
-    p.type_size.should.equal SCALAR_TYPES[:cl_uchar]
+    p.type_size.should.equal 1
 
     p = HostPointer.new :cl_float16, 4
-    p.type_size.should.equal VECTOR_TYPES[:cl_float16]
+    p.type_size.should.equal 64
   end
 
   the '#size' do
@@ -63,12 +63,12 @@ describe HostPointer do
   end
 
   the '#byte_size' do
-    @p.byte_size.should.equal 1024 * SCALAR_TYPES[:cl_int]
+    @p.byte_size.should.equal 1024 * 4
 
     p = HostPointer.new :cl_float, 1
-    p.byte_size.should.equal SCALAR_TYPES[:cl_float]
+    p.byte_size.should.equal 4
     p = HostPointer.new :cl_float, 100
-    p.byte_size.should.equal SCALAR_TYPES[:cl_float] * 100
+    p.byte_size.should.equal 4 * 100
 
   end
 
@@ -348,7 +348,7 @@ describe HostPointer do
     p = HostPointer.new :cl_float, 20
     wp = HostPointer.wrap_pointer p.address, :cl_float, 10
     wp.should.is_a HostPointer
-    wp.byte_size.should.equal SCALAR_TYPES[:cl_float] * 10
+    wp.byte_size.should.equal 4 * 10
     p[0] = 1.1
     wp[0].should.equal p[0]
     wp.free
