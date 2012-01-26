@@ -242,7 +242,7 @@ static void define_cl_types(void)
 
 // Referenced by kernel_set_arg in capi.c
 void
-rcl_ruby2native(ID type, void *address, VALUE value)
+rcl_ruby2native(VALUE type, void *address, VALUE value)
 {
     assert(!(NIL_P(value) || NULL == address));
 
@@ -325,7 +325,7 @@ rcl_ruby2native(ID type, void *address, VALUE value)
     }
 
 static inline VALUE
-rcl_native2ruby(ID type, void *address)
+rcl_native2ruby(VALUE type, void *address)
 {
     assert(NULL != address);
 

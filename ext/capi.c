@@ -2687,13 +2687,13 @@ rcl_kernel_init_copy(VALUE copy, VALUE orig)
 }
 
 
-extern size_t rcl_type_size(ID);
-extern void rcl_ruby2native(ID, void *, VALUE);
+extern size_t rcl_type_size(VALUE);
+extern void rcl_ruby2native(VALUE, void *, VALUE);
 
-static ID   rcl_kernel_arg_type_memory;
-static ID   rcl_kernel_arg_type_struct;
-static ID   rcl_kernel_arg_type_local;
-static ID   rcl_kernel_arg_type_sampler;
+static VALUE   rcl_kernel_arg_type_memory;
+static VALUE   rcl_kernel_arg_type_struct;
+static VALUE   rcl_kernel_arg_type_local;
+static VALUE   rcl_kernel_arg_type_sampler;
 
 /*
  * call-seq:
@@ -2713,8 +2713,7 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE type, VALUE value)
     size_t arg_size = 0;
     int8_t *arg_ptr = NULL;
 
-    ID tid = SYM2ID(type);
-    if (tid == rcl_kernel_arg_type_memory) {
+    if (type == rcl_kernel_arg_type_memory) {
         if (!NIL_P(value)) {
             EXPECT_RCL_TYPE(value, Memory);
             arg_size = sizeof(cl_mem);
@@ -2723,15 +2722,15 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE type, VALUE value)
             Data_Get_Struct(value, rcl_mem_t, mem);
             arg_ptr = (void *)(&(mem->mem));
         }
-    } else if (tid == rcl_kernel_arg_type_local) {
+    } else if (type == rcl_kernel_arg_type_local) {
         EXTRACT_SIZE(value, sz);
         arg_size = sz;
         arg_ptr = NULL;
-    } else if (tid == rcl_kernel_arg_type_struct) {
+    } else if (type == rcl_kernel_arg_type_struct) {
         // TODO: rb_call pointer
         //       rb_call address, size
         rb_notimplement();
-    } else if (tid == rcl_kernel_arg_type_sampler) {
+    } else if (type == rcl_kernel_arg_type_sampler) {
         EXPECT_RCL_TYPE(value, Sampler);
 
         rcl_sampler_t *ps;
@@ -2740,10 +2739,10 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE type, VALUE value)
 
         arg_size = sizeof(cl_sampler);
     } else {
-        arg_size = rcl_type_size(tid);
+        arg_size = rcl_type_size(type);
         arg_ptr = ALLOCA_N(int8_t, arg_size);
 
-        rcl_ruby2native(tid, (void *)arg_ptr, value);
+        rcl_ruby2native(type, (void *)arg_ptr, value);
     }
 
     cl_int res = clSetKernelArg(KernelPtr(self), (cl_uint)idx, arg_size, arg_ptr);
@@ -2841,10 +2840,10 @@ define_class_kernel(void)
     rb_define_method(rcl_cKernel, "workgroup_info", rcl_kernel_workgroup_info, 2);
 
     // Initialize constants.
-    rcl_kernel_arg_type_memory = rb_intern("mem");
-    rcl_kernel_arg_type_struct = rb_intern("struct");
-    rcl_kernel_arg_type_local = rb_intern("local");
-    rcl_kernel_arg_type_sampler = rb_intern("sampler");
+    rcl_kernel_arg_type_memory = ID2SYM(rb_intern("mem"));
+    rcl_kernel_arg_type_struct = ID2SYM(rb_intern("struct"));
+    rcl_kernel_arg_type_local = ID2SYM(rb_intern("local"));
+    rcl_kernel_arg_type_sampler = ID2SYM(rb_intern("sampler"));
 }
 
 /*
