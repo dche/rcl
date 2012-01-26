@@ -1,6 +1,6 @@
 .DS_Store
 ref
-
+.rbx
 *.rbo
 *.rbc
 *.gem
@@ -10,5 +10,5 @@ ref
 *.so
 
 Makefile
-
-ci.rb
+cov
+*doc
