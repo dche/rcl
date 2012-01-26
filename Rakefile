@@ -3,6 +3,8 @@
 require 'rake'
 require 'rake/gempackagetask'
 
+require 'rbconfig'
+
 spec = Gem::Specification.new do |s|
   s.name = 'rcl'
   s.version = '0.3.3'
@@ -21,6 +23,7 @@ spec = Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
 
   s.add_development_dependency 'bacon', '>= 1.1.0'
+  s.add_development_dependency 'simplecov', '>= 0.5.0'
   s.add_development_dependency 'narray', '>= 0.5.9'
   s.add_development_dependency 'perftools.rb', '>= 0.5.6'
 
@@ -39,7 +42,7 @@ dir = File.dirname(__FILE__)
 extdir = File.join(dir, 'ext')
 libdir = File.join(dir, 'lib/opencl')
 ext_name = 'capi'
-ext_ext = RUBY_PLATFORM =~ /darwin/ ? 'bundle' : 'so'
+ext_ext = `uname` =~ /darwin/i ? 'bundle' : 'so'
 ext_target = "#{ext_name}.#{ext_ext}"
 
 task :default => :spec
@@ -68,7 +71,7 @@ end
 
 file File.join(libdir, ext_target) => FileList[File.join(extdir, '*.{c,h}')] do
   cd(extdir, verbose:false) do
-    system "#{RUBY_ENGINE} extconf.rb && make"
+    system "#{Config::CONFIG['bindir']}/#{RUBY_ENGINE} extconf.rb && make"
   end
   cp File.join(extdir, ext_target), libdir, verbose:false
 end
@@ -91,11 +94,3 @@ end
 
 desc 'Rebuild the extension.'
 task :rebuild => [:clean, :build]
-
-desc 'Run benchmark.'
-task :bm => :build do
-  FileList[File.join(dir, 'bm/**/*.rb')].each do |bm|
-    load bm
-  end
-end
-
