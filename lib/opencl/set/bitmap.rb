@@ -84,6 +84,16 @@ module OpenCL
       self[d] & (1 << m) != 0
     end
 
+    protected
+
+    def [](i)
+      super i + 1
+    end
+
+    def []=(i, v)
+      super i + 1, v
+    end
+
     private
 
     def size_for_cap(cap)
@@ -92,14 +102,6 @@ module OpenCL
 
     def in_range?(i)
       i >= 0 && i < @capacity
-    end
-
-    def [](i)
-      super i + 1
-    end
-
-    def []=(i, v)
-      super i + 1, v
     end
 
     def next_random_cell
