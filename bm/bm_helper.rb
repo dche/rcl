@@ -6,7 +6,7 @@ require File.join(File.dirname(__FILE__), '../lib/opencl')
 include Benchmark
 include OpenCL
 
-def profile(name, times, &blk)
+def profile(name, times = 1, &blk)
   begin
     require 'perftools'
 
