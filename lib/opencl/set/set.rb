@@ -33,7 +33,9 @@ module OpenCL
     def put(elm)
       resize
 
-      i = @bitmap.next_cell + 1
+      i = self.length
+      i = @bitmap.next_cell + 1 while i == self.length
+
       begin
         self[i] = elm
         @bitmap.mark_cell(i - 1)
@@ -49,7 +51,7 @@ module OpenCL
       super
     end
 
-    private :[]=
+    protected :[]=
 
     # Returns true if the receiver fully contains the given object, which can
     # be an element or another Set.
