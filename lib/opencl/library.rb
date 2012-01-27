@@ -8,7 +8,6 @@ module OpenCL
   # class definition.
   #
   class Library
-
     class << self
       # The OpenCL kernel source.
       attr_reader :source
@@ -64,7 +63,7 @@ module OpenCL
       def def_method(meth, &blk)
         @interface_module ||= Module.new
         @interface_module.class_eval do
-          define_method(meth, &blk)
+          define_method meth, blk
         end
       end
 
