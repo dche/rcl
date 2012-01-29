@@ -67,4 +67,13 @@
         } \
     } while (0)
 
+#ifdef HAVE_MACRUBY
+#include "macruby_internal.h"
+#else
+#define GC_WB(dst, newval) \
+    do { \
+        *(void **)dst = newval; \
+    } while (0)
+#endif
+
 #endif  // RUBY_EXT_H__

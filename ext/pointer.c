@@ -419,7 +419,7 @@ AllocMemory(rcl_pointer_t *p)
     assert(p->size > 0 && p->type_size > 0);
 
     size_t alloc_sz = ALLOC_SIZE_OF(p);     // align in 128bytes.
-    p->alloc_address = (int8_t *)ALLOC_N(int8_t, alloc_sz);
+    GC_WB(&p->alloc_address, ALLOC_N(int8_t, alloc_sz));
     bzero(p->alloc_address, alloc_sz);
 
     if (p->alloc_address == NULL) {
