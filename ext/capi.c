@@ -373,6 +373,11 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_ARGB);
     RCL_DEF_CONSTANT(CL_INTENSITY);
     RCL_DEF_CONSTANT(CL_LUMINANCE);
+#ifdef CL_VERSION_1_1
+    RCL_DEF_CONSTANT(CL_Rx);
+    RCL_DEF_CONSTANT(CL_RGx);
+    RCL_DEF_CONSTANT(CL_RGBx);
+#endif
 
     // cl_channel_type
     RCL_DEF_CONSTANT(CL_FLOAT);
@@ -424,6 +429,9 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_CONTEXT_REFERENCE_COUNT);
     RCL_DEF_CONSTANT(CL_CONTEXT_DEVICES);
     RCL_DEF_CONSTANT(CL_CONTEXT_PROPERTIES);
+#ifdef CL_VERSION_1_1
+    RCL_DEF_CONSTANT(CL_CONTEXT_NUM_DEVICES);
+#endif
 
     // cl_context_properties
     RCL_DEF_CONSTANT(CL_CONTEXT_PLATFORM);
@@ -491,6 +499,17 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_DEVICE_VENDOR);
     RCL_DEF_CONSTANT(CL_DEVICE_VERSION);
     RCL_DEF_CONSTANT(CL_DRIVER_VERSION);
+#ifdef CL_VERSION_1_1
+    RCL_DEF_CONSTANT(CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR);
+    RCL_DEF_CONSTANT(CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT);
+    RCL_DEF_CONSTANT(CL_DEVICE_NATIVE_VECTOR_WIDTH_INT);
+    RCL_DEF_CONSTANT(CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG);
+    RCL_DEF_CONSTANT(CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT);
+    RCL_DEF_CONSTANT(CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE);
+    RCL_DEF_CONSTANT(CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF);
+    RCL_DEF_CONSTANT(CL_DEVICE_HOST_UNIFIED_MEMORY);
+    RCL_DEF_CONSTANT(CL_DEVICE_OPENCL_C_VERSION);
+#endif
 
     // cl_device_local_mem_type
     RCL_DEF_CONSTANT(CL_GLOBAL);
@@ -554,7 +573,9 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_KERNEL_WORK_GROUP_SIZE);
     RCL_DEF_CONSTANT(CL_KERNEL_COMPILE_WORK_GROUP_SIZE);
     RCL_DEF_CONSTANT(CL_KERNEL_LOCAL_MEM_SIZE);
-
+#ifdef CL_VERSION_1_1
+    RCL_DEF_CONSTANT(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
+#endif
     // cl_map_flags
     RCL_DEF_CONSTANT(CL_MAP_READ);
     RCL_DEF_CONSTANT(CL_MAP_WRITE);
@@ -871,6 +892,9 @@ rcl_device_info(VALUE self, VALUE device_info)
         case CL_DEVICE_VENDOR:
         case CL_DEVICE_VERSION:
         case CL_DRIVER_VERSION:
+#ifdef CL_VERSION_1_1
+        case CL_DEVICE_OPENCL_C_VERSION:
+#endif
             return rb_str_new2((char *)param_value);
         // cl_bool
         case CL_DEVICE_AVAILABLE:
@@ -878,6 +902,9 @@ rcl_device_info(VALUE self, VALUE device_info)
         case CL_DEVICE_ENDIAN_LITTLE:
         case CL_DEVICE_ERROR_CORRECTION_SUPPORT:
         case CL_DEVICE_IMAGE_SUPPORT:
+#ifdef CL_VERSION_1_1
+        case CL_DEVICE_HOST_UNIFIED_MEMORY:
+#endif
             return *(cl_bool *)param_value == CL_TRUE ? Qtrue : Qfalse;
         // cl_uint
         case CL_DEVICE_ADDRESS_BITS:
@@ -897,7 +924,17 @@ rcl_device_info(VALUE self, VALUE device_info)
         case CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG:
         case CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT:
         case CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE:
+        case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF:
         case CL_DEVICE_VENDOR_ID:
+#ifdef CL_VERSION_1_1
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_INT:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF:
+#endif
             return UINT2NUM(*(cl_uint *)param_value);
         // cl_ulong
         case CL_DEVICE_GLOBAL_MEM_CACHE_SIZE:
@@ -1129,6 +1166,9 @@ rcl_context_info(VALUE self, VALUE context_info)
 
     switch (iname) {
         case CL_CONTEXT_REFERENCE_COUNT:
+#ifdef CL_VERSION_1_1
+        case CL_CONTEXT_NUM_DEVICES:
+#endif
             return INT2NUM(*(int *)info);
         case CL_CONTEXT_DEVICES:
             return build_device_array((cl_device_id *)info, info_size);

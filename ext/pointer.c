@@ -24,6 +24,7 @@ static VALUE type_cl_ulong;
 static VALUE type_cl_half;
 static VALUE type_cl_float;
 static VALUE type_cl_double;
+static VALUE type_cl_half;
 
 static VALUE type_cl_char2;
 static VALUE type_cl_char4;
@@ -65,6 +66,24 @@ static VALUE type_cl_double2;
 static VALUE type_cl_double4;
 static VALUE type_cl_double8;
 static VALUE type_cl_double16;
+// static VALUE type_cl_half2;
+// static VALUE type_cl_half4;
+// static VALUE type_cl_half8;
+// static VALUE type_cl_half16;
+
+#ifdef CL_VERSION_1_1
+static VALUE type_cl_char3;
+static VALUE type_cl_uchar3;
+static VALUE type_cl_short3;
+static VALUE type_cl_ushort3;
+static VALUE type_cl_int3;
+static VALUE type_cl_uint3;
+static VALUE type_cl_long3;
+static VALUE type_cl_ulong3;
+static VALUE type_cl_float3;
+static VALUE type_cl_double3;
+// static VALUE type_cl_half3;
+#endif
 
 typedef struct {
     VALUE           id;
@@ -211,6 +230,24 @@ static void define_cl_types(void)
     DEF_CL_VECTOR_TYPE(cl_double,   4);
     DEF_CL_VECTOR_TYPE(cl_double,   8);
     DEF_CL_VECTOR_TYPE(cl_double,   16);
+    // DEF_CL_VECTOR_TYPE(cl_half,     2);
+    // DEF_CL_VECTOR_TYPE(cl_half,     4);
+    // DEF_CL_VECTOR_TYPE(cl_half,     8);
+    // DEF_CL_VECTOR_TYPE(cl_half,     16);
+
+#ifdef CL_VERSION_1_1
+    DEF_CL_VECTOR_TYPE(cl_char,     3);
+    DEF_CL_VECTOR_TYPE(cl_uchar,    3);
+    DEF_CL_VECTOR_TYPE(cl_short,    3);
+    DEF_CL_VECTOR_TYPE(cl_ushort,   3);
+    DEF_CL_VECTOR_TYPE(cl_int,      3);
+    DEF_CL_VECTOR_TYPE(cl_uint,     3);
+    DEF_CL_VECTOR_TYPE(cl_long,     3);
+    DEF_CL_VECTOR_TYPE(cl_ulong,    3);
+    DEF_CL_VECTOR_TYPE(cl_float,    3);
+    DEF_CL_VECTOR_TYPE(cl_double,   3);
+    // DEF_CL_VECTOR_TYPE(cl_half,     3);
+#endif
 
     rb_define_module_function(rcl_mOpenCL, "type_size", rcl_sizeof, 1);
     rb_define_module_function(rcl_mOpenCL, "valid_type?", rcl_is_type_valid, 1);
@@ -298,6 +335,23 @@ rcl_ruby2native(VALUE type, void *address, VALUE value)
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 4,  EXPECT_FLOAT,   NUM2DBL);
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 8,  EXPECT_FLOAT,   NUM2DBL);
     IF_VECTOR_TYPE_TO_NATIVE(cl_double, 16, EXPECT_FLOAT,   NUM2DBL);
+    // IF_VECTOR_TYPE_TO_NATIVE(cl_half,   2,  EXPECT_FLOAT,   ExtractHalf);
+    // IF_VECTOR_TYPE_TO_NATIVE(cl_half,   4,  EXPECT_FLOAT,   ExtractHalf);
+    // IF_VECTOR_TYPE_TO_NATIVE(cl_half,   8,  EXPECT_FLOAT,   ExtractHalf);
+    // IF_VECTOR_TYPE_TO_NATIVE(cl_half,   16, EXPECT_FLOAT,   ExtractHalf);
+#ifdef CL_VERSION_1_1
+    IF_VECTOR_TYPE_TO_NATIVE(cl_char,   3,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uchar,  3,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_short,  3,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ushort, 3,  EXPECT_FIXNUM,  FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_int,    3,  EXPECT_INTEGER, FIX2INT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_uint,   3,  EXPECT_INTEGER, NUM2UINT);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_long,   3,  EXPECT_INTEGER, NUM2LONG);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_ulong,  3,  EXPECT_INTEGER, NUM2ULONG);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_float,  3,  EXPECT_FLOAT,   NUM2DBL);
+    IF_VECTOR_TYPE_TO_NATIVE(cl_double, 3,  EXPECT_FLOAT,   NUM2DBL);
+    // IF_VECTOR_TYPE_TO_NATIVE(cl_half,   3,  EXPECT_FLOAT,   ExtractHalf);
+#endif
 
     if (type == ID2SYM(rb_intern("cl_bool"))) {
         EXTRACT_BOOLEAN(value, bv);
@@ -381,6 +435,23 @@ rcl_native2ruby(VALUE type, void *address)
     IF_VECTOR_TYPE_TO_RUBY(cl_double, 4,  rb_float_new);
     IF_VECTOR_TYPE_TO_RUBY(cl_double, 8,  rb_float_new);
     IF_VECTOR_TYPE_TO_RUBY(cl_double, 16, rb_float_new);
+    // IF_VECTOR_TYPE_TO_RUBY(cl_half,   2,  rcl_half_float_new);
+    // IF_VECTOR_TYPE_TO_RUBY(cl_half,   4,  rcl_half_float_new);
+    // IF_VECTOR_TYPE_TO_RUBY(cl_half,   8,  rcl_half_float_new);
+    // IF_VECTOR_TYPE_TO_RUBY(cl_half,   16, rcl_half_float_new);
+#ifdef CL_VERSINO_1_1
+    IF_VECTOR_TYPE_TO_RUBY(cl_char,   3,  INT2FIX);
+    IF_VECTOR_TYPE_TO_RUBY(cl_uchar,  3,  UINT2NUM);
+    IF_VECTOR_TYPE_TO_RUBY(cl_short,  3,  INT2FIX);
+    IF_VECTOR_TYPE_TO_RUBY(cl_ushort, 3,  UINT2NUM);
+    IF_VECTOR_TYPE_TO_RUBY(cl_int,    3,  INT2NUM);
+    IF_VECTOR_TYPE_TO_RUBY(cl_uint,   3,  UINT2NUM);
+    IF_VECTOR_TYPE_TO_RUBY(cl_long,   3,  LONG2NUM);
+    IF_VECTOR_TYPE_TO_RUBY(cl_ulong,  3,  ULONG2NUM);
+    IF_VECTOR_TYPE_TO_RUBY(cl_float,  3,  rb_float_new);
+    IF_VECTOR_TYPE_TO_RUBY(cl_double, 3,  rb_float_new);
+    // IF_VECTOR_TYPE_TO_RUBY(cl_half,   3,  rcl_half_float_new);
+#endif
 
     if (type == ID2SYM(rb_intern("cl_bool"))) {
         return (*(cl_bool *)address) ? Qtrue : Qfalse;
