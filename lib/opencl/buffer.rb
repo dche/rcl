@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 module OpenCL
-
   # Buffer encaplulates the OpenCL memory object.
   #
   class Buffer
@@ -25,46 +24,39 @@ module OpenCL
         raise ArgumentError, "invalid io flag. Expected :in, :out, :inout, got #{io_flag}"
       end
 
-      begin
-        @byte_size = size
-        @memory = @context.create_buffer(@io, size, nil)
-        @pinned_memory = @memory
-        @pinned_pointer = nil
-        @mapped_pointer = nil
-      rescue Capi::CLError => e
-        raise CLError.new(e)
-      end
+      @byte_size = size
+      @memory = @context.create_buffer(@io, size, nil)
+      @pinned_memory = @memory
+      @pinned_pointer = nil
+      @mapped_pointer = nil
     end
 
     def initialize_copy(orig)
-      begin
-        @memory = @context.create_buffer(@io, @byte_size, nil)
+      @memory = @context.create_buffer(@io, @byte_size, nil)
 
-        orig.unmap_pointer
-        cq = @context.command_queue_of @context.default_device
-        cq.enqueue_copy_buffer(orig.memory, @memory, 0, 0, self.byte_size, nil)
+      orig.unmap_pointer
+      cq = @context.command_queue_of @context.default_device
+      cq.enqueue_copy_buffer(orig.memory, @memory, 0, 0, self.byte_size, nil)
 
-        @pinned_memory = @memory
-        @pinned_pointer = nil
-        @mapped_pointer = nil
-      rescue Capi::CLError => e
-        raise CLError.new(e.message)
-      end
+      @pinned_memory = @memory
+      @pinned_pointer = nil
+      @mapped_pointer = nil
     end
 
     # Attaches a pinned memory object to the receiver.
-    # This pinned memory object is always mapped to a host pointer.
+    # This pinned memory object is allocated by OpenCL and always mapped to
+    # a host pointer.
+    #
+    # Note: Concurrently write to a pinned memory may not work because the
+    #       host memory is page-locked.
     def pin
       return self if self.pinned?
 
       self.unmap_pointer
-      begin
-        @pinned_memory = @context.create_buffer(@io | Capi::CL_MEM_ALLOC_HOST_PTR, @byte_size, nil)
-        cq = @context.command_queue_of @context.default_device
-        @pinned_pointer, _ = cq.enqueue_map_buffer @pinned_memory, true, map_flag, 0, self.byte_size, nil
-      rescue Capi::CLError => e
-        raise CLError.new(e)
-      end
+      @pinned_memory = @context.create_buffer(@io | Capi::CL_MEM_ALLOC_HOST_PTR, @byte_size, nil)
+      cq = @context.command_queue_of @context.default_device
+      @pinned_pointer, _ = cq.enqueue_map_buffer @pinned_memory, true, map_flag, 0, self.byte_size, nil
+
       self
     end
 
@@ -98,15 +90,12 @@ module OpenCL
       self.unmap_pointer
       buffer.unmap_pointer
 
-      begin
-        mem_from = self.memory
-        mem_to = buffer.memory
+      mem_from = self.memory
+      mem_to = buffer.memory
 
-        cq = @context.command_queue_of @context.default_device
-        cq.enqueue_copy_buffer(mem_from, mem_to, start, target_start, size, nil)
-      rescue Capi::CLError => e
-        raise CLError.new(e)
-      end
+      cq = @context.command_queue_of @context.default_device
+      cq.enqueue_copy_buffer(mem_from, mem_to, start, target_start, size, nil)
+
       self
     end
 
@@ -122,25 +111,21 @@ module OpenCL
 
       self.unmap_pointer
       pinned = self.pinned?
-      begin
-        cq = @context.command_queue_of @context.default_device
 
-        if pinned
-          cq.enqueue_unmap_mem_object @pinned_memory, @pinned_pointer, nil
-          @pinned_pointer = nil
-        end
-        mo = @context.create_buffer(@io, sz, nil)
-        cq.enqueue_copy_buffer(@memory, mo, 0, 0, self.byte_size, nil)
-
-        @memory = mo
-        @pinned_memory = mo
+      cq = @context.command_queue_of @context.default_device
+      if pinned
+        cq.enqueue_unmap_mem_object @pinned_memory, @pinned_pointer, nil
         @pinned_pointer = nil
-        @byte_size = sz
-
-        self.pin if pinned
-      rescue Capi::CLError => e
-        raise CLError.new(e)
       end
+      mo = @context.create_buffer(@io, sz, nil)
+      cq.enqueue_copy_buffer(@memory, mo, 0, 0, self.byte_size, nil)
+
+      @memory = mo
+      @pinned_memory = mo
+      @pinned_pointer = nil
+      @byte_size = sz
+
+      self.pin if pinned
       self
     end
 
@@ -202,9 +187,9 @@ module OpenCL
         else
           @mapped_pointer, _ = cq.enqueue_map_buffer self.memory, true, map_flag, 0, self.byte_size, nil
         end
-      rescue Capi::CLError => e
-        warn self.inspect + ".map(), " + CLError.new(e.message).to_s
-        raise CLError.new(e.message)
+      rescue CLError => e
+        warn self.inspect + ".map(), " + e.message
+        raise e
       end
       return @mapped_pointer
     end
@@ -229,9 +214,9 @@ module OpenCL
           cq.enqueue_unmap_mem_object self.memory, @mapped_pointer, nil
         end
         @mapped_pointer = nil
-      rescue Capi::CLError => e
-        warn self.inspect + ".unmap_pointer(), " + CLError.new(e.message).to_s
-        raise CLError.new(e.message)
+      rescue CLError => e
+        warn self.inspect + ".unmap_pointer(), " + e.message
+        raise e
       end
       self
     end
@@ -281,43 +266,33 @@ module OpenCL
 
     # Do the work of read from/wrie to a HostPointer.
     def rw_mem(rw, pointer, offset, size)
-      ts = pointer.type_size
+      bsz = self.byte_size
+      tsz = pointer.type_size
 
       offset = 0 if offset < 0
-      offset *= ts
+      offset *= tsz
 
-      size = 0 if size < 0
-      if size == 0
-        size = self.byte_size
-      else
-        size *= ts
+      size = (size <= 0) ? bsz : size * tsz
+
+      if size < 1 || size > bsz
+        raise ArgumentError, "size must be larger than 0 and less than #{bsz}."
       end
 
-      if size < 1 || size > self.byte_size
-        raise ArgumentError, "size must be larger than 0 and less than #{self.byte_size}."
-      end
-
-      if self.byte_size < (offset + size) || pointer.byte_size < size
+      if bsz < (offset + size) || pointer.byte_size < size
         raise ArgumentError, "size is too large."
       end
 
-      begin
-        # NOTE: Devices in same context share a combined memory bool.
-        #       That's why we can always use the queue of default device,
-        #       i.e., it's OK a buffer is written through a queue of one device,
-        #       and read by the kernel executed on another device.
-        cq = @context.command_queue_of @context.default_device
-        if rw == :read
-          cq.enqueue_read_buffer(self.memory, true, offset, size, pointer, nil);
-        else
-          cq.enqueue_write_buffer(self.memory, true, offset, size, pointer, nil);
-        end
-      rescue Capi::CLError => e
-        raise CLError.new(e.message)
+      # NOTE: Devices in same context share a combined memory bool.
+      #       That's why we can always use the queue of default device,
+      #       i.e., it's OK a buffer is written through a queue of one device,
+      #       and read by the kernel executed on another device.
+      cq = @context.command_queue_of @context.default_device
+      if rw == :read
+        cq.enqueue_read_buffer(self.memory, true, offset, size, pointer, nil);
+      else
+        cq.enqueue_write_buffer(self.memory, true, offset, size, pointer, nil);
       end
-
       self
     end
-
   end
 end

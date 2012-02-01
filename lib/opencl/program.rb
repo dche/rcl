@@ -6,7 +6,7 @@ module OpenCL
   # Compiled code that can be executed on OpenCL devices.
   #
   #--
-  # TODO: a interface for compiler options?
+  # TODO: a interface for compiler options? no?
   #++
   class Program
 
@@ -38,13 +38,11 @@ module OpenCL
         # Compilte the program on all available devices in the context.
         @program.build @context.devices, options, nil
         @source = src.freeze
-      rescue Capi::CLError => e
-        cl_err = CLError.new e.message
-
-        if cl_err.program_build_failed?
+      rescue CLError => e
+        if e.program_build_failed?
           raise ProgramBuildError, @program.build_info(@context.default_device, Capi::CL_PROGRAM_BUILD_LOG)
         else
-          raise cl_err
+          raise e
         end
       ensure
         @mutex.unlock
@@ -55,7 +53,7 @@ module OpenCL
     # Returns the Capi::Kernel object with given +name+, or +nil+ if no
     # such a kernel in the receiver.
     #
-    # Raises Capi::CLError if a kernel with given +name+ is not found in program.
+    # Raises CLError if a kernel with given +name+ is not found in program.
     def kernel(name)
       nm = name.to_s
       k = @kernels[nm]
@@ -134,8 +132,8 @@ module OpenCL
         # TOOD: Not wait for the execution to be completed? Find a case
         #       defeat it!
         profiling kernel_name, cq.enqueue_NDRange_kernel(k, gws.length, gws, lws, nil)
-      rescue Capi::CLError => e
-        raise CLError.new(e.message)
+      rescue CLError => e
+        raise e
       ensure
         @mutex.unlock
       end

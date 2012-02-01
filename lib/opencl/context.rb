@@ -36,20 +36,16 @@ module OpenCL
     end
 
     def initialize(device_type)
-      begin
-        devs = Capi.devices(device_type, Capi.platforms.first)
-        raise RuntimeError, "no deivce of given type found." if devs.empty?
+      devs = Capi.devices(device_type, Capi.platforms.first)
+      raise RuntimeError, "no deivce of given type found." if devs.empty?
 
-        @context = Capi::Context.new nil, devs
-        @queues = {}
+      @context = Capi::Context.new nil, devs
+      @queues = {}
 
-        devs.each do |dev|
-          @queues[dev] = @context.create_command_queue dev
-        end
-        @queues.freeze
-      rescue Capi::CLError => e
-        raise CLError.new(e.message)
+      devs.each do |dev|
+        @queues[dev] = @context.create_command_queue dev
       end
+      @queues.freeze
     end
 
     # Returns the default Capi::Device object.

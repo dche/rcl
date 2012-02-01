@@ -638,7 +638,7 @@ define_opencl_constants(void)
 }
 
 /*
- * Capi::CLError
+ * OpenCL::CLError
  *
  * error code and error message.
  */
@@ -652,9 +652,60 @@ static VALUE rb_eOpenCL;
     } while (0)
 
 static void
-define_opencl_errors(void)
+check_cl_error(cl_int errcode, int warn)
 {
-    // NOTE: MacRuby's GC does not allow a static Hash object.
+    if (errcode == CL_SUCCESS) return;
+
+    const char *fmt = "%s";
+
+    if (warn) {
+        const char *msg = "unknown OpenCL error.";
+
+        VALUE errors = rb_cvar_get(rb_eOpenCL, rb_intern("@@messages"));
+        VALUE err_msg = rb_hash_lookup(errors, INT2FIX(errcode));
+        if (!NIL_P(err_msg)) {
+            msg = RSTRING_PTR(err_msg);
+        }
+        rb_warn(fmt, msg);
+    } else {
+        // NOTE: because rb_raise can't raise a Exception object, we have to
+        //       encode error code to a string.
+        // SEE: cl_error.rb::new
+        fmt = "%d";
+        rb_raise(rb_eOpenCL, fmt, errcode);
+    }
+}
+
+static VALUE
+rcl_error_init(VALUE self, VALUE code)
+{
+    if (TYPE(code) != T_STRING) {
+        rb_raise(rb_eArgError, "Expected a String.");
+    }
+    // decode error code from string.
+    VALUE errcode = rb_funcall(code, rb_intern("to_i"), 0);
+    rb_iv_set(self, "@code", errcode);
+
+    VALUE errors = rb_cvar_get(rb_eOpenCL, rb_intern("@@messages"));
+    VALUE msg = rb_hash_lookup(errors, errcode);
+    if (NIL_P(msg)) {
+        msg = rb_str_new2("Unrecognized CL error.");
+    }
+    // NOTE: MacRuby doesn't export this function. Ignore the compiler warning.
+    rb_call_super(1, &msg);
+
+    return self;
+}
+
+#define CHECK_AND_RAISE(code)   (check_cl_error(code, 0))
+#define CHECK_AND_WARN(code)    (check_cl_error(code, 1))
+
+static void
+define_class_clerror(void)
+{
+    // NOTE: MacRuby's GC does not allow a static Hash object. But that's
+    //       OK. Better practice is to remove all static variables (for the
+    //       sake of multiple VMs in same process).
     // SEE: pointer.c - define_cl_types()
     VALUE rcl_errors = rb_hash_new();
 
@@ -703,43 +754,9 @@ define_opencl_errors(void)
     RCL_DEF_CL_ERROR(rcl_errors, CL_OUT_OF_RESOURCES, "Failed to queue the execution instance of given kernel on the command-queue because of insufficient resources needed to execute the kernel.");
     RCL_DEF_CL_ERROR(rcl_errors, CL_PROFILING_INFO_NOT_AVAILABLE, "CL_QUEUE_PROFILING_ENABLE flag is not set for the command-queue and the profiling information is currently not available.");
 
-    rb_define_const(rcl_mCapi, "ERROR_MESSAGES", rcl_errors);
-}
-
-
-static void
-check_cl_error(cl_int errcode, int warn)
-{
-    if (errcode == CL_SUCCESS) return;
-
-    const char *fmt = "%s";
-
-    if (warn) {
-        const char *msg = "unknown OpenCL error.";
-
-        VALUE errors = rb_const_get(rcl_mCapi, rb_intern("ERROR_MESSAGES"));
-        VALUE err_msg = rb_hash_lookup(errors, INT2FIX(errcode));
-        if (!NIL_P(err_msg)) {
-            msg = RSTRING_PTR(err_msg);
-        }
-
-        rb_warn(fmt, msg);
-    } else {
-        // NOTE: because rb_raise can only raise a Exception class, we have to
-        //       encode error code to a string.
-        // SEE: cl_error.rb::new
-        fmt = "%d";
-        rb_raise(rb_eOpenCL, fmt, errcode);
-    }
-}
-
-#define CHECK_AND_RAISE(code)   (check_cl_error(code, 0))
-#define CHECK_AND_WARN(code)    (check_cl_error(code, 1))
-
-static void
-define_class_clerror(void)
-{
-    rb_eOpenCL = rb_define_class_under(rcl_mCapi, "CLError", rb_eRuntimeError);
+    rb_eOpenCL = rb_define_class_under(rcl_mOpenCL, "CLError", rb_eRuntimeError);
+    rb_define_method(rb_eOpenCL, "initialize", rcl_error_init, 1);
+    rb_define_class_variable(rb_eOpenCL, "@@messages", rcl_errors);
 }
 
 /*
@@ -2897,7 +2914,6 @@ Init_capi()
     rcl_mCapi = rb_define_module_under(rcl_mOpenCL, "Capi");
 
     define_opencl_constants();
-    define_opencl_errors();
 
     define_class_clerror();
 
