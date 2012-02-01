@@ -70,7 +70,7 @@ describe Program do
 
     prog = OpenCL::Program.new valid_src
 
-    should.raise(OpenCL::Capi::CLError) {
+    should.raise(OpenCL::CLError) {
       prog.kernel('no_such_kernel')
     }
 
