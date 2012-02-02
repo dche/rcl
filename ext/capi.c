@@ -765,7 +765,7 @@ define_class_clerror(void)
 
 /*
  * call-seq:
- *      OpenCL.platforms  -> [Platform, ..] or []
+ *      OpenCL.platforms  -> Array of Platform objects.
  *
  * Wraps the +clGetPlatformIDs()+.
  */
@@ -790,7 +790,7 @@ rcl_platforms(VALUE self)
 
 /*
  * call-seq:
- *      Platform#info(CL_PLATFORM_VENDOR) -> "NVIDIA, Inc."
+ *		aPlatform.info(CL_PLATFORM_VENDOR)
  *
  * Wrapps the +clGetPlatformInfo()+.
  */
@@ -831,7 +831,7 @@ define_class_platform(void)
 
 /*
  * call-seq:
- *      Capi.devices(CL_DEVICE_TYPE_GPU, platform)  -> [Device ..]
+ *      Capi.devices(CL_DEVICE_TYPE_GPU, platform)  -> Array of Device objects.
  *
  * Wrapps +clGetDeviceIDs()+
  */
@@ -863,7 +863,7 @@ rcl_devices(VALUE self, VALUE device_type, VALUE platform)
 
 /*
  * call-seq:
- *      Device#info(CL_DEVICE_VENDOR) -> "NVIDIA, Inc."
+ *      aDevice.info(CL_DEVICE_VENDOR)
  *
  * Wrapps +clGetDeviceInfo()+
  */
@@ -991,20 +991,22 @@ rcl_device_info(VALUE self, VALUE device_info)
 
 /*
  * call-seq:
- *      Device#eql?
+ *      aDevice.eql?(device)	-> true or false.
  */
 static VALUE
 rcl_device_eql(VALUE self, VALUE dev)
 {
     cl_device_id myid = DevicePtr(self);
-    cl_device_id youid = DevicePtr(dev);
+    cl_device_id yourid = DevicePtr(dev);
 
-    return myid == youid ? Qtrue : Qfalse;
+    return myid == yourid ? Qtrue : Qfalse;
 }
 
 /*
  * call-seq:
- *      Device#hash
+ *      aDevice.hash
+ *
+ * The hash number for the Device ojects.
  */
 static VALUE
 rcl_device_hash(VALUE self)
@@ -1163,7 +1165,7 @@ rcl_context_init_copy(VALUE copy, VALUE orig)
 
 /*
  * call-seq:
- *      Context#info(CL_CONTEXT_REFERENCE_COUNT) -> 2
+ *      aContext.info(CL_CONTEXT_REFERENCE_COUNT)	-> Fixnum
  *
  * Wrapps +clGetContextInfo()+.
  */
@@ -1333,7 +1335,7 @@ rcl_command_queue_init_copy(VALUE copy, VALUE orig)
 
 /*
  * call-seq:
- *   CommandQueue#info(CL_COMMAND_QUEUE_)
+ *   aCommandQueue.info(CL_COMMAND_QUEUE_PROPERTIES)
  */
 static VALUE
 rcl_command_queue_info(VALUE self, VALUE command_queue_info)
@@ -1658,7 +1660,8 @@ rcl_cq_enqueue_map_buffer(VALUE self, VALUE mem_obj, VALUE blocking_map,
 }
 
 /*
- * call-seq: CommandQueue#enqueue_map_image(aImage, true, CL_MEM_FLAG_READ, ...)
+ * call-seq:
+ *		aCommandQueue.enqueue_map_image(aImage, true, CL_MEM_FLAG_READ, ...)
  *
  * Returns an Array contains following information in order:
  * * A MappedPointer object
@@ -1725,7 +1728,7 @@ rcl_cq_enqueue_unmap_mem_obj(VALUE self, VALUE mem_obj, VALUE mapped_ptr,
 
 /*
  * call-seq:
- *      ComamndQueue#enqueue_NDRange_kernel()   -> an Event object
+ *      aComamndQueue.enqueue_NDRange_kernel(...)   -> an Event object
  *
  * Wrapps the +clEnqueueNDRangeKernel()+.
  */
@@ -1817,7 +1820,7 @@ rcl_cq_enqueue_waitfor_events(VALUE self, VALUE events)
 
 /*
  * call-seq:
- *      CommandQueue#enqueue_barrier     -> Receiver
+ *      aCommandQueue.enqueue_barrier     -> the receiver
  *
  * Wrapps +clEnqueueBarrier()+.
  */
@@ -1833,8 +1836,8 @@ rcl_cq_enqueue_barrier(VALUE self)
 
 /*
  * call-seq:
- *      CommandQueue#enqueue_acquire_gl_objects([Memory, ..], nil)   -> Event
- *      CommandQueue#enqueue_acquire_gl_objects([], nil)     -> receiver
+ *      CommandQueue#enqueue_acquire_gl_objects([Memory, ..], nil)   -> a Event
+ *      CommandQueue#enqueue_acquire_gl_objects([], nil)     -> the receiver
  *
  * Wrapps +clEnqueueAcquireGLObjects()+.
  */
@@ -2546,7 +2549,7 @@ rcl_program_build(VALUE self, VALUE devices, VALUE options, VALUE memo)
 
 /*
  * call-seq:
- *      Program#build_info(Device, CL_PROGRAM_BUILD_LOG)    -> a String
+ *      Program#build_info(Device, CL_PROGRAM_BUILD_LOG)
  *
  * Wrapps +clGetProgramBuildInfo()+.
  */
@@ -2583,7 +2586,7 @@ rcl_program_build_info(VALUE self, VALUE device, VALUE param_name)
 
 /*
  * call-seq:
- *      Program#info(CL_PROGRAM_SOURCE) -> "..."
+ *      Program#info(CL_PROGRAM_SOURCE)
  *
  * Wrapps +clGetProgramInfo()+.
  */
@@ -2633,7 +2636,7 @@ rcl_program_info(VALUE self, VALUE param_name)
 
 /*
  * call-seq:
- *      Program#create_kernels  -> [Kernel, ...]
+ *      Program#create_kernels  -> Array of Kernel objects
  *
  * Wrapps +clCreateKernelsInProgram()+.
  */
@@ -2656,7 +2659,7 @@ rcl_program_create_kernels(VALUE self)
 
 /*
  * call-seq:
- *      Capi.unload_compiler    -> receiver
+ *      Capi.unload_compiler    -> the receiver
  *
  * Wrapps +clUnloadCompiler()+.
  */
@@ -2810,7 +2813,7 @@ rcl_kernel_set_arg(VALUE self, VALUE index, VALUE type, VALUE value)
 
 /*
  * call-seq:
- *      Kernel#info(CL_KERNEL_FUNCTION_NAME)    -> "filter"
+ *      Kernel#info(CL_KERNEL_FUNCTION_NAME)
  *
  * Wrapps +clGetKernelInfo()+.
  */

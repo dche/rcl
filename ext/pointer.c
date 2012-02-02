@@ -550,7 +550,7 @@ rcl_pointer_free_func(void *ptr)
 
 /*
  * call-seq:
- *      HostPointer.allocate    -> a HostPointer object.
+ *      HostPointer.allocate    -> HostPointer
  *
  * Allocate a HostPointer object.
  */
@@ -617,7 +617,7 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
 
 /*
  * call-seq:
- *      HostPointer#clear   -> receiver
+ *      HostPointer#clear   ->the receiver
  *
  * Set the memory that the receiver manages to zero.
  */
@@ -637,7 +637,7 @@ rcl_pointer_clear(VALUE self)
 
 /*
  * call-seq:
- *      HostPointer::new(type, size)    -> a HostPointer
+ *      HostPointer::new(type, size)    -> the receiver
  *
  * Allocate a managed host memory.
  */
@@ -700,7 +700,7 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
 
 /*
  * call-seq:
- *      aHostPointer[0]     # =>  1.234
+ *      aHostPointer[0]
  *
  * Returns the n-th element stored in the memory region managed by
  * the receiver.
@@ -719,7 +719,7 @@ rcl_pointer_aref(VALUE self, VALUE index)
 
 /*
  * call-seq:
- *      aHostPointer[0] = 1234  # =>  receiver
+ *      aHostPointer[0] = 1234  -> the  receiver
  *
  * Sets the n-th element stored to the given value.
  * The value must match with the receiver's type.
@@ -773,7 +773,7 @@ rcl_pointer_assign(VALUE self, VALUE address, VALUE size, VALUE offset)
 
 /*
  * call-seq:
- *      HostPointer#assign_byte_string(aString, offset) -> the receiver.
+ *      HostPointer#assign_byte_string(aString, offset)     -> the receiver.
  */
 static VALUE
 rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
@@ -857,7 +857,7 @@ rcl_pointer_address(VALUE self)
 
 /*
  * call-seq:
- *      HostPointer#type ->  :cl_float16
+ *      HostPointer#type    -> Symbol
  *
  * Returns the type of the receiver.
  */
@@ -869,7 +869,7 @@ rcl_pointer_type(VALUE self)
 
 /*
  * call-seq:
- *      HostPointer#size    -> aInteger
+ *      HostPointer#size    -> Fixnum
  *
  * Returns the size of the receiver.
  */
@@ -881,7 +881,7 @@ rcl_pointer_size(VALUE self)
 
 /*
  * call-seq:
- *      aHostPointer.byte_size   # => 1024
+ *      aHostPointer.byte_size   -> Fixnum
  *
  * Returns the size of the receiver in byte.
  */
@@ -893,7 +893,7 @@ rcl_pointer_byte_size(VALUE self)
 
 /*
  * call-seq:
- *      aHostPointer.free   # => the receiver.
+ *      aHostPointer.free   -> the receiver.
  *
  * Frees the memory the receiver manages, or stops wrapping a C pointer
  * if the receiver is a wrapper.
@@ -924,7 +924,7 @@ rcl_pointer_free(VALUE self)
 
 /*
  * call-seq:
- *      HostPointer#copy_from(ptr)   -> receiver
+ *      HostPointer#copy_from(ptr)   -> the receiver
  *
  * Copy the contents of a HostPointer to the receiver. The source and receiver
  * must have identical type and size.
@@ -954,7 +954,7 @@ rcl_pointer_copy_from(VALUE self, VALUE src)
 
 /*
  * call-seq:
- *      HostPointer#slice(start, size)  -> a HostPointer
+ *      HostPointer#slice(start, size)  -> HostPointer
  *
  * Returns a new created HostPointer object which contains copied data from
  * receiver. The range of data starts from +start+ and with length +size+.
