@@ -7,6 +7,7 @@
  * TODO: check all arguments that could be +nil+.
  * TODO: check all value conversions.
  * TODO: Big endien support.
+ * TODO: remove all static variables.
  *
  * Copyright (c) 2010, Che Kenan
  */
@@ -361,6 +362,11 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_BUILD_IN_PROGRESS);
     RCL_DEF_CONSTANT(CL_BUILD_NONE);
     RCL_DEF_CONSTANT(CL_BUILD_SUCCESS);
+
+#ifdef CL_VERSION_1_1
+    //￼cl_buffer_create_type
+    RCL_DEF_CONSTANT(CL_BUFFER_CREATE_TYPE_REGION);
+#endif
 
     // cl_channel_order
     RCL_DEF_CONSTANT(CL_A);
@@ -753,6 +759,10 @@ define_class_clerror(void)
     RCL_DEF_CL_ERROR(rcl_errors, CL_OUT_OF_HOST_MEMORY, "Failed to allocate resources required by the OpenCL implementation on the host.");
     RCL_DEF_CL_ERROR(rcl_errors, CL_OUT_OF_RESOURCES, "Failed to queue the execution instance of given kernel on the command-queue because of insufficient resources needed to execute the kernel.");
     RCL_DEF_CL_ERROR(rcl_errors, CL_PROFILING_INFO_NOT_AVAILABLE, "CL_QUEUE_PROFILING_ENABLE flag is not set for the command-queue and the profiling information is currently not available.");
+#ifdef CL_VERSION_1_1
+    RCL_DEF_CL_ERROR(rcl_errors, CL_MISALIGNED_SUB_BUFFER_OFFSET, "The subbuffer's origin and/or offest values is not aligned to the CL_DEVICE_MEM_BASE_ADDR_ALIGN value of the device.");
+    RCL_DEF_CL_ERROR(rcl_errors, CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST, "The execution status of any of the events in event_wait_list is a negative integer value.");
+#endif
 
     rb_eOpenCL = rb_define_class_under(rcl_mOpenCL, "CLError", rb_eRuntimeError);
     rb_define_method(rb_eOpenCL, "initialize", rcl_error_init, 1);
@@ -1200,6 +1210,22 @@ rcl_context_info(VALUE self, VALUE context_info)
     return Qnil;
 }
 
+#ifdef CL_VERSION_1_1
+
+static VALUE
+rcl_context_create_user_event(VALUE self)
+{
+    cl_context cxt = ContextPtr(self);
+    cl_int res = CL_SUCCESS;
+
+    cl_event evt = clCreateUserEvent(cxt, &res);
+    CHECK_AND_RAISE(res);
+
+    return REvent(evt);
+}
+
+#endif
+
 static void
 define_class_context(void)
 {
@@ -1209,6 +1235,9 @@ define_class_context(void)
     rb_define_method(rcl_cContext, "initialize_copy",
                                   rcl_context_init_copy, 1);
     rb_define_method(rcl_cContext, "info", rcl_context_info, 1);
+#ifdef CL_VERSION_1_1
+    rb_define_method(rcl_cContext, "create_user_event", rcl_context_create_user_event, 0);
+#endif
 }
 
 /*
@@ -1510,6 +1539,95 @@ rcl_cq_enqueue_copy_buffer(VALUE self, VALUE src_buffer, VALUE dst_buffer,
 
     return REvent(e);
 }
+
+#ifdef CL_VERSION_1_1
+
+static VALUE
+rcl_cq_enqueue_read_buffer_rect(VALUE self, VALUE buffer, VALUE blocking_read,
+                                VALUE src_origin, VALUE dst_origin, VALUE offset,
+                                VALUE src_row_pitch, VALUE src_slice_pitch,
+                                VALUE dst_row_pitch, VALUE dst_slice_pitch,
+                                VALUE host_ptr, VALUE events)
+{
+    EXTRACT_MEM_OBJECT(buffer, buf);
+    EXTRACT_BOOLEAN(blocking_read, br);
+    EXTRACT_VECTOR(src_origin, sor);
+    EXTRACT_VECTOR(dst_origin, dor);
+    EXTRACT_VECTOR(offset, ofs);
+    EXTRACT_SIZE(src_row_pitch, srp);
+    EXTRACT_SIZE(src_slice_pitch, ssp);
+    EXTRACT_SIZE(dst_row_pitch, drp);
+    EXTRACT_SIZE(dst_slice_pitch, dsp);
+    EXTRACT_POINTER(host_ptr, hp);
+    EXTRACT_WAIT_FOR_EVENTS(events, num_evt, pevts);
+
+    cl_command_queue cq = CommandQueuePtr(self);
+    cl_event e;
+    cl_event *ep = (br == CL_TRUE) ? NULL : &e;
+
+    cl_int res = clEnqueueReadBufferRect(cq, buf, br, sor, dor, ofs, srp, ssp, drp, dsp, hp, num_evt, pevts, ep);
+    CHECK_AND_RAISE(res);
+
+    return (br == CL_TRUE) ? self : REvent(e);
+}
+
+static VALUE
+rcl_cq_enqueue_write_buffer_rect(VALUE self, VALUE buffer, VALUE blocking_write,
+                                 VALUE src_origin, VALUE dst_origin, VALUE offset,
+                                 VALUE src_row_pitch, VALUE src_slice_pitch,
+                                 VALUE dst_row_pitch, VALUE dst_slice_pitch,
+                                 VALUE host_ptr, VALUE events)
+{
+    EXTRACT_MEM_OBJECT(buffer, buf);
+    EXTRACT_BOOLEAN(blocking_write, bw);
+    EXTRACT_VECTOR(src_origin, sor);
+    EXTRACT_VECTOR(dst_origin, dor);
+    EXTRACT_VECTOR(offset, ofs);
+    EXTRACT_SIZE(src_row_pitch, srp);
+    EXTRACT_SIZE(src_slice_pitch, ssp);
+    EXTRACT_SIZE(dst_row_pitch, drp);
+    EXTRACT_SIZE(dst_slice_pitch, dsp);
+    EXTRACT_POINTER(host_ptr, hp);
+    EXTRACT_WAIT_FOR_EVENTS(events, num_evt, pevts);
+
+    cl_command_queue cq = CommandQueuePtr(self);
+    cl_event e;
+    cl_event *ep = (bw == CL_TRUE) ? NULL : &e;
+
+    cl_int res = clEnqueueWriteBufferRect(cq, buf, bw, sor, dor, ofs, srp, ssp, drp, dsp, hp, num_evt, pevts, ep);
+    CHECK_AND_RAISE(res);
+
+    return (bw == CL_TRUE) ? self : REvent(e);
+}
+
+static VALUE
+rcl_cq_enqueue_copy_buffer_rect(VALUE self, VALUE src_buffer, VALUE dst_buffer,
+                                VALUE src_origin, VALUE dst_origin, VALUE offset,
+                                VALUE src_row_pitch, VALUE src_slice_pitch,
+                                VALUE dst_row_pitch, VALUE dst_slice_pitch,
+                                VALUE events)
+{
+    EXTRACT_MEM_OBJECT(src_buffer, sbuf);
+    EXTRACT_MEM_OBJECT(dst_buffer, dbuf);
+    EXTRACT_VECTOR(src_origin, sor);
+    EXTRACT_VECTOR(dst_origin, dor);
+    EXTRACT_VECTOR(offset, ofs);
+    EXTRACT_SIZE(src_row_pitch, srp);
+    EXTRACT_SIZE(src_slice_pitch, ssp);
+    EXTRACT_SIZE(dst_row_pitch, drp);
+    EXTRACT_SIZE(dst_slice_pitch, dsp);
+    EXTRACT_WAIT_FOR_EVENTS(events, num_evt, pevts);
+
+    cl_command_queue cq = CommandQueuePtr(self);
+    cl_event e;
+
+    cl_int res = clEnqueueCopyBufferRect(cq, sbuf, dbuf, sor, dor, ofs, srp, ssp, drp, dsp, num_evt, pevts, &e);
+    CHECK_AND_RAISE(res);
+
+    return self;
+}
+
+#endif
 
 static VALUE
 rcl_cq_enqueue_read_image(VALUE self, VALUE image, VALUE blocking_read,
@@ -1900,6 +2018,11 @@ define_class_command_queue(void)
     rb_define_method(rcl_cCommandQueue, "enqueue_read_buffer", rcl_cq_enqueue_read_buffer, 6);
     rb_define_method(rcl_cCommandQueue, "enqueue_write_buffer", rcl_cq_enqueue_write_buffer, 6);
     rb_define_method(rcl_cCommandQueue, "enqueue_copy_buffer", rcl_cq_enqueue_copy_buffer, 6);
+#ifdef CL_VERSION_1_1
+    rb_define_method(rcl_cCommandQueue, "enqueue_read_buffer_rect", rcl_cq_enqueue_read_buffer_rect, 11);
+    rb_define_method(rcl_cCommandQueue, "enqueue_write_buffer_rect", rcl_cq_enqueue_write_buffer_rect, 11);
+    rb_define_method(rcl_cCommandQueue, "enqueue_copy_buffer_rect", rcl_cq_enqueue_copy_buffer_rect, 10);
+#endif
     rb_define_method(rcl_cCommandQueue, "enqueue_read_image", rcl_cq_enqueue_read_image, 8);
     rb_define_method(rcl_cCommandQueue, "enqueue_write_image", rcl_cq_enqueue_write_image, 8);
     rb_define_method(rcl_cCommandQueue, "enqueue_copy_image", rcl_cq_enqueue_copy_image, 6);
@@ -2085,9 +2208,24 @@ rcl_wait_for_events(VALUE self, VALUE events)
     return Qtrue;
 }
 
-// enable after support OpenCL 1.1
-#if 0
+#ifdef CL_VERSION_1_1
 
+static VALUE
+rcl_set_user_event_status(VALUE self, VALUE execution_status)
+{
+    EXPECT_FIXNUM(execution_status);
+    cl_int es = FIX2INT(execution_status);
+
+    cl_event evt = EventPtr(self);
+    cl_int res = clSetUserEventStatus(evt, es);
+    CHECK_AND_RAISE(res);
+
+    return self;
+}
+
+/*
+ *
+ */
 static void
 rcl_pfn_event_callback(cl_event evt, cl_int cmd_exec_status, void *usr_data)
 {
@@ -2157,8 +2295,11 @@ define_class_event(void)
     rb_undef_alloc_func(rcl_cEvent);
     rb_define_method(rcl_cEvent, "info", rcl_event_info, 1);
     rb_define_module_function(rcl_mCapi, "wait_for_events", rcl_wait_for_events, 1);
-    // rb_define_method(rcl_cEvent, "set_callback", rcl_set_event_callback, -1);
     rb_define_method(rcl_cEvent, "profiling_info", rcl_event_profiling_info, 1);
+#ifdef CL_VERSION_1_1
+    rb_define_method(rcl_cEvent, "set_status", rcl_set_user_event_status, 1);
+    rb_define_method(rcl_cEvent, "set_callback", rcl_set_event_callback, -1);
+#endif
 }
 
 /*
@@ -2192,6 +2333,50 @@ rcl_mem_create_buffer(VALUE mod, VALUE context, VALUE flags, VALUE size, VALUE h
 
     return RMemory(mem);
 }
+
+#ifdef CL_VERSION_1_1
+
+/*
+ * call-seq:
+ *      Memory.create_subbuffer(buffer, , [10, 100])
+ *
+ */
+static VALUE
+rcl_mem_create_subbuffer(VALUE mod, VALUE buffer,
+                                     VALUE flags,
+                                     VALUE region)
+{
+    EXPECT_RCL_TYPE(buffer, Memory);
+    EXPECT_FIXNUM(flags);
+    EXPECT_ARRAY(region);
+
+    int i = RARRAY_LEN(region);
+    if (i != 2) {
+        rb_raise(rb_eArgError, "Expected the parameter region has 2 items, got (%d).", i);
+    }
+    VALUE sz = rb_ary_entry(region, 0);
+    EXTRACT_SIZE(sz, origin);
+    sz = rb_ary_entry(region, 1);
+    EXTRACT_SIZE(sz, offset);
+
+    cl_buffer_region br;
+    br.origin = origin;
+    br.size = offset;
+
+    cl_mem buf = MemoryPtr(buffer);
+    cl_mem_flags mf = FIX2INT(flags);
+
+    cl_int res = CL_SUCCESS;
+    cl_mem subbuf = clCreateSubBuffer(buf, mf, CL_BUFFER_CREATE_TYPE_REGION, &br, &res);
+    CHECK_AND_RAISE(res);
+
+    return RMemory(subbuf);
+}
+
+// NOTE: clSetMemObjectDestructorCallback is not supported.
+//       Please use Ruby's finalizer instead.
+
+#endif
 
 static VALUE
 rcl_mem_create_image_2d(VALUE mod, VALUE context,
@@ -2367,6 +2552,9 @@ define_class_memory(void)
     rcl_cMemory = rb_define_class_under(rcl_mCapi, "Memory", rb_cObject);
     rb_undef_alloc_func(rcl_cMemory);
     rb_define_singleton_method(rcl_cMemory, "create_buffer", rcl_mem_create_buffer, 4);
+#ifdef CL_VERSION_1_1
+    rb_define_singleton_method(rcl_cMemory, "create_subbuffer", rcl_mem_create_subbuffer, 3);
+#endif
     rb_define_singleton_method(rcl_cMemory, "create_image_2d", rcl_mem_create_image_2d, 7);
     rb_define_singleton_method(rcl_cMemory, "create_image_3d", rcl_mem_create_image_3d, 9);
     rb_define_method(rcl_cMemory, "info", rcl_mem_info, 1);
