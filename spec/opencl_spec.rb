@@ -3,12 +3,6 @@
 require File.join(File.dirname(__FILE__), 'spec_helper')
 
 describe OpenCL do
-  the 'type constants' do
-    OpenCL::VECTOR_TYPES.should.is_a Hash
-    OpenCL::VECTOR_TYPES.should.has_key :cl_ulong8
-    OpenCL::SCALAR_TYPES.should.is_a Hash
-    OpenCL::SCALAR_TYPES.should.has_key :cl_ushort
-  end
 
   the '::type_size' do
     OpenCL.type_size(:cl_float).should.equal 4
