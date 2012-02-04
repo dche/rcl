@@ -41,9 +41,7 @@ end
 dir = File.dirname(__FILE__)
 extdir = File.join(dir, 'ext')
 libdir = File.join(dir, 'lib/opencl')
-ext_name = 'capi'
-ext_ext = `uname` =~ /darwin/i ? 'bundle' : 'so'
-ext_target = "#{ext_name}.#{ext_ext}"
+ext_target = "capi.#{RbConfig::CONFIG['DLEXT']}"
 
 task :default => :spec
 
@@ -71,7 +69,7 @@ end
 
 file File.join(libdir, ext_target) => FileList[File.join(extdir, '*.{c,h}')] do
   cd(extdir, verbose:false) do
-    system "#{Config::CONFIG['bindir']}/#{RUBY_ENGINE} extconf.rb && make"
+    system "#{RbConfig::CONFIG['bindir']}/#{RUBY_ENGINE} extconf.rb && make"
   end
   cp File.join(extdir, ext_target), libdir, verbose:false
 end
