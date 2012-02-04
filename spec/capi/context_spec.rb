@@ -6,7 +6,7 @@ include OpenCL::Capi
 describe Context do
   before do
     # CHECK: NVIDIA OpenCL impl's bug. Calling Context.new more than 13 times
-    #        a CL_DEVICE_NOT_AVAILABLE error is returned. 
+    #        a CL_DEVICE_NOT_AVAILABLE error is returned.
     platform = platforms.first
     @cxt = OpenCL::Capi::Context.new([CL_CONTEXT_PLATFORM, platform], CL_DEVICE_TYPE_DEFAULT)
   end
@@ -25,7 +25,6 @@ describe Context do
     devs.should.is_a Array
     devs.should.not.be.empty
     devs.first.should.is_a Device
-    puts devs.first.info(CL_DEVICE_NAME)
   end
 
   the "retainContext should performed." do

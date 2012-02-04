@@ -44,8 +44,5 @@ describe Device do
     d.info(CL_DEVICE_IMAGE2D_MAX_WIDTH).should.is_a Fixnum
     d.info(CL_DEVICE_MAX_WORK_ITEM_SIZES).should.is_a Array
     d.info(CL_DEVICE_PLATFORM).should.is_a Platform
-
-    p d.info(CL_DEVICE_VERSION)
   end
-
 end

@@ -39,9 +39,7 @@ describe Kernel do
     k = @prog.create_kernels.first
     lws = k.workgroup_info(@cxt.devices.first, CL_KERNEL_WORK_GROUP_SIZE)
     lws.should.not.equal 0
-    puts "CL_KERNEL_WORK_GROUP_SIZE: #{lws}"
     lms = k.workgroup_info(@cxt.devices.first, CL_KERNEL_LOCAL_MEM_SIZE)
-    puts "CL_KERNEL_LOCAL_MEM_SIZE: #{lms}"
   end
 
   it 'should be able to create a kernel more than once' do

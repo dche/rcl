@@ -28,8 +28,6 @@ describe Platform do
     pf.info(CL_PLATFORM_VERSION).should.not.be.empty
     pf.info(CL_PLATFORM_VENDOR).should.is_a String
     pf.info(CL_PLATFORM_EXTENSIONS).should.is_a String
-
-    p pf.info(CL_PLATFORM_VERSION)
   end
 
   the 'invalid query should raise an error.' do

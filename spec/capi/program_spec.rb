@@ -49,14 +49,13 @@ describe Program do
     p = Program.new @cxt, [src]
     s = p.info(CL_PROGRAM_SOURCE)
     s.should.is_a String
-    puts s
+    s.should.equal src
   end
 
   it 'should report build errors.' do
     p = Program.new @cxt, [wrong_src]
     devs = @cxt.info(CL_CONTEXT_DEVICES)
     should.raise(CLError) { p.build devs, "", nil }
-    puts p.build_info(devs.first, CL_PROGRAM_BUILD_LOG)
   end
 end
 
