@@ -6,16 +6,10 @@
 # You should use more rubyish APIs that defiend in module OpenCL, e.g.,
 # Context, Program, Buffer, Operand and NDArray
 #
-# Copyright (c) 2010-2011, Che Kenan. All rights reserved.
-
-require File.join(File.dirname(__FILE__), 'capi')
 
 # The OpenCL enabler for ruby.
 module OpenCL
   module Capi
-    # OpenCL version the API conforms to.
-    VERSION = '1.0'
-
     class Platform
 
       def profile
@@ -313,7 +307,7 @@ module OpenCL
     end
 
     def inspect
-      "#<#{self.class} address=#{self.address} type=#{self.type} size=#{self.size}>"
+      "#<#{self.class}: address=#{self.address}, type=#{self.type}, size=#{self.size}>"
     end
 
     def to_a
@@ -346,5 +340,4 @@ module OpenCL
   class MappedPointer
     include PointerHelper
   end
-
 end

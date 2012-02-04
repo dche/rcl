@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+require File.join(File.dirname(__FILE__), 'ndarray')
 require File.join(File.dirname(__FILE__), 'vector/vector')
 require File.join(File.dirname(__FILE__), 'vector/gen')
 require File.join(File.dirname(__FILE__), 'vector/arith')

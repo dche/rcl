@@ -1,6 +1,6 @@
 
 // CHECK: in MacRuby v0.12, there's no way to include "macruby_internal.h",
-//        in which GC_WB is defined. So we have to define this macro.
+//        in which GC_WB is defined. So we have to define this macro here.
 
 #ifndef RCL_MACRUBY_INTERNAL_H__
 #define RCL_MACRUBY_INTERNAL_H__

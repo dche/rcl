@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 require File.join(File.dirname(__FILE__), '../spec_helper')
+require File.join(File.dirname(__FILE__), '../../lib/opencl/ndarray')
 
 describe NDArray do
   the '::like' do

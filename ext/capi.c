@@ -641,6 +641,11 @@ define_opencl_constants(void)
     RCL_DEF_CONSTANT(CL_SAMPLER_NORMALIZED_COORDS);
     RCL_DEF_CONSTANT(CL_SAMPLER_ADDRESSING_MODE);
     RCL_DEF_CONSTANT(CL_SAMPLER_FILTER_MODE);
+
+#ifdef CL_VERSION_1_1
+    // cl_version
+    RCL_DEF_CONSTANT(CL_VERSION_1_1);
+#endif
 }
 
 /*
@@ -3063,6 +3068,9 @@ rcl_kernel_workgroup_info(VALUE self, VALUE device, VALUE param_name)
     switch (kwi) {
     case CL_KERNEL_WORK_GROUP_SIZE:
     case CL_KERNEL_LOCAL_MEM_SIZE:
+#ifdef CL_VERSION_1_1
+    case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
+#endif
         return ULONG2NUM(param_value[0]);
     case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
         ret = rb_ary_new2(3);
