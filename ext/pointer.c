@@ -708,13 +708,15 @@ rcl_pointer_init_copy(VALUE copy, VALUE orig)
 static VALUE
 rcl_pointer_aref(VALUE self, VALUE index)
 {
-    rcl_pointer_t *p = PointerPtr(self);
-    EXTRACT_SIZE(index, i);
+    EXPECT_FIXNUM(index);
+    int i = FIX2INT(index);
 
-    if (p->size == 0 || i >= p->size) {
-        rb_raise(rb_eRuntimeError, "subscriber exceeds the boundary.");
+    rcl_pointer_t *p = PointerPtr(self);
+    if (i >= p->size || i < 0) {
+        return Qnil;
+    } else {
+        return rcl_native2ruby(p->type, ElementAddress(p, i));
     }
-    return rcl_native2ruby(p->type, ElementAddress(p, i));
 }
 
 /*

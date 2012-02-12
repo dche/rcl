@@ -76,8 +76,10 @@ describe HostPointer do
     p = HostPointer.new :cl_char8, 256
     p.address.should.not.equal 0
     should.not.raise(RuntimeError) { p[0] }
+    p[0].should.not.be.nil
     p.free
-    should.raise(RuntimeError) { p[0] }
+    should.not.raise(RuntimeError) { p[0] }
+    p[0].should.be.nil
     p.address.should.equal nil
     p.should.be.null
     p.size.should.equal 0
@@ -85,7 +87,9 @@ describe HostPointer do
   end
 
   it 'should reject access out of memory boundary.' do
-    should.raise(RuntimeError) { @p[@p.size] }
+    should.not.raise(RuntimeError) { @p[@p.size] }
+    @p[@p.size].should.be.nil
+    @p[-1].should.be.nil
     should.raise(RuntimeError) { @p[@p.size] = 1 }
   end
 
@@ -186,7 +190,8 @@ describe HostPointer do
     @p.free
     @p.size.should.equal 0
     p.size.should.not.equal 0
-    should.raise(RuntimeError) { @p[0] }
+    should.not.raise(RuntimeError) { @p[0] }
+    @p[0].should.be.nil
     p[0].should.equal 4345
   end
 
