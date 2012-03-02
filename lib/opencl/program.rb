@@ -40,7 +40,7 @@ module OpenCL
         @source = src.freeze
       rescue CLError => e
         if e.program_build_failed?
-          raise ProgramBuildError, @program.build_info(@context.default_device, Capi::CL_PROGRAM_BUILD_LOG)
+          raise ProgramBuildError, @program.build_info(@context.default_device, CL_PROGRAM_BUILD_LOG)
         else
           raise e
         end
@@ -50,10 +50,8 @@ module OpenCL
       self
     end
 
-    # Returns the Capi::Kernel object with given +name+, or +nil+ if no
-    # such a kernel in the receiver.
-    #
-    # Raises CLError if a kernel with given +name+ is not found in program.
+    # Returns the Capi::Kernel object with given +name+, or raises CLError
+    # if a kernel with given +name+ is not found in program.
     def kernel(name)
       nm = name.to_s
       k = @kernels[nm]
@@ -82,7 +80,6 @@ module OpenCL
     # kernel_name -- the kernel name.
     # sizes -- global and local work sizes, can be nil if the work sizes are
     #          provided by calling back to the associated block.
-    # local_size -- local work size, i.e., how many work-items in a workgroup.
     # args -- arguments of the kernel.
     def call(kernel_name, sizes = nil, *args)
       @mutex.lock
@@ -105,9 +102,10 @@ module OpenCL
           lmem_size = device.local_memory_size
           gws, lws, args = yield max_lws, lmem_size
         else
+          # sizes = [[dim1, dim2], [dim1, dim2]]
           gws, lws = sizes
-          if Integer === gws && lws.nil?
-            gws = [gws]
+          if Fixnum === gws
+            gws = lws.nil? ? [gws] : sizes
           end
         end
 
@@ -120,7 +118,7 @@ module OpenCL
           value = args[i * 2 + 1]
 
           case type
-          when :mem
+          when :mem, :image2d, :image3d
             value.unmap_pointer
             k.set_arg i, type, value.memory
           else
@@ -161,8 +159,8 @@ module OpenCL
     def profiling(kernel, event)
       if self.profiling?
         OpenCL::Capi.wait_for_events([event])
-        et = event.profiling_info Capi::CL_PROFILING_COMMAND_END
-        st = event.profiling_info Capi::CL_PROFILING_COMMAND_START
+        et = event.profiling_info CL_PROFILING_COMMAND_END
+        st = event.profiling_info CL_PROFILING_COMMAND_START
         @execution_time = (et - st) * 1e-9
       end
     end

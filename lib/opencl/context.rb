@@ -13,11 +13,11 @@ module OpenCL
 
         dt = case device_type
         when :gpu
-          Capi::CL_DEVICE_TYPE_GPU
+          CL_DEVICE_TYPE_GPU
         when :cpu
-          Capi::CL_DEVICE_TYPE_CPU
+          CL_DEVICE_TYPE_CPU
         when :all
-          Capi::CL_DEVICE_TYPE_ALL
+          CL_DEVICE_TYPE_ALL
         else
           raise ArgumentError, 'invalid device type.'
         end
@@ -29,7 +29,7 @@ module OpenCL
       end
 
       def default_context
-        context_of(:gpu) ||context_of(:cpu)
+        context_of(:gpu) || context_of(:cpu)
       end
 
       private :new

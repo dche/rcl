@@ -4,7 +4,7 @@ require File.join(File.dirname(__FILE__), 'capi')
 
 module OpenCL
   module Capi
-    VERSION = if defined? ::OpenCL::Capi::CL_VERSION_1_1
+    VERSION = if defined? ::OpenCL::CL_VERSION_1_1
       '1.1'
     else
       '1.0'

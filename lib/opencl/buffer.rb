@@ -15,11 +15,11 @@ module OpenCL
 
       @io = case io_flag
       when :inout
-        Capi::CL_MEM_READ_WRITE
+        CL_MEM_READ_WRITE
       when :in
-        @io = Capi::CL_MEM_READ_ONLY
+        @io = CL_MEM_READ_ONLY
       when :out
-        @io = Capi::CL_MEM_WRITE_ONLY
+        @io = CL_MEM_WRITE_ONLY
       else
         raise ArgumentError, "invalid io flag. Expected :in, :out, :inout, got #{io_flag}"
       end
@@ -53,7 +53,7 @@ module OpenCL
       return self if self.pinned?
 
       self.unmap_pointer
-      @pinned_memory = @context.create_buffer(@io | Capi::CL_MEM_ALLOC_HOST_PTR, @byte_size, nil)
+      @pinned_memory = @context.create_buffer(@io | CL_MEM_ALLOC_HOST_PTR, @byte_size, nil)
       cq = @context.command_queue_of @context.default_device
       @pinned_pointer, _ = cq.enqueue_map_buffer @pinned_memory, true, map_flag, 0, self.byte_size, nil
 
@@ -228,12 +228,12 @@ module OpenCL
 
     # Returns +true+ if the receiver is readable by the device.
     def in?
-      @io != Capi::CL_MEM_WRITE_ONLY
+      @io != CL_MEM_WRITE_ONLY
     end
 
     # Returns +true+ ff the receiver is writable by the device.
     def out?
-      @io != Capi::CL_MEM_READ_ONLY
+      @io != CL_MEM_READ_ONLY
     end
 
     def to_s
@@ -258,8 +258,8 @@ module OpenCL
     # of @io.
     def map_flag
       flag = 0
-      flag |= Capi::CL_MAP_READ if self.in?
-      flag |= Capi::CL_MAP_WRITE if self.out?
+      flag |= CL_MAP_READ if self.in?
+      flag |= CL_MAP_WRITE if self.out?
       # The value of above statement is nil if self.out? is false.
       flag
     end

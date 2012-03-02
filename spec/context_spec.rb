@@ -47,6 +47,6 @@ describe OpenCL::Context do
     cxt = OpenCL::Context.default_context
     cq = cxt.profiling_command_queue_of cxt.default_device
     cq.should.is_a Capi::CommandQueue
-    cq.info(Capi::CL_QUEUE_PROPERTIES).should.equal Capi::CL_QUEUE_PROFILING_ENABLE
+    cq.info(CL_QUEUE_PROPERTIES).should.equal CL_QUEUE_PROFILING_ENABLE
   end
 end

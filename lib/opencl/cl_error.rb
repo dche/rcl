@@ -5,11 +5,11 @@ module OpenCL
   class CLError
 
     def program_build_failed?
-      @code == Capi::CL_BUILD_PROGRAM_FAILURE
+      @code == CL_BUILD_PROGRAM_FAILURE
     end
 
     def invalid_kernel_name?
-      @code == Capi::CL_INVALID_KERNEL_NAME
+      @code == CL_INVALID_KERNEL_NAME
     end
 
     def inspect
