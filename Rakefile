@@ -75,13 +75,7 @@ file File.join(libdir, ext_target) => FileList[File.join(extdir, '*.{c,h}')] do
 end
 
 desc 'Build the extension.'
-task :build => File.join(libdir, ext_target) do
-  cd(extdir, verbose:false) do
-    FileList['*.{o,bundle,so}', '*Makefile'].each do |f|
-      rm f, verbose:false
-    end
-  end
-end
+task :build => File.join(libdir, ext_target)
 
 desc 'Clean the project directory.'
 task :clean => :clobber_package do
