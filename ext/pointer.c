@@ -3,8 +3,6 @@
 #include "ieee_half_float.h"
 #include "uthash.h"     // store rcl_type_t structures. Ruby Hash is heavy.
 
-extern VALUE rcl_mOpenCL;
-
 VALUE rcl_cPointer;
 VALUE rcl_cMappedPointer;
 
@@ -175,7 +173,7 @@ static VALUE rcl_is_type_valid(VALUE self, VALUE id)
     return Qfalse;
 }
 
-static void define_cl_types(void)
+static void define_cl_types(VALUE mod)
 {
     DEF_CL_TYPE(cl_bool);
     DEF_CL_TYPE(cl_char);
@@ -230,7 +228,7 @@ static void define_cl_types(void)
     DEF_CL_VECTOR_TYPE(cl_double,   4);
     DEF_CL_VECTOR_TYPE(cl_double,   8);
     DEF_CL_VECTOR_TYPE(cl_double,   16);
-    // DEF_CL_VECTOR_TYPE(cl_half,     2);
+    // DEF_CL_VECTOR_TYPE(cl_half,     2);  // Apple platform doesn't support cl_halfn.
     // DEF_CL_VECTOR_TYPE(cl_half,     4);
     // DEF_CL_VECTOR_TYPE(cl_half,     8);
     // DEF_CL_VECTOR_TYPE(cl_half,     16);
@@ -249,9 +247,9 @@ static void define_cl_types(void)
     // DEF_CL_VECTOR_TYPE(cl_half,     3);
 #endif
 
-    rb_define_module_function(rcl_mOpenCL, "type_size", rcl_sizeof, 1);
-    rb_define_module_function(rcl_mOpenCL, "valid_type?", rcl_is_type_valid, 1);
-    rb_define_module_function(rcl_mOpenCL, "valid_vector?", rcl_is_type_vector, 1);
+    rb_define_module_function(mod, "type_size", rcl_sizeof, 1);
+    rb_define_module_function(mod, "valid_type?", rcl_is_type_valid, 1);
+    rb_define_module_function(mod, "valid_vector?", rcl_is_type_vector, 1);
 }
 
 #define IF_TYPE_TO_NATIVE(c_type, expector, convertor) \
@@ -991,6 +989,13 @@ rcl_pointer_slice(VALUE self, VALUE start, VALUE size)
     return ro;
 }
 
+static VALUE
+rcl_pointer_copy_rect(VALUE self, VALUE target, VALUE row_pitch, VALUE region)
+{
+    // TODO:
+    return target;
+}
+
 /*
  * class MappedPointer
  */
@@ -1100,11 +1105,11 @@ rcl_mapped_pointer_write_as_type(VALUE self, VALUE address, VALUE type, VALUE va
  */
 
 void
-define_rcl_class_pointer(void)
+rcl_define_class_pointer(VALUE mod)
 {
-    define_cl_types();
+    define_cl_types(mod);
 
-    rcl_cPointer = rb_define_class_under(rcl_mOpenCL, "HostPointer", rb_cObject);
+    rcl_cPointer = rb_define_class_under(mod, "HostPointer", rb_cObject);
     rb_define_singleton_method(rcl_cPointer, "wrap_pointer", rcl_pointer_wrap, 3);
     rb_define_alloc_func(rcl_cPointer, rcl_pointer_alloc);
     rb_define_method(rcl_cPointer, "initialize", rcl_pointer_init, 2);
@@ -1120,9 +1125,10 @@ define_rcl_class_pointer(void)
     rb_define_method(rcl_cPointer, "free", rcl_pointer_free, 0);
     rb_define_method(rcl_cPointer, "clear", rcl_pointer_clear, 0);
     rb_define_method(rcl_cPointer, "copy_from", rcl_pointer_copy_from, 1);
+    rb_define_method(rcl_cPointer, "copy_rect", rcl_pointer_copy_rect, 3);
     rb_define_method(rcl_cPointer, "slice", rcl_pointer_slice, 2);
 
-    rcl_cMappedPointer = rb_define_class_under(rcl_mOpenCL, "MappedPointer", rb_cObject);
+    rcl_cMappedPointer = rb_define_class_under(mod, "MappedPointer", rb_cObject);
     rb_undef_alloc_func(rcl_cMappedPointer);
     rb_define_method(rcl_cMappedPointer, "[]", rcl_pointer_aref, 1);
     rb_define_method(rcl_cMappedPointer, "[]=", rcl_pointer_aset, 2);

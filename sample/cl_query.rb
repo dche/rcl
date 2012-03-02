@@ -16,7 +16,7 @@ OpenCL::Capi.platforms.each do |pt|
   pinfo "Vendor", "#{pt.vendor}"
   pinfo "Version", "#{pt.version}"
 
-  OpenCL::Capi.devices(OpenCL::Capi::CL_DEVICE_TYPE_ALL, pt).each do |dev|
+  OpenCL::Capi.devices(OpenCL::CL_DEVICE_TYPE_ALL, pt).each do |dev|
     puts '-' * 60
 
     pinfo "Device", "#{dev.name}"
