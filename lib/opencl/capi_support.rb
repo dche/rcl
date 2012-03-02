@@ -263,6 +263,17 @@ module OpenCL
         end
       end
     end
+
+    class ImageFormat
+      def to_s
+        self.to_a.to_s
+        # TODO: should show the names of constants, instead of numbers.
+      end
+
+      def to_a
+        [self.channel_order, self.channel_data_type]
+      end
+    end
   end
 
   # :nodoc:
