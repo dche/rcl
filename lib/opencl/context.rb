@@ -80,7 +80,7 @@ module OpenCL
 
     def method_missing(meth, *args, &blk)
       case meth
-      when :create_program, :devices, :create_buffer
+      when :create_program, :devices, :create_buffer, :create_image_2d, :create_image_3d
         @context.send meth, *args, &blk
       else
         super
