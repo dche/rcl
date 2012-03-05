@@ -55,9 +55,9 @@ rcl_mem_create_subbuffer(VALUE mod, VALUE buffer,
     EXPECT_FIXNUM(flags);
     EXPECT_ARRAY(region);
 
-    int i = RARRAY_LEN(region);
+    long i = RARRAY_LEN(region);
     if (i != 2) {
-        rb_raise(rb_eArgError, "Expected the parameter region has 2 items, got (%d).", i);
+        rb_raise(rb_eArgError, "Expected the parameter region has 2 items, got (%ld).", i);
     }
     VALUE sz = rb_ary_entry(region, 0);
     EXTRACT_SIZE(sz, origin);

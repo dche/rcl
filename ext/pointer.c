@@ -591,7 +591,7 @@ rcl_pointer_wrap(VALUE klass, VALUE address, VALUE type, VALUE size)
     void *addr = (void *)NUM2ULONG(address);
 
     Check_Type(type, T_SYMBOL);
-    int tsz = rcl_type_size(type);
+    size_t tsz = rcl_type_size(type);
     if (tsz == 0) {
         rb_raise(rb_eArgError, "invalid type tag.");
     }
@@ -646,7 +646,7 @@ rcl_pointer_init(VALUE self, VALUE type, VALUE size)
     Data_Get_Struct(self, rcl_pointer_t, p);
 
     Check_Type(type, T_SYMBOL);
-    int tsz = rcl_type_size(type);
+    size_t tsz = rcl_type_size(type);
     if (tsz == 0) {
         rb_raise(rb_eArgError, "unrecognized type tag.");
     }
@@ -1040,7 +1040,7 @@ rcl_mapped_pointer_coerce(VALUE self, VALUE type)
         return self;
     }
 
-    int tsz = rcl_type_size(type);
+    size_t tsz = rcl_type_size(type);
     if (tsz == 0) {
         rb_raise(rb_eArgError, "unrecognized type name.");
     }
@@ -1066,7 +1066,7 @@ static VALUE
 rcl_mapped_pointer_read_as_type(VALUE self, VALUE address, VALUE type)
 {
     Check_Type(type, T_SYMBOL);
-    int tsz = rcl_type_size(type);
+    size_t tsz = rcl_type_size(type);
     if (tsz == 0) {
         rb_raise(rb_eArgError, "unrecognized type name.");
     }
@@ -1084,7 +1084,7 @@ static VALUE
 rcl_mapped_pointer_write_as_type(VALUE self, VALUE address, VALUE type, VALUE value)
 {
     Check_Type(type, T_SYMBOL);
-    int tsz = rcl_type_size(type);
+    size_t tsz = rcl_type_size(type);
     if (tsz == 0) {
         rb_raise(rb_eArgError, "unrecognized type name.");
     }
