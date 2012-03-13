@@ -77,10 +77,6 @@ module OpenCL
 
     # Executes a kernel.
     #
-    # kernel_name -- the kernel name.
-    # sizes -- global and local work sizes, can be nil if the work sizes are
-    #          provided by calling back to the associated block.
-    # args -- arguments of the kernel.
     def call(kernel_name, sizes = nil, *args)
       @mutex.lock
       begin
@@ -89,7 +85,7 @@ module OpenCL
         # The context object controls which device to use.
         device = @context.device
 
-        gws = lws = 0
+        gws = lws = nil
 
         # if sizes is nil, then we know the caller wants to query the program
         # object for max local workgroup size and local memory size.
@@ -105,7 +101,8 @@ module OpenCL
           # sizes = [[dim1, dim2], [dim1, dim2]]
           gws, lws = sizes
           if Fixnum === gws
-            gws = lws.nil? ? [gws] : sizes
+            gws = [gws]
+            lws = [lws] unless lws.nil?
           end
         end
 
@@ -118,10 +115,16 @@ module OpenCL
           value = args[i * 2 + 1]
 
           case type
-          when :mem, :image2d, :image3d
+          when :mem
+            # Buffer
             value.unmap_pointer
             k.set_arg i, type, value.memory
+          when :image2d, :image3d
+            # Image
+            k.set_arg i, :mem, value.memory
           else
+            # :cl_float4 etc. Capi::Kernel#set_arg will raise error if anyting
+            # is wrong.
             k.set_arg i, type, value
           end
         end

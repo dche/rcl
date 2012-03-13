@@ -40,14 +40,15 @@ module OpenCL
       @byte_size *= @height if @height > 1
       @byte_size *= @depth if self.threed?
 
+      io = CL_MEM_READ_WRITE
       # TODO: support create Iamge from GL objects.
       data = options[:data]
       unless data.nil?
         raise ArgumentError, "expected an OpenCL::HostPointer, got a (#{data.class})." unless data.is_a?(HostPointer)
         raise ArgumentError, "size of option :data doesn't match the specified image size and format." if data.byte_size != @byte_size
+        io |= CL_MEM_COPY_HOST_PTR
       end
 
-      io = CL_MEM_READ_WRITE
       @memory = if self.threed?
         @context.create_image_3d(io, @format, @width, @height, @depth, 0, 0, data)
       else
