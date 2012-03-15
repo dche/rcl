@@ -163,6 +163,13 @@ module OpenCL
       v
     end
 
+    # Zeroes the buffer.
+    def clear
+      self.map_pointer
+      @mapped_pointer.clear
+      self
+    end
+
     # This method is used to access the contents of the receiver without
     # creating a +Structure+ object as a accessor.
     #
@@ -178,6 +185,7 @@ module OpenCL
     def write_as_type(byte_addr, type, value)
       self.map_pointer
       @mapped_pointer.write_as_type byte_addr, type, value
+      self
     end
 
     # Recursively executes a reduction kernel.
