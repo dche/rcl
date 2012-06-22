@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 require 'rake'
-require 'rake/gempackagetask'
+require 'rubygems/package_task'
 
 require 'rbconfig'
 
@@ -32,8 +32,7 @@ spec = Gem::Specification.new do |s|
                     '--line-numbers' << '--exclude="spec/*"'
 end
 
-Rake::GemPackageTask.new(spec) do |p|
-  p.gem_spec = spec
+Gem::PackageTask.new(spec) do |p|
   p.need_zip = true
   p.need_tar = true
 end
