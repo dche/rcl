@@ -1,4 +1,3 @@
-# encoding: utf-8
 #
 # This file expands the CAPI classes and methods defined in C extension,
 # to make CAPI more easy to use. However, even though,
@@ -236,7 +235,7 @@ module OpenCL
 
       # Returns the amount of local memory in bytes being used by a kernel.
       #
-      # This includes local memory that may be needed by an implementation
+      # This includes local memory that maybe needed by an implementation
       # to execute the kernel, variables declared inside the kernel
       # with the __local address qualifier and local memory to be allocated
       # for arguments to the kernel declared as pointers

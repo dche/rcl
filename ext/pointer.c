@@ -1,4 +1,3 @@
-// Copyright (c) 2010, Che Kenan
 
 #include "ieee_half_float.h"
 #include "uthash.h"     // store rcl_type_t structures. Ruby Hash is heavy.
@@ -362,8 +361,7 @@ rcl_ruby2native(VALUE type, void *address, VALUE value)
 
 #define IF_TYPE_TO_RUBY(c_type, convertor) \
     if (type == type_##c_type) { \
-        c_type *ptr = (c_type *)address; \
-        return convertor(ptr[0]); \
+        return convertor(*(c_type *)address); \
     }
 
 #define IF_VECTOR_TYPE_TO_RUBY(base_c_type, n, convertor) \

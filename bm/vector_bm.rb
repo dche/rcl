@@ -1,11 +1,10 @@
-# encoding: utf-8
 
 has_narray = true
 
 begin
   require 'narray'
 rescue LoadError => e
-  puts "You need to install the 'narray' gem to compare the benchmarks with NArray."
+  puts "You need to install the 'narray' gem to compare with NArray."
   has_narray = false
 end
 
@@ -16,7 +15,7 @@ def test(title)
   puts "\n== #{title} #{'=' * 20}"
 end
 
-(4..6).each do |i|
+(5..6).each do |i|
 
   sz = 10 ** i
 

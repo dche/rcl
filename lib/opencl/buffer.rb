@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 module OpenCL
   # Buffer encaplulates the OpenCL memory object.

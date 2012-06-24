@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 module OpenCL
   # Image class wrapps the OpenCL image memory object.
