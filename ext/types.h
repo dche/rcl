@@ -166,7 +166,7 @@ void rcl_kernel_free(void *);
 
 #define RPlatform(ptr)      (Data_Wrap_Struct(rcl_cPlatform, 0, 0, (ptr)))
 
-inline cl_platform_id
+static inline cl_platform_id
 PlatformPtr(VALUE ro)
 {
     EXPECT_RCL_TYPE(ro, Platform);
@@ -175,14 +175,14 @@ PlatformPtr(VALUE ro)
 
 #define RDevice(ptr)      Data_Wrap_Struct(rcl_cDevice, 0, 0, (ptr))
 
-inline cl_device_id
+static inline cl_device_id
 DevicePtr(VALUE ro)
 {
     EXPECT_RCL_TYPE(ro, Device);
     return DATA_PTR(ro);
 }
 
-inline cl_context
+static inline cl_context
 ContextPtr(VALUE ro)
 {
     EXPECT_RCL_TYPE(ro, Context);
@@ -193,7 +193,7 @@ ContextPtr(VALUE ro)
     return p->c;
 }
 
-inline VALUE
+static inline VALUE
 RContext(cl_context ptr)
 {
     rcl_context_t *p;
@@ -203,7 +203,7 @@ RContext(cl_context ptr)
     return ret;
 }
 
-inline VALUE
+static inline VALUE
 RImageFormat(cl_image_format *imf)
 {
     VALUE ro = rb_obj_alloc(rcl_cImageFormat);
@@ -215,7 +215,7 @@ RImageFormat(cl_image_format *imf)
     return ro;
 }
 
-inline VALUE
+static inline VALUE
 RCommandQueue(cl_command_queue ptr)
 {
     rcl_command_queue_t *p;
@@ -225,7 +225,7 @@ RCommandQueue(cl_command_queue ptr)
     return ret;
 }
 
-inline cl_command_queue
+static inline cl_command_queue
 CommandQueuePtr(VALUE ro)
 {
     EXPECT_RCL_TYPE(ro, CommandQueue);
@@ -236,7 +236,7 @@ CommandQueuePtr(VALUE ro)
     return p->cq;
 }
 
-inline cl_sampler
+static inline cl_sampler
 SamplerPtr(VALUE ro)
 {
     EXPECT_RCL_TYPE(ro, Sampler);
@@ -247,7 +247,7 @@ SamplerPtr(VALUE ro)
     return ps->s;
 }
 
-inline VALUE
+static inline VALUE
 REvent(cl_event ptr)
 {
     rcl_event_t *p;
@@ -257,7 +257,7 @@ REvent(cl_event ptr)
     return ro;
 }
 
-inline cl_event
+static inline cl_event
 EventPtr(VALUE ro)
 {
     EXPECT_RCL_TYPE(ro, Event);
@@ -268,7 +268,7 @@ EventPtr(VALUE ro)
     return p->e;
 }
 
-inline cl_mem
+static inline cl_mem
 MemoryPtr(VALUE ro)
 {
     EXPECT_RCL_TYPE(ro, Memory);
@@ -279,7 +279,7 @@ MemoryPtr(VALUE ro)
     return p->mem;
 }
 
-inline VALUE
+static inline VALUE
 RMemory(cl_mem m)
 {
     rcl_mem_t *p;
@@ -289,7 +289,7 @@ RMemory(cl_mem m)
     return ret;
 }
 
-inline VALUE
+static inline VALUE
 RProgram(cl_program prog)
 {
     rcl_program_t *sp;
@@ -299,7 +299,7 @@ RProgram(cl_program prog)
     return ret;
 }
 
-inline cl_program
+static inline cl_program
 ProgramPtr(VALUE ro)
 {
     EXPECT_RCL_TYPE(ro, Program);
@@ -310,7 +310,7 @@ ProgramPtr(VALUE ro)
     return p->p;
 }
 
-inline VALUE
+static inline VALUE
 RKernel(cl_kernel k)
 {
     rcl_kernel_t *p;
@@ -320,7 +320,7 @@ RKernel(cl_kernel k)
     return ret;
 }
 
-inline cl_kernel
+static inline cl_kernel
 KernelPtr(VALUE ro)
 {
     EXPECT_RCL_TYPE(ro, Kernel);
@@ -331,7 +331,7 @@ KernelPtr(VALUE ro)
     return p->k;
 }
 
-inline VALUE
+static inline VALUE
 build_device_array(cl_device_id *devs, size_t cb)
 {
     VALUE ret = rb_ary_new();
