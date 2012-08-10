@@ -538,10 +538,13 @@ ElementAddress(rcl_pointer_t *ptr, size_t index)
 static void
 rcl_pointer_free_func(void *ptr)
 {
-    // NOTE: It's safe to free a NULL pointer. So no special case for wrapped
-    // pointer and short values.
-    xfree(((rcl_pointer_t *)ptr)->alloc_address);
-    xfree(ptr);
+    if (NULL != ptr) {
+        // SEE: https://github.com/MacRuby/MacRuby/commit/dbedf7c04cee40b6f79fc794e75481e7b81d351c
+#ifndef HAVE_MACRUBY
+        xfree(((rcl_pointer_t *)ptr)->alloc_address);
+#endif
+        xfree(ptr);
+    }
 }
 
 /*
