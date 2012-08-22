@@ -787,7 +787,7 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
         rb_raise(rb_eArgError, "offset exceeds the boundary.");
     }
 
-    const char *ptr = RSTRING_PTR(value);
+    const char *ptr = StringValuePtr(value);
     size_t sz = RSTRING_LEN(value);
     if (sz % p->type_size != 0) {
         rb_raise(rb_eArgError, "size of byte string does not match the data type of receiver.");
@@ -799,6 +799,13 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
     p->is_dirty = Qtrue;
 
     return self;
+}
+
+static VALUE
+rcl_pointer_to_byte_string(VALUE self)
+{
+    rcl_pointer_t *p = PointerPtr(self);
+    return rb_str_new(ElementAddress(p, 0), BytesOf(p));
 }
 
 /*
@@ -1119,6 +1126,7 @@ rcl_define_class_pointer(VALUE mod)
     rb_define_method(rcl_cPointer, "[]=", rcl_pointer_aset, 2);
     rb_define_method(rcl_cPointer, "assign_pointer", rcl_pointer_assign, 3);
     rb_define_method(rcl_cPointer, "assign_byte_string", rcl_pointer_assign_byte_string, 2);
+    rb_define_method(rcl_cPointer, "to_byte_string", rcl_pointer_to_byte_string, 0);
     rb_define_method(rcl_cPointer, "address", rcl_pointer_address, 0);
     rb_define_method(rcl_cPointer, "type", rcl_pointer_type, 0);
     rb_define_method(rcl_cPointer, "size", rcl_pointer_size, 0);

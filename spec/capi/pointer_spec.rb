@@ -325,6 +325,17 @@ describe HostPointer do
     p.size.should.equal 1
   end
 
+  the 'to_byte_string' do
+    p = HostPointer.new :cl_uchar4, 1
+    bytes = [1, 2, 3, 4].pack('C4')
+    p.assign_byte_string bytes, 0
+    p.to_byte_string.unpack('C4').should.equal [1, 2, 3, 4]
+    p = HostPointer.new :cl_uint, 10
+    ints = (1..10).to_a.pack('I10')
+    p.assign_byte_string ints, 0
+    p.to_byte_string.unpack('I10').should.equal (1..10).to_a
+  end
+
   the '#assign' do
     p = HostPointer.new :cl_uint, 8
     p.assign [1, 2]
