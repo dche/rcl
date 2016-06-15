@@ -7,8 +7,6 @@
  * TODO: check all arguments that could be +nil+.
  * TODO: check all value conversions.
  * TODO: Big endien support.
- *
- * Copyright (c) 2010, Che Kenan
  */
 
 #include "capi.h"

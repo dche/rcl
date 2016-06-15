@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 module OpenCL
   # A PRNG used by each work item.

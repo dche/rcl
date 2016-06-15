@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 module OpenCL
   # The Structure object stores value of structrued data type in Ruby side,

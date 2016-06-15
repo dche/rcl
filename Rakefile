@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 require 'rake'
 require 'rubygems/package_task'
@@ -40,7 +39,20 @@ end
 dir = File.dirname(__FILE__)
 extdir = File.join(dir, 'ext')
 libdir = File.join(dir, 'lib/opencl')
-ext_target = "capi.#{RbConfig::CONFIG['DLEXT']}"
+# special case for JRuby, whose 'DLEXT' is 'jar'.
+ext_ext = RbConfig::CONFIG['DLEXT']
+if RUBY_ENGINE == 'jruby'
+  ext_ext = case RbConfig::CONFIG['target_os']
+  when 'darwin'
+    'bundle'
+  when 'linux'
+    'so'
+  else
+    raise "target os '#{RbConfig::CONFIG['target_os']}' is not supported."
+  end
+end
+
+ext_target = "capi.#{ext_ext}"
 
 task :default => :spec
 

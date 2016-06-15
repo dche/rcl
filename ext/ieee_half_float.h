@@ -1,8 +1,6 @@
 /*
  * ieee_half_float.h - Conversion between double from/to half-precision float.
  *
- * Copyright (c) 2010, Che Kenan
- *
  * Adapted from the implementation of James Tursa.
  *
  *******************************************************************************

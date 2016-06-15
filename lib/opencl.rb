@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 require File.join(File.dirname(__FILE__), 'opencl/version')
 require File.join(File.dirname(__FILE__), 'opencl/cl_error')

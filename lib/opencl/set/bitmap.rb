@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 module OpenCL
   # Bitmap is a "map" operation friendly data structure.

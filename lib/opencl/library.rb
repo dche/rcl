@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 module OpenCL
   # A Library object stores the source code of OpenCL kernels, and ruby side

@@ -1,4 +1,3 @@
-// Copyright (c) 2010, Che Kenan
 
 #include "ieee_half_float.h"
 #include "uthash.h"     // store rcl_type_t structures. Ruby Hash is heavy.
@@ -362,8 +361,7 @@ rcl_ruby2native(VALUE type, void *address, VALUE value)
 
 #define IF_TYPE_TO_RUBY(c_type, convertor) \
     if (type == type_##c_type) { \
-        c_type *ptr = (c_type *)address; \
-        return convertor(ptr[0]); \
+        return convertor(*(c_type *)address); \
     }
 
 #define IF_VECTOR_TYPE_TO_RUBY(base_c_type, n, convertor) \
@@ -540,10 +538,13 @@ ElementAddress(rcl_pointer_t *ptr, size_t index)
 static void
 rcl_pointer_free_func(void *ptr)
 {
-    // NOTE: It's safe to free a NULL pointer. So no special case for wrapped
-    // pointer and short values.
-    xfree(((rcl_pointer_t *)ptr)->alloc_address);
-    xfree(ptr);
+    if (NULL != ptr) {
+        // SEE: https://github.com/MacRuby/MacRuby/commit/dbedf7c04cee40b6f79fc794e75481e7b81d351c
+#ifndef HAVE_MACRUBY
+        xfree(((rcl_pointer_t *)ptr)->alloc_address);
+#endif
+        xfree(ptr);
+    }
 }
 
 /*
@@ -786,7 +787,7 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
         rb_raise(rb_eArgError, "offset exceeds the boundary.");
     }
 
-    const char *ptr = RSTRING_PTR(value);
+    const char *ptr = StringValuePtr(value);
     size_t sz = RSTRING_LEN(value);
     if (sz % p->type_size != 0) {
         rb_raise(rb_eArgError, "size of byte string does not match the data type of receiver.");
@@ -798,6 +799,13 @@ rcl_pointer_assign_byte_string(VALUE self, VALUE value, VALUE offset)
     p->is_dirty = Qtrue;
 
     return self;
+}
+
+static VALUE
+rcl_pointer_to_byte_string(VALUE self)
+{
+    rcl_pointer_t *p = PointerPtr(self);
+    return rb_str_new(ElementAddress(p, 0), BytesOf(p));
 }
 
 /*
@@ -1118,6 +1126,7 @@ rcl_define_class_pointer(VALUE mod)
     rb_define_method(rcl_cPointer, "[]=", rcl_pointer_aset, 2);
     rb_define_method(rcl_cPointer, "assign_pointer", rcl_pointer_assign, 3);
     rb_define_method(rcl_cPointer, "assign_byte_string", rcl_pointer_assign_byte_string, 2);
+    rb_define_method(rcl_cPointer, "to_byte_string", rcl_pointer_to_byte_string, 0);
     rb_define_method(rcl_cPointer, "address", rcl_pointer_address, 0);
     rb_define_method(rcl_cPointer, "type", rcl_pointer_type, 0);
     rb_define_method(rcl_cPointer, "size", rcl_pointer_size, 0);
